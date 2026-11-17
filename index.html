@@ -32,7 +32,7 @@
     }
 
     /* Permite toque livre em botões e áreas interativas sem travar a lousa HDMI */
-    button, .mem-card, .syl-btn, .key-btn, .mini-key, input {
+    button, .mem-card, .syl-btn, .key-btn, .mini-key, .q-count-btn, input {
       user-select: none;
       -webkit-user-select: none;
       -webkit-touch-callout: none;
@@ -356,9 +356,80 @@
       display: inline-block;
     }
 
+    /* Seletor de Quantidade de Questões (Fases 2 e 3) */
+    .question-count-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.4vw;
+      background: rgba(255, 255, 255, 0.92);
+      border: 4px solid #4DD0E1;
+      border-radius: 999px;
+      padding: 0.7vh 2.2vw;
+      box-shadow: 0 6px 0 rgba(0, 172, 193, 0.2);
+      flex-shrink: 0;
+    }
+
+    .question-count-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6vw;
+      font-size: clamp(1.05rem, 1.65vw, 1.55rem);
+      font-weight: 900;
+      color: #006064;
+      letter-spacing: 0.5px;
+    }
+
+    .question-count-label svg {
+      width: clamp(1.4rem, 2.1vw, 2rem);
+      height: clamp(1.4rem, 2.1vw, 2rem);
+      flex-shrink: 0;
+    }
+
+    .question-count-options {
+      display: flex;
+      align-items: center;
+      gap: 0.9vw;
+    }
+
+    .q-count-btn {
+      border: 3.5px solid #80DEEA;
+      background: #E0F7FA;
+      color: #006064;
+      border-radius: 999px;
+      padding: 0.55vh 1.6vw;
+      font-size: clamp(1.05rem, 1.6vw, 1.5rem);
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #4DD0E1;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4vw;
+    }
+
+    .q-count-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #4DD0E1;
+    }
+
+    .q-count-btn.active {
+      background: linear-gradient(180deg, #FFB300 0%, #F57C00 100%);
+      border-color: #FFE082;
+      color: #FFFFFF;
+      box-shadow: 0 5px 0 #E65100;
+      transform: scale(1.05);
+    }
+
+    #screenMenu .lower-zone {
+      height: 45.5vh;
+      justify-content: space-between;
+    }
+
     .menu-grid {
       width: 100%;
-      height: 37.5vh;
+      height: 35.5vh;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 1.8vw;
@@ -1354,15 +1425,42 @@
         border-radius: 12px;
       }
 
-      .lower-zone {
+      #screenMenu .lower-zone {
         height: 56dvh;
         margin-bottom: 1dvh;
+        gap: 0.8dvh;
+      }
+
+      .question-count-bar {
+        width: 100%;
+        padding: 0.5dvh 2.5vw;
+        gap: 1.5vw;
+        border-width: 3px;
+      }
+
+      .question-count-label {
+        font-size: clamp(0.75rem, 2.6vw, 1rem);
+      }
+
+      .question-count-label svg {
+        width: clamp(1.1rem, 3.8vw, 1.5rem);
+        height: clamp(1.1rem, 3.8vw, 1.5rem);
+      }
+
+      .question-count-options {
+        gap: 1.2vw;
+      }
+
+      .q-count-btn {
+        font-size: clamp(0.75rem, 2.6vw, 1rem);
+        padding: 0.45dvh 2.4vw;
+        border-width: 2.5px;
       }
 
       .menu-grid {
         grid-template-columns: repeat(2, 1fr);
         grid-template-rows: repeat(2, 1fr);
-        height: 52dvh;
+        height: 48dvh;
         gap: 1.2dvh 2.5vw;
       }
 
@@ -1690,14 +1788,37 @@
         border-width: 2px;
       }
 
-      .lower-zone {
-        height: 47dvh;
-        margin-bottom: 1dvh;
+      #screenMenu .lower-zone {
+        height: 48dvh;
+        margin-bottom: 0.8dvh;
+        gap: 0.8dvh;
+      }
+
+      .question-count-bar {
+        padding: 0.4dvh 1.8vw;
+        border-width: 2.5px;
+        box-shadow: 0 3px 0 rgba(0, 172, 193, 0.2);
+      }
+
+      .question-count-label {
+        font-size: clamp(0.72rem, 1.4vw, 1rem);
+      }
+
+      .question-count-label svg {
+        width: 4dvh;
+        height: 4dvh;
+      }
+
+      .q-count-btn {
+        font-size: clamp(0.72rem, 1.4vw, 1rem);
+        padding: 0.3dvh 1.2vw;
+        border-width: 2px;
+        box-shadow: 0 3px 0 rgba(0,0,0,0.2);
       }
 
       .menu-grid {
         grid-template-columns: repeat(4, 1fr);
-        height: 44dvh;
+        height: 39dvh;
         gap: 1.4vw;
       }
 
@@ -2034,6 +2155,24 @@
 
       <!-- Lower Half Interactive Menu Cards -->
       <div class="lower-zone">
+        <!-- Seletor de Quantidade de Questões (Fases 2 e 3) -->
+        <div class="question-count-bar" role="group" aria-label="QUANTIDADE DE QUESTÕES">
+          <div class="question-count-label">
+            <svg viewBox="0 0 36 36" aria-hidden="true">
+              <rect x="5" y="4" width="26" height="28" rx="5" fill="#FFF9C4" stroke="#00838F" stroke-width="2.8"/>
+              <line x1="11" y1="12" x2="25" y2="12" stroke="#00ACC1" stroke-width="3" stroke-linecap="round"/>
+              <line x1="11" y1="18" x2="25" y2="18" stroke="#FFB300" stroke-width="3" stroke-linecap="round"/>
+              <line x1="11" y1="24" x2="20" y2="24" stroke="#66BB6A" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+            <span>QUANTIDADE DE QUESTÕES:</span>
+          </div>
+          <div class="question-count-options">
+            <button type="button" class="q-count-btn" id="qCountBtn3" onclick="setQuestionCount(3)">3 QUESTÕES</button>
+            <button type="button" class="q-count-btn" id="qCountBtn5" onclick="setQuestionCount(5)">5 QUESTÕES</button>
+            <button type="button" class="q-count-btn active" id="qCountBtn10" onclick="setQuestionCount(10)">10 QUESTÕES</button>
+          </div>
+        </div>
+
         <div class="menu-grid">
           <button class="menu-card journey" onclick="startGameMode('JOURNEY')">
             <span class="menu-card-badge">
@@ -2876,6 +3015,7 @@
      **************************************************************/
     let gameState = {
       mode: 'MENU', // 'JOURNEY', 'PHASE1', 'PHASE2', 'PHASE3'
+      questionCount: 10, // 3, 5 ou 10 questões para as Fases 2 e 3
       currentPhase: 0,
       stars: 0,
       studentName: '',
@@ -2902,6 +3042,17 @@
       p3FirstTry: true,
       p3Lock: false
     };
+
+    function setQuestionCount(count) {
+      playSoundClick();
+      gameState.questionCount = count;
+      [3, 5, 10].forEach(n => {
+        const btn = document.getElementById(`qCountBtn${n}`);
+        if (btn) {
+          btn.classList.toggle('active', n === count);
+        }
+      });
+    }
 
     function shuffleArray(arr) {
       const copy = [...arr];
@@ -3172,7 +3323,7 @@
      **************************************************************/
     function startPhase2() {
       gameState.currentPhase = 2;
-      gameState.p2Queue = shuffleArray(WORD_BANK);
+      gameState.p2Queue = shuffleArray(WORD_BANK).slice(0, gameState.questionCount);
       gameState.p2Index = 0;
       showScreen('screenPhase2', 'FASE 2: CONSTRUTOR DE SÍLABAS', true);
       document.getElementById('btnNextWordLabel').textContent = 'OUTRA PALAVRA';
@@ -3255,7 +3406,7 @@
       const item = gameState.p2Queue[gameState.p2Index];
       gameState.p2CurrentWord = item;
 
-      const totalWords = gameState.mode === 'JOURNEY' ? 5 : gameState.p2Queue.length;
+      const totalWords = gameState.p2Queue.length;
       document.getElementById('p2ProgressTag').textContent = `PALAVRA ${gameState.p2Index + 1} DE ${totalWords}`;
       document.getElementById('p2SvgContainer').innerHTML = item.svg;
       document.getElementById('p2EmojiCorner').textContent = item.emoji;
@@ -3348,7 +3499,7 @@
         setFeedback(`PARABÉNS! VOCÊ FORMOU A PALAVRA "${gameState.p2CurrentWord.word}"!`, 'success');
 
         setTimeout(() => {
-          const targetTotal = gameState.mode === 'JOURNEY' ? 5 : gameState.p2Queue.length;
+          const targetTotal = gameState.p2Queue.length;
           if (gameState.p2Index + 1 < targetTotal) {
             gameState.p2Index++;
             loadPhase2Word();
@@ -3402,7 +3553,7 @@
      **************************************************************/
     function startPhase3() {
       gameState.currentPhase = 3;
-      gameState.p3Queue = shuffleArray(WORD_BANK);
+      gameState.p3Queue = shuffleArray(WORD_BANK).slice(0, gameState.questionCount);
       gameState.p3Index = 0;
       showScreen('screenPhase3', 'FASE 3: ESCRITA ESPONTÂNEA', true);
       document.getElementById('btnNextWordLabel').textContent = 'OUTRA PALAVRA';
@@ -3557,7 +3708,7 @@
       const item = gameState.p3Queue[gameState.p3Index];
       gameState.p3CurrentWord = item;
 
-      const totalWords = gameState.mode === 'JOURNEY' ? 5 : gameState.p3Queue.length;
+      const totalWords = gameState.p3Queue.length;
       document.getElementById('p3ProgressTag').textContent = `DESAFIO ${gameState.p3Index + 1} DE ${totalWords}`;
       document.getElementById('p3SvgContainer').innerHTML = item.svg;
       document.getElementById('p3EmojiCorner').textContent = item.emoji;
@@ -3670,7 +3821,7 @@
         setFeedback(`EXCELENTE! VOCÊ ESCREVEU "${item.word}" DIREITINHO!`, 'success');
 
         setTimeout(() => {
-          const targetTotal = gameState.mode === 'JOURNEY' ? 5 : gameState.p3Queue.length;
+          const targetTotal = gameState.p3Queue.length;
           if (gameState.p3Index + 1 < targetTotal) {
             gameState.p3Index++;
             loadPhase3Word();
