@@ -313,6 +313,39 @@
     return limpo;
   }
 
+  /**
+   * Sanitiza estatisticas por fase preservando null para sessoes antigas sem esse campo.
+   */
+  function sanitizarFasesStats(mapa) {
+    if (!mapa || typeof mapa !== 'object' || Array.isArray(mapa)) {
+      return null;
+    }
+    var chaves = ['fase1', 'fase2', 'fase3'];
+    var temAlguma = false;
+    var limpo = {};
+
+    for (var i = 0; i < chaves.length; i += 1) {
+      var chave = chaves[i];
+      var bruto = mapa[chave];
+      if (bruto && typeof bruto === 'object' && !Array.isArray(bruto)) {
+        temAlguma = true;
+        limpo[chave] = {
+          tentativas: sanitizarNumeroNaoNegativo(bruto.tentativas),
+          acertos: sanitizarNumeroNaoNegativo(bruto.acertos),
+          acertosPrimeira: sanitizarNumeroNaoNegativo(bruto.acertosPrimeira)
+        };
+      } else {
+        limpo[chave] = {
+          tentativas: 0,
+          acertos: 0,
+          acertosPrimeira: 0
+        };
+      }
+    }
+
+    return temAlguma ? limpo : null;
+  }
+
   function clonarSessao(sessao) {
     return {
       id: sessao.id,
@@ -331,6 +364,7 @@
       errosSilabas: sanitizarErrosSilabas(sessao.errosSilabas),
       errosOrtograficos: sanitizarErrosOrtograficos(sessao.errosOrtograficos),
       palavrasStats: sanitizarPalavrasStats(sessao.palavrasStats),
+      fasesStats: sanitizarFasesStats(sessao.fasesStats),
       palavrasTrabalhadas: Array.isArray(sessao.palavrasTrabalhadas)
         ? sessao.palavrasTrabalhadas.slice()
         : []
@@ -387,6 +421,7 @@
       errosSilabas: sanitizarErrosSilabas(raw.errosSilabas),
       errosOrtograficos: sanitizarErrosOrtograficos(raw.errosOrtograficos),
       palavrasStats: palavrasStats,
+      fasesStats: sanitizarFasesStats(raw.fasesStats),
       palavrasTrabalhadas: palavras
     };
   }

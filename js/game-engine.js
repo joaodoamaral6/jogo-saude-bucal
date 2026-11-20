@@ -25,6 +25,7 @@
     p1Flipped: [],
     p1MatchedCount: 0,
     p1Mistakes: 0,
+    p1PairMistakes: {},
     p1Lock: false,
     // Estado da Fase 2 (Construtor de Silabas)
     p2Queue: [],
@@ -83,36 +84,100 @@
     return (wordBank && wordBank.SVGS && wordBank.SVGS[svgKey]) ? wordBank.SVGS[svgKey] : '';
   }
 
+  const WEEKLY_BADGE_BOOK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 4.5A2.5 2.5 0 0 1 4.5 2H11a2 2 0 0 1 2 2v16.5a1.5 1.5 0 0 0-1.5-1.5H4.5A2.5 2.5 0 0 1 2 16.5V4.5z"></path><path d="M22 4.5A2.5 2.5 0 0 0 19.5 2H13a2 2 0 0 0-2 2v16.5a1.5 1.5 0 0 1 1.5-1.5h7A2.5 2.5 0 0 0 22 16.5V4.5z"></path></svg>';
+
   /**
-   * Informa se o modo Palavras da Semana esta ativo no Storage.
+   * Obtem metadados unificados do banco ativo (Palavras da Semana ou Banco Padrao).
+   */
+  function getActiveBankInfoSafe() {
+    const wordBank = getSaudeModule('WordBank');
+    if (wordBank && typeof wordBank.getActiveBankInfo === 'function') {
+      const info = wordBank.getActiveBankInfo();
+      if (info && Array.isArray(info.words)) {
+        return {
+          isWeekly: Boolean(info.isWeekly),
+          words: info.words,
+          count: typeof info.count === 'number' ? info.count : info.words.length
+        };
+      }
+    }
+
+    const storage = getSaudeModule('Storage');
+    const weeklyActive = Boolean(
+      storage &&
+      typeof storage.isPalavrasSemanaAtivo === 'function' &&
+      storage.isPalavrasSemanaAtivo()
+    );
+    if (weeklyActive && storage && typeof storage.getBancoPalavrasSemanaParaJogo === 'function') {
+      const weeklyBank = storage.getBancoPalavrasSemanaParaJogo();
+      if (Array.isArray(weeklyBank) && weeklyBank.length >= 4) {
+        return {
+          isWeekly: true,
+          words: weeklyBank,
+          count: weeklyBank.length
+        };
+      }
+    }
+
+    const defaultWords = (wordBank && Array.isArray(wordBank.DEFAULT_WORDS))
+      ? wordBank.DEFAULT_WORDS
+      : [];
+    return {
+      isWeekly: false,
+      words: defaultWords,
+      count: defaultWords.length
+    };
+  }
+
+  /**
+   * Informa se o modo Palavras da Semana esta ativo com banco valido.
    */
   function isWeeklyWordsActive() {
-    const storage = getSaudeModule('Storage');
-    return Boolean(storage && typeof storage.isPalavrasSemanaAtivo === 'function' && storage.isPalavrasSemanaAtivo());
+    return getActiveBankInfoSafe().isWeekly;
   }
 
   /**
    * Obtem o banco de palavras ativo (Palavras da Semana ou Banco Padrao).
    */
   function getActiveWordBankSafe() {
-    const wordBank = getSaudeModule('WordBank');
-    if (wordBank && typeof wordBank.getActiveWordBank === 'function') {
-      const bank = wordBank.getActiveWordBank();
-      if (Array.isArray(bank)) return bank;
-    }
+    return getActiveBankInfoSafe().words;
+  }
 
-    const storage = getSaudeModule('Storage');
-    if (isWeeklyWordsActive() && storage && typeof storage.getBancoPalavrasSemanaParaJogo === 'function') {
-      const weeklyBank = storage.getBancoPalavrasSemanaParaJogo();
-      if (Array.isArray(weeklyBank) && weeklyBank.length >= 4) {
-        return weeklyBank;
+  /**
+   * Atualiza os badges discretos de "Palavras da Semana" no topo das Fases 1, 2 e 3.
+   */
+  function updatePhaseWeeklyBadges(bankInfoOpt) {
+    const info = bankInfoOpt || getActiveBankInfoSafe();
+    const badgeIds = ['p1WeeklyBadge', 'p2WeeklyBadge', 'p3WeeklyBadge'];
+    const staticBookSvg = (global.SaudeEscola && global.SaudeEscola.SVGs && global.SaudeEscola.SVGs.BOOK)
+      ? global.SaudeEscola.SVGs.BOOK
+      : WEEKLY_BADGE_BOOK_SVG;
+
+    badgeIds.forEach(function (id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      if (!info.isWeekly) {
+        el.style.display = 'none';
+        el.textContent = '';
+        el.removeAttribute('title');
+        return;
       }
-    }
 
-    if (wordBank && Array.isArray(wordBank.DEFAULT_WORDS)) {
-      return wordBank.DEFAULT_WORDS;
-    }
-    return [];
+      el.style.display = 'inline-flex';
+      el.title = 'BANCO CUSTOMIZADO ATIVO: PALAVRAS DA SEMANA';
+      el.innerHTML = '';
+
+      const iconWrap = document.createElement('span');
+      iconWrap.className = 'phase-weekly-badge-icon';
+      iconWrap.innerHTML = staticBookSvg;
+
+      const textWrap = document.createElement('span');
+      textWrap.textContent = 'PALAVRAS DA SEMANA (' + info.count + ')';
+
+      el.appendChild(iconWrap);
+      el.appendChild(textWrap);
+    });
   }
 
   /**
@@ -288,6 +353,12 @@
     gameState.currentPhase = 0;
     showScreen('screenMenu', 'MENU INICIAL', false);
     setFeedback('ESCOLHA UMA ATIVIDADE PARA COMEÇAR!');
+
+    const teacherPanel = getSaudeModule('TeacherPanel');
+    if (teacherPanel && typeof teacherPanel.atualizarIndicadoresMenu === 'function') {
+      teacherPanel.atualizarIndicadoresMenu();
+    }
+    updatePhaseWeeklyBadges();
   }
 
   /**
@@ -348,11 +419,13 @@
   }
 
   function initPhase1Round() {
-    const weeklyActive = isWeeklyWordsActive();
+    const bankInfo = getActiveBankInfoSafe();
+    const weeklyActive = bankInfo.isWeekly;
     const storage = getSaudeModule('Storage');
-    const bank = getActiveWordBankSafe();
-    const selectedWords = shuffleArray(bank).slice(0, 4);
+    const bank = bankInfo.words;
     const deck = [];
+
+    updatePhaseWeeklyBadges(bankInfo);
 
     const instrEl = document.getElementById('p1InstructionText');
     let fase1Modo = 'dica';
@@ -369,15 +442,43 @@
       instrEl.textContent = 'ENCONTRE OS PARES: 1 FIGURA + 1 PALAVRA ESCRITA!';
     }
 
+    const shuffledBank = shuffleArray(bank);
+    let selectedWords = [];
+    if (weeklyActive) {
+      // Prioriza 4 palavras com dicas/silabas iniciais distintas na mesma rodada
+      const usedClueKeys = {};
+      const pickedIndices = {};
+      for (let i = 0; i < shuffledBank.length && selectedWords.length < 4; i++) {
+        const cand = shuffledBank[i];
+        const candUsaDica = fase1Modo === 'dica' && Boolean(cand.dicaOriginal && cand.dicaOriginal.trim());
+        const candKey = candUsaDica
+          ? ('D:' + cand.dicaOriginal.trim().toUpperCase())
+          : ('S:' + String(cand.silabaInicial || (cand.syllables && cand.syllables[0]) || '').trim().toUpperCase());
+        if (!usedClueKeys[candKey]) {
+          usedClueKeys[candKey] = true;
+          pickedIndices[i] = true;
+          selectedWords.push(cand);
+        }
+      }
+      for (let j = 0; j < shuffledBank.length && selectedWords.length < 4; j++) {
+        if (!pickedIndices[j]) {
+          selectedWords.push(shuffledBank[j]);
+        }
+      }
+    } else {
+      selectedWords = shuffledBank.slice(0, 4);
+    }
+
     selectedWords.forEach(function (item) {
       if (weeklyActive) {
         const usaDica = fase1Modo === 'dica' && Boolean(item.dicaOriginal && item.dicaOriginal.trim());
+        const silabaIni = String(item.silabaInicial || (item.syllables && item.syllables[0]) || '').trim().toUpperCase();
         deck.push({
           uid: item.id + '_CLUE',
           pairId: item.id,
           type: 'CLUE_OR_SYL',
           clueKind: usaDica ? 'DICA' : 'SILABA',
-          clueValue: usaDica ? item.dicaOriginal : (item.silabaInicial || (item.syllables && item.syllables[0]) || ''),
+          clueValue: usaDica ? item.dicaOriginal : silabaIni,
           word: item.word,
           isWeeklyWord: true,
           matched: false
@@ -387,6 +488,7 @@
           pairId: item.id,
           type: 'WORD',
           word: item.word,
+          silabaInicial: silabaIni,
           isWeeklyWord: true,
           matched: false
         });
@@ -416,6 +518,7 @@
     gameState.p1Flipped = [];
     gameState.p1MatchedCount = 0;
     gameState.p1Mistakes = 0;
+    gameState.p1PairMistakes = {};
     gameState.p1Lock = false;
 
     updateP1Counter();
@@ -514,8 +617,43 @@
       const card1 = roundCards[idx1];
       const card2 = roundCards[idx2];
 
-      if (card1.pairId === card2.pairId) {
+      let isMatch = (card1.pairId === card2.pairId);
+
+      // Se duas palavras da semana na rodada compartilharem a mesma silaba inicial, aceita o par valido
+      if (!isMatch && card1.isWeeklyWord && card2.isWeeklyWord && card1.type !== card2.type) {
+        const clueCard = card1.type === 'CLUE_OR_SYL' ? card1 : card2;
+        const wordCard = card1.type === 'WORD' ? card1 : card2;
+        if (clueCard && wordCard &&
+            clueCard.clueKind === 'SILABA' &&
+            clueCard.clueValue &&
+            clueCard.clueValue === wordCard.silabaInicial) {
+          for (let k = 0; k < roundCards.length; k++) {
+            const other = roundCards[k];
+            if (other !== clueCard && !other.matched &&
+                other.type === 'CLUE_OR_SYL' && other.pairId === wordCard.pairId) {
+              other.pairId = clueCard.pairId;
+              other.word = clueCard.word;
+              break;
+            }
+          }
+          clueCard.pairId = wordCard.pairId;
+          clueCard.word = wordCard.word;
+          isMatch = true;
+        }
+      }
+
+      if (isMatch) {
         // Par correto!
+        const matchedWord = card1.type === 'WORD' ? card1.word : card2.word;
+        const firstTryForPair = !gameState.p1PairMistakes[card1.pairId];
+        const analytics = getSaudeModule('Analytics');
+        if (analytics && typeof analytics.registrarTentativaFase1 === 'function') {
+          analytics.registrarTentativaFase1({
+            palavra: matchedWord,
+            acertou: true,
+            primeiraTentativa: firstTryForPair
+          });
+        }
         global.setTimeout(function () {
           if (gameState.currentPhase !== 1 || gameState.p1Cards !== roundCards) return;
 
@@ -532,7 +670,7 @@
           gameState.p1MatchedCount++;
           addStars(1);
           updateP1Counter();
-          setFeedback('MUITO BEM! VOCÊ ENCONTROU O PAR DE "' + card1.word + '"!', 'success');
+          setFeedback('MUITO BEM! VOCÊ ENCONTROU O PAR DE "' + matchedWord + '"!', 'success');
           gameState.p1Lock = false;
 
           if (gameState.p1MatchedCount === 4) {
@@ -548,6 +686,18 @@
       } else {
         // Nao formou par
         gameState.p1Mistakes++;
+        gameState.p1PairMistakes[card1.pairId] = true;
+        gameState.p1PairMistakes[card2.pairId] = true;
+
+        const analytics = getSaudeModule('Analytics');
+        if (analytics && typeof analytics.registrarTentativaFase1 === 'function') {
+          analytics.registrarTentativaFase1({
+            palavra: card1.word || card2.word,
+            palavraComparada: card2.word || '',
+            acertou: false,
+            primeiraTentativa: false
+          });
+        }
         global.setTimeout(function () {
           if (gameState.currentPhase !== 1 || gameState.p1Cards !== roundCards) return;
           playAudio('playEncourage');
@@ -581,7 +731,11 @@
       toggleRankingRegisterBox(false);
     } else {
       if (title) title.textContent = 'MEMÓRIA DE CAMPEÃO!';
-      if (msg) msg.textContent = 'VOCÊ FEZ ' + gameState.stars + ' ESTRELAS NA SAÚDE BUCAL!';
+      if (msg) {
+        msg.textContent = isWeeklyWordsActive()
+          ? 'VOCÊ FEZ ' + gameState.stars + ' ESTRELAS NAS PALAVRAS DA SEMANA!'
+          : 'VOCÊ FEZ ' + gameState.stars + ' ESTRELAS NA SAÚDE BUCAL!';
+      }
       if (btn) btn.innerHTML = getWordBankSvg('REPLAY_ICON') + '<span>JOGAR OUTRA RODADA</span>';
       toggleRankingRegisterBox(true);
     }
@@ -593,12 +747,14 @@
    **************************************************************/
   function startPhase2() {
     gameState.currentPhase = 2;
-    const bank = getActiveWordBankSafe();
+    const bankInfo = getActiveBankInfoSafe();
+    const bank = bankInfo.words;
     const count = Math.min(gameState.questionCount, bank.length);
     gameState.p2Queue = shuffleArray(bank).slice(0, count);
     gameState.p2Index = 0;
 
     showScreen('screenPhase2', 'FASE 2: CONSTRUTOR DE SÍLABAS', true);
+    updatePhaseWeeklyBadges(bankInfo);
     const nextLabel = document.getElementById('btnNextWordLabel');
     if (nextLabel) nextLabel.textContent = 'OUTRA PALAVRA';
     loadPhase2Word();
@@ -808,12 +964,14 @@
    **************************************************************/
   function startPhase3() {
     gameState.currentPhase = 3;
-    const bank = getActiveWordBankSafe();
+    const bankInfo = getActiveBankInfoSafe();
+    const bank = bankInfo.words;
     const count = Math.min(gameState.questionCount, bank.length);
     gameState.p3Queue = shuffleArray(bank).slice(0, count);
     gameState.p3Index = 0;
 
     showScreen('screenPhase3', 'FASE 3: ESCRITA ESPONTÂNEA', true);
+    updatePhaseWeeklyBadges(bankInfo);
     const nextLabel = document.getElementById('btnNextWordLabel');
     if (nextLabel) nextLabel.textContent = 'OUTRA PALAVRA';
     buildVirtualKeyboard();
@@ -1185,7 +1343,8 @@
     if (ranking && typeof ranking.configure === 'function') {
       ranking.configure({
         getStars: function () { return gameState.stars; },
-        resetStars: resetStars
+        resetStars: resetStars,
+        goHome: goHome
       });
     }
 
@@ -1198,6 +1357,7 @@
     });
 
     initMascotSvg();
+    updatePhaseWeeklyBadges();
 
     const teacherPanelInstance = getSaudeModule('TeacherPanel');
     if (teacherPanelInstance && typeof teacherPanelInstance.init === 'function') {
@@ -1206,6 +1366,7 @@
           if (typeof teacherPanelInstance.atualizarIndicadoresMenu === 'function') {
             teacherPanelInstance.atualizarIndicadoresMenu();
           }
+          updatePhaseWeeklyBadges();
         }
       });
     }

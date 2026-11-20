@@ -24,6 +24,7 @@
     var lastSavedTimestamp = null;
     var getStarsCallback = function () { return 0; };
     var resetStarsCallback = function () {};
+    var goHomeCallback = null;
 
     /* ----------------------------------------------------------------------
        Helpers internos
@@ -152,7 +153,7 @@
        ---------------------------------------------------------------------- */
 
     /**
-     * Configura os callbacks externos de leitura e limpeza de estrelas.
+     * Configura os callbacks externos de leitura, limpeza de estrelas e retorno ao menu.
      */
     function configure(options) {
         if (!options || typeof options !== 'object') return;
@@ -161,6 +162,9 @@
         }
         if (typeof options.resetStars === 'function') {
             resetStarsCallback = options.resetStars;
+        }
+        if (typeof options.goHome === 'function') {
+            goHomeCallback = options.goHome;
         }
     }
 
@@ -452,14 +456,31 @@
     }
 
     /**
-     * Fecha o modal do Ranking da Turma.
+     * Fecha o modal do Ranking da Turma e retorna diretamente ao Menu Inicial.
      */
     function closeModal() {
-        playAudio('playClick');
         var modal = document.getElementById('rankingModal');
         if (modal) {
             modal.classList.remove('active');
         }
+
+        if (typeof goHomeCallback === 'function') {
+            goHomeCallback();
+            return;
+        }
+
+        var game = getModule('Game');
+        if (game && typeof game.goHome === 'function') {
+            game.goHome();
+            return;
+        }
+
+        if (typeof global.goHome === 'function') {
+            global.goHome();
+            return;
+        }
+
+        playAudio('playClick');
     }
 
     /**

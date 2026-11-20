@@ -1097,6 +1097,46 @@ body.tp-modal-open {
     font-size: clamp(0.98rem, 2.1vw, 1.6rem);
 }
 
+/* Badges discretos de Palavras da Semana no topo das Fases 1, 2 e 3 */
+.phase-tags-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.65vw;
+}
+
+.phase-weekly-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.45vh 1vw;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #E0F7FA 0%, #E8F5E9 100%);
+    border: 2.5px solid #4DD0E1;
+    color: #00695C;
+    font-size: clamp(0.74rem, 1.15vw, 0.96rem);
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: 0.4px;
+    box-shadow: 0 3px 8px rgba(0, 150, 136, 0.14);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.phase-weekly-badge-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.phase-weekly-badge-icon svg {
+    width: clamp(14px, 1.35vw, 18px);
+    height: clamp(14px, 1.35vw, 18px);
+    display: block;
+    color: #00897B;
+}
+
 /* 7. Aba de Evolucao e Dificuldades (evolution-view.js) */
 .ev-root {
     display: flex;
@@ -1547,6 +1587,304 @@ body.tp-modal-open {
     overflow-wrap: anywhere;
 }
 
+/* Painel de desempenho por fase e barras agrupadas (Etapa 2) */
+.ev-phases-panel {
+    padding: 16px;
+    border-radius: 16px;
+    background: #FFFFFF;
+    border: 2px solid #E2E8F0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ev-phases-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ev-phases-date-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #E0F7FA;
+    border: 1.5px solid #80DEEA;
+    color: #006064;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.ev-phases-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.ev-phase-card {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 2px solid #E2E8F0;
+    background: #F8FAFC;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ev-phase-card.ev-phase-1 {
+    border-color: #BAE6FD;
+    background: linear-gradient(180deg, #F0F9FF 0%, #FFFFFF 100%);
+}
+
+.ev-phase-card.ev-phase-2 {
+    border-color: #BBF7D0;
+    background: linear-gradient(180deg, #F0FDF4 0%, #FFFFFF 100%);
+}
+
+.ev-phase-card.ev-phase-3 {
+    border-color: #E9D5FF;
+    background: linear-gradient(180deg, #FAF5FF 0%, #FFFFFF 100%);
+}
+
+.ev-phase-card.is-empty {
+    opacity: 0.82;
+}
+
+.ev-phase-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.ev-phase-tag {
+    font-size: 0.84rem;
+    font-weight: 900;
+    color: #0F172A;
+}
+
+.ev-phase-delta {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 900;
+}
+
+.ev-phase-delta.is-up {
+    background: #E8F5E9;
+    color: #1B5E20;
+    border: 1px solid #81C784;
+}
+
+.ev-phase-delta.is-down {
+    background: #FFEBEE;
+    color: #B71C1C;
+    border: 1px solid #EF9A9A;
+}
+
+.ev-phase-delta.is-flat {
+    background: #ECEFF1;
+    color: #455A64;
+    border: 1px solid #B0BEC5;
+}
+
+.ev-phase-metrics {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ev-phase-pct {
+    font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+    font-weight: 900;
+    color: #0F172A;
+    line-height: 1.1;
+}
+
+.ev-phase-count {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+}
+
+.ev-phase-progress-track {
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: #E2E8F0;
+    overflow: hidden;
+}
+
+.ev-phase-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.35s ease;
+}
+
+.ev-phase-progress-fill.is-f1 {
+    background: linear-gradient(90deg, #38BDF8 0%, #0284C7 100%);
+}
+
+.ev-phase-progress-fill.is-f2 {
+    background: linear-gradient(90deg, #4ADE80 0%, #16A34A 100%);
+}
+
+.ev-phase-progress-fill.is-f3 {
+    background: linear-gradient(90deg, #C084FC 0%, #9333EA 100%);
+}
+
+.ev-legacy-note {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748B;
+}
+
+.ev-phase-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+}
+
+.ev-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #334155;
+}
+
+.ev-legend-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.ev-legend-dot.is-f1 {
+    background: #0284C7;
+}
+
+.ev-legend-dot.is-f2 {
+    background: #16A34A;
+}
+
+.ev-legend-dot.is-f3 {
+    background: #9333EA;
+}
+
+.ev-legend-dot.is-legacy {
+    background: #64748B;
+}
+
+.ev-vbars-grouped {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 10px;
+    padding-top: 6px;
+    overflow-x: auto;
+}
+
+.ev-vbar-group-col {
+    flex: 1 1 0;
+    min-width: 58px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 4px 4px;
+    border-radius: 12px;
+}
+
+.ev-vbar-group-col.is-ref {
+    background: #F0FDFA;
+    border: 1.5px solid #99F6E4;
+}
+
+.ev-vbar-group-col.is-prev {
+    background: #F8FAFC;
+    border: 1.5px dashed #CBD5E1;
+}
+
+.ev-vbar-mini-group {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.ev-mini-bar {
+    flex: 1 1 0;
+    max-width: 22px;
+    min-width: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.ev-mini-bar.is-legacy-bar {
+    max-width: 40px;
+    min-width: 28px;
+}
+
+.ev-mini-val {
+    font-size: 0.68rem;
+    font-weight: 900;
+    color: #0F172A;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.ev-mini-bar.is-empty .ev-mini-val {
+    color: #94A3B8;
+}
+
+.ev-mini-track {
+    width: 100%;
+    height: 124px;
+    background: #ECEFF1;
+    border-radius: 8px 8px 4px 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.ev-mini-fill {
+    width: 100%;
+    border-radius: 6px 6px 2px 2px;
+    transition: height 0.35s ease;
+}
+
+.ev-mini-fill.is-f1 {
+    background: linear-gradient(180deg, #38BDF8 0%, #0284C7 100%);
+}
+
+.ev-mini-fill.is-f2 {
+    background: linear-gradient(180deg, #4ADE80 0%, #16A34A 100%);
+}
+
+.ev-mini-fill.is-f3 {
+    background: linear-gradient(180deg, #C084FC 0%, #9333EA 100%);
+}
+
+.ev-mini-fill.is-legacy {
+    background: linear-gradient(180deg, #94A3B8 0%, #64748B 100%);
+}
+
 .ev-footer {
     display: flex;
     align-items: center;
@@ -1626,6 +1964,7 @@ body.tp-modal-open {
     .tp-mode-grid,
     .tp-form-grid,
     .ev-summary-grid,
+    .ev-phases-grid,
     .ev-charts-grid {
         grid-template-columns: 1fr;
     }
@@ -1669,6 +2008,22 @@ body.tp-modal-open {
     .mem-clue-syllable {
         font-size: clamp(1rem, 3.8vw, 1.55rem);
         padding: 3px 10px;
+    }
+
+    .phase-tags-row {
+        gap: 6px;
+    }
+
+    .phase-weekly-badge {
+        padding: 3px 8px;
+        border-width: 2px;
+        font-size: clamp(0.64rem, 2.2vw, 0.82rem);
+        gap: 4px;
+    }
+
+    .phase-weekly-badge-icon svg {
+        width: 13px;
+        height: 13px;
     }
 }
 
@@ -1718,8 +2073,9 @@ body.tp-modal-open {
         gap: 12px;
     }
 
-    .ev-vbar-track {
-        height: 110px;
+    .ev-vbar-track,
+    .ev-mini-track {
+        height: 100px;
     }
 
     .ranking-suggestions-row {
@@ -1761,5 +2117,17 @@ body.tp-modal-open {
     .mem-clue-icon svg {
         width: 20px;
         height: 20px;
+    }
+
+    .phase-weekly-badge {
+        padding: 2px 9px;
+        border-width: 2px;
+        font-size: clamp(0.66rem, 1.1vw, 0.82rem);
+        gap: 4px;
+    }
+
+    .phase-weekly-badge-icon svg {
+        width: 13px;
+        height: 13px;
     }
 }

@@ -13,6 +13,39 @@
     var filtroDataRef = null;
     var limparConfirmTimer = null;
 
+    // Configuração visual e rótulos das 3 fases exibidas no painel de evolução
+    var FASES_CONFIG = [
+        { key: 'fase1', titulo: 'Fase 1: Memória', curto: 'Memória', sigla: 'F1', classe: 'ev-phase-1', fillClasse: 'is-f1' },
+        { key: 'fase2', titulo: 'Fase 2: Sílabas', curto: 'Sílabas', sigla: 'F2', classe: 'ev-phase-2', fillClasse: 'is-f2' },
+        { key: 'fase3', titulo: 'Fase 3: Escrita', curto: 'Escrita', sigla: 'F3', classe: 'ev-phase-3', fillClasse: 'is-f3' }
+    ];
+
+    /**
+     * Lê de forma segura os indicadores de uma fase (sem gerar NaN em registros antigos).
+     */
+    function obterMetricasFase(porFase, chave) {
+        var f = (porFase && typeof porFase === 'object' && porFase[chave]) ? porFase[chave] : null;
+        var tentativas = f && isFinite(Number(f.tentativas)) ? Math.max(0, Number(f.tentativas)) : 0;
+        var acertos = f && isFinite(Number(f.acertos)) ? Math.max(0, Number(f.acertos)) : 0;
+        var temDados = Boolean(f && f.temDados && tentativas > 0);
+        var taxaAcerto = null;
+
+        if (temDados) {
+            if (f.taxaAcerto !== null && f.taxaAcerto !== undefined && isFinite(Number(f.taxaAcerto))) {
+                taxaAcerto = Math.max(0, Math.min(100, Math.round(Number(f.taxaAcerto))));
+            } else {
+                taxaAcerto = Math.round((acertos / tentativas) * 100);
+            }
+        }
+
+        return {
+            tentativas: tentativas,
+            acertos: acertos,
+            temDados: temDados,
+            taxaAcerto: taxaAcerto
+        };
+    }
+
     /**
      * Escapa caracteres especiais HTML para evitar injeção de marcação.
      */
@@ -305,7 +338,7 @@
             '<div class="ev-empty-icon">' + svgEstadoVazio(52) + '</div>' +
             '<p class="ev-empty-title">Ainda não há registros de evolução para esta seleção.</p>' +
             '<p class="ev-empty-desc">' +
-                'Os registros aparecem automaticamente após jogar as Fases 2 ou 3 com o <strong>Modo Aula</strong> ativado.' +
+                'Os registros aparecem automaticamente após jogar as Fases 1, 2 ou 3 com o <strong>Modo Aula</strong> ativado.' +
             '</p>' +
         '</div>';
     }
@@ -386,31 +419,150 @@
     }
 
     /**
-     * Gera o HTML dos dois gráficos em HTML/CSS puro (evolução diária e ranking de dificuldades).
+     * Gera o HTML do painel de desempenho quebrado por fase no dia selecionado.
+     */
+    function renderDesempenhoPorFaseHtml(resumo) {
+        var metDia = resumo.metricasDia || {};
+        var metAnt = resumo.metricasAnterior || null;
+        var porFaseDia = metDia.porFase || null;
+        var porFaseAnt = (metAnt && metAnt.porFase) ? metAnt.porFase : null;
+
+        var cardsHtml = '';
+        for (var i = 0; i < FASES_CONFIG.length; i++) {
+            var cfg = FASES_CONFIG[i];
+            var met = obterMetricasFase(porFaseDia, cfg.key);
+            var ant = porFaseAnt ? obterMetricasFase(porFaseAnt, cfg.key) : null;
+
+            var deltaBadgeHtml = '';
+            if (met.temDados && ant && ant.temDados) {
+                var diff = met.taxaAcerto - ant.taxaAcerto;
+                var deltaClasse = diff > 0 ? 'is-up' : (diff < 0 ? 'is-down' : 'is-flat');
+                var deltaTexto = diff === 0 ? '=' : ((diff > 0 ? '+' : '') + diff + '%');
+                deltaBadgeHtml = '<span class="ev-phase-delta ' + deltaClasse + '">' + escapeHtml(deltaTexto) + '</span>';
+            }
+
+            var pctTexto = met.temDados ? (String(met.taxaAcerto) + '%') : '—';
+            var largura = met.temDados ? Math.max(0, Math.min(100, met.taxaAcerto)) : 0;
+            var countTexto = met.temDados
+                ? (met.acertos + ' de ' + met.tentativas + (met.tentativas === 1 ? ' tentativa' : ' tentativas'))
+                : 'Sem registros nesta fase';
+
+            cardsHtml += '<div class="ev-phase-card ' + cfg.classe + (met.temDados ? '' : ' is-empty') + '">' +
+                '<div class="ev-phase-top">' +
+                    '<span class="ev-phase-tag">' + escapeHtml(cfg.titulo) + '</span>' +
+                    deltaBadgeHtml +
+                '</div>' +
+                '<div class="ev-phase-metrics">' +
+                    '<span class="ev-phase-pct">' + escapeHtml(pctTexto) + '</span>' +
+                    '<span class="ev-phase-count">' + escapeHtml(countTexto) + '</span>' +
+                '</div>' +
+                '<div class="ev-phase-progress-track">' +
+                    '<div class="ev-phase-progress-fill ' + cfg.fillClasse + '" style="width: ' + largura + '%;"></div>' +
+                '</div>' +
+            '</div>';
+        }
+
+        var notaLegadoHtml = metDia.temDadosLegadosSemFase
+            ? '<p class="ev-legacy-note">Registros antigos de Jornada completa anteriores a esta atualização aparecem no consolidado geral.</p>'
+            : '';
+
+        return '<div class="ev-phases-panel">' +
+            '<div class="ev-phases-header">' +
+                '<h4 class="ev-chart-title">' + svgGraficoBarras(18) + ' <span>Desempenho por fase no dia</span></h4>' +
+                '<span class="ev-phases-date-badge">' + escapeHtml(formatarDataBR(resumo.dataReferencia)) + '</span>' +
+            '</div>' +
+            '<div class="ev-phases-grid">' + cardsHtml + '</div>' +
+            notaLegadoHtml +
+        '</div>';
+    }
+
+    /**
+     * Gera o HTML dos dois gráficos em HTML/CSS puro (evolução diária por fase e ranking de dificuldades).
      */
     function renderGraficosHtml(resumo) {
-        // Gráfico 1: Barras verticais de evolução diária
+        // Gráfico 1: Barras verticais agrupadas por fase na evolução diária
         var serie = Array.isArray(resumo.serieDiaria) ? resumo.serieDiaria : [];
+        var usaLegado = false;
+
+        for (var u = 0; u < serie.length; u++) {
+            var pCheck = serie[u] || {};
+            var chk1 = obterMetricasFase(pCheck.porFase, 'fase1');
+            var chk2 = obterMetricasFase(pCheck.porFase, 'fase2');
+            var chk3 = obterMetricasFase(pCheck.porFase, 'fase3');
+            if (!chk1.temDados && !chk2.temDados && !chk3.temDados && Number(pCheck.tentativas) > 0) {
+                usaLegado = true;
+                break;
+            }
+        }
+
+        var legendaHtml = '<div class="ev-phase-legend">';
+        for (var lg = 0; lg < FASES_CONFIG.length; lg++) {
+            var lCfg = FASES_CONFIG[lg];
+            legendaHtml += '<span class="ev-legend-item">' +
+                '<span class="ev-legend-dot ' + lCfg.fillClasse + '"></span>' +
+                '<span>' + escapeHtml(lCfg.titulo) + '</span>' +
+            '</span>';
+        }
+        if (usaLegado) {
+            legendaHtml += '<span class="ev-legend-item">' +
+                '<span class="ev-legend-dot is-legacy"></span>' +
+                '<span>Geral (registro antigo)</span>' +
+            '</span>';
+        }
+        legendaHtml += '</div>';
+
         var colunasHtml = '';
         for (var i = 0; i < serie.length; i++) {
-            var ponto = serie[i];
-            var classeFill = '';
+            var ponto = serie[i] || {};
             var classeCol = '';
             if (ponto.isReferencia) {
-                classeFill = ' is-ref';
                 classeCol = ' is-ref';
             } else if (ponto.isAnterior) {
-                classeFill = ' is-prev';
                 classeCol = ' is-prev';
             }
-            var altura = Math.max(0, Math.min(100, Number(ponto.taxaAcerto) || 0));
-            var tooltip = ponto.dataCurta + ': ' + altura + '% (' + ponto.acertos + ' de ' + ponto.tentativas + ' acertos)';
 
-            colunasHtml += '<div class="ev-vbar-col' + classeCol + '" title="' + escapeHtml(tooltip) + '">' +
-                '<span class="ev-vbar-value">' + escapeHtml(String(altura)) + '%</span>' +
-                '<div class="ev-vbar-track">' +
-                    '<div class="ev-vbar-fill' + classeFill + '" style="height: ' + altura + '%;"></div>' +
-                '</div>' +
+            var f1 = obterMetricasFase(ponto.porFase, 'fase1');
+            var f2 = obterMetricasFase(ponto.porFase, 'fase2');
+            var f3 = obterMetricasFase(ponto.porFase, 'fase3');
+            var temAlgumaFase = f1.temDados || f2.temDados || f3.temDados;
+
+            var miniBarsHtml = '';
+            if (temAlgumaFase) {
+                var fasesDoDia = [f1, f2, f3];
+                for (var fi = 0; fi < FASES_CONFIG.length; fi++) {
+                    var cfgF = FASES_CONFIG[fi];
+                    var mf = fasesDoDia[fi];
+                    var valTexto = mf.temDados ? (String(mf.taxaAcerto) + '%') : '—';
+                    var altura = mf.temDados ? Math.max(0, Math.min(100, mf.taxaAcerto)) : 0;
+                    var tooltip = mf.temDados
+                        ? (ponto.dataCurta + ' - ' + cfgF.titulo + ': ' + mf.taxaAcerto + '% (' + mf.acertos + ' de ' + mf.tentativas + ')')
+                        : (ponto.dataCurta + ' - ' + cfgF.titulo + ': Sem registros');
+
+                    miniBarsHtml += '<div class="ev-mini-bar' + (mf.temDados ? '' : ' is-empty') + '" title="' + escapeHtml(tooltip) + '">' +
+                        '<span class="ev-mini-val">' + escapeHtml(valTexto) + '</span>' +
+                        '<div class="ev-mini-track">' +
+                            '<div class="ev-mini-fill ' + cfgF.fillClasse + '" style="height: ' + altura + '%;"></div>' +
+                        '</div>' +
+                    '</div>';
+                }
+            } else if (Number(ponto.tentativas) > 0) {
+                var taxaGeral = Math.max(0, Math.min(100, Number(ponto.taxaAcerto) || 0));
+                var tooltipLegado = ponto.dataCurta + ' - Geral (registro antigo): ' + taxaGeral + '% (' + ponto.acertos + ' de ' + ponto.tentativas + ')';
+                miniBarsHtml = '<div class="ev-mini-bar is-legacy-bar" title="' + escapeHtml(tooltipLegado) + '">' +
+                    '<span class="ev-mini-val">' + escapeHtml(String(taxaGeral)) + '%</span>' +
+                    '<div class="ev-mini-track">' +
+                        '<div class="ev-mini-fill is-legacy" style="height: ' + taxaGeral + '%;"></div>' +
+                    '</div>' +
+                '</div>';
+            } else {
+                miniBarsHtml = '<div class="ev-mini-bar is-empty" title="' + escapeHtml(ponto.dataCurta + ': Sem registros') + '">' +
+                    '<span class="ev-mini-val">—</span>' +
+                    '<div class="ev-mini-track"><div class="ev-mini-fill is-legacy" style="height: 0%;"></div></div>' +
+                '</div>';
+            }
+
+            colunasHtml += '<div class="ev-vbar-group-col' + classeCol + '">' +
+                '<div class="ev-vbar-mini-group">' + miniBarsHtml + '</div>' +
                 '<span class="ev-vbar-label">' + escapeHtml(ponto.dataCurta) + '</span>' +
             '</div>';
         }
@@ -456,8 +608,9 @@
 
         return '<div class="ev-charts-grid">' +
             '<div class="ev-chart-box">' +
-                '<h4 class="ev-chart-title">' + svgGraficoBarras(18) + ' <span>Evolução diária (% de acertos)</span></h4>' +
-                '<div class="ev-vbars">' + colunasHtml + '</div>' +
+                '<h4 class="ev-chart-title">' + svgGraficoBarras(18) + ' <span>Evolução diária por fase (% de acertos)</span></h4>' +
+                legendaHtml +
+                '<div class="ev-vbars-grouped">' + colunasHtml + '</div>' +
             '</div>' +
             '<div class="ev-chart-box">' +
                 '<h4 class="ev-chart-title">' + svgLupa(18) + ' <span>Principais dificuldades observadas</span></h4>' +
@@ -530,6 +683,7 @@
             html += renderEstadoVazioHtml();
         } else {
             html += renderCardsResumoHtml(resumo) +
+                renderDesempenhoPorFaseHtml(resumo) +
                 renderGraficosHtml(resumo) +
                 renderRodapeHtml();
         }

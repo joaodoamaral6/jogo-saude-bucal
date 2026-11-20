@@ -250,6 +250,7 @@
           <span id="p1InstructionText">ENCONTRE OS PARES: 1 FIGURA + 1 PALAVRA ESCRITA!</span>
         </div>
         <div class="p1-round-info">
+          <div class="phase-weekly-badge" id="p1WeeklyBadge" style="display: none;"></div>
           <div class="phase-pill" id="p1PairsCounter">PARES: 0 / 4</div>
         </div>
       </div>
@@ -267,7 +268,10 @@
             <div class="illust-emoji-corner" id="p2EmojiCorner"></div>
           </div>
           <div class="p2-clue-box">
-            <span class="p2-clue-tag" id="p2ProgressTag">PALAVRA 1 DE 10</span>
+            <div class="phase-tags-row">
+              <span class="p2-clue-tag" id="p2ProgressTag">PALAVRA 1 DE 10</span>
+              <span class="phase-weekly-badge" id="p2WeeklyBadge" style="display: none;"></span>
+            </div>
             <p class="p2-clue-text" id="p2ClueText">TOQUE NAS SÍLABAS ABAIXO PARA FORMAR O NOME DA FIGURA!</p>
           </div>
         </div>
@@ -289,7 +293,10 @@
           <div class="illust-emoji-corner" id="p3EmojiCorner"></div>
         </div>
         <div class="p3-context-wrap">
-          <span class="p2-clue-tag" style="background:#F3E5F5; color:#6A1B9A; border-color:#CE93D8;" id="p3ProgressTag">DESAFIO 1 DE 10</span>
+          <div class="phase-tags-row">
+            <span class="p2-clue-tag" style="background:#F3E5F5; color:#6A1B9A; border-color:#CE93D8;" id="p3ProgressTag">DESAFIO 1 DE 10</span>
+            <span class="phase-weekly-badge" id="p3WeeklyBadge" style="display: none;"></span>
+          </div>
           <p class="p3-sentence" id="p3SentenceText">EU USO A <span class="p3-blank-highlight">______</span> PARA LIMPAR OS DENTES.</p>
         </div>
       </div>
@@ -438,11 +445,13 @@
         <button class="btn-3d btn-modal-secondary" onclick="closeRankingModal()">
           <span style="display:inline-flex;align-items:center;">
             <svg viewBox="0 0 40 40" aria-hidden="true">
-              <circle cx="20" cy="20" r="16" fill="#E1F5FE" stroke="#FFFFFF" stroke-width="2.8"/>
-              <path d="M24 12 L14 20 L24 28" fill="none" stroke="#01579B" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 19 L8 34 C8 35.5 9.5 37 11 37 L29 37 C30.5 37 32 35.5 32 34 L32 19 Z" fill="#FFF9C4" stroke="#5D4037" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M3 21 L20 5 L37 21 Z" fill="#EF5350" stroke="#B71C1C" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M16 37 L16 25 C16 22.5 24 22.5 24 25 L24 37 Z" fill="#29B6F6" stroke="#01579B" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="20" cy="14" r="3" fill="#FFF176" stroke="#B71C1C" stroke-width="2"/>
             </svg>
           </span>
-          <span>VOLTAR</span>
+          <span>MENU INICIAL</span>
         </button>
         <button class="btn-3d btn-clear-ranking" onclick="clearRankingData()">
           <span style="display:inline-flex;align-items:center;">

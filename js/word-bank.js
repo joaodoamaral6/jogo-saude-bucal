@@ -604,36 +604,175 @@
   /* ----------------------------------------------------------------------
      4. Resolucao de modulos e banco ativo (padrao vs. Palavras da Semana)
      ---------------------------------------------------------------------- */
+  var FALLBACK_INTRUDERS = ['PA', 'TO', 'LA', 'MI', 'BO', 'CA'];
+
   function getSaudeModule(name) {
     return (SaudeEscola && SaudeEscola[name]) ? SaudeEscola[name] : null;
   }
 
   /**
-   * Indica se o modo personalizado "Palavras da Semana" esta ativo no Storage.
+   * Remove acentos e preserva apenas letras maiusculas [A-Z] como fallback seguro.
    */
-  function isWeeklyWordsActive() {
-    var storage = getSaudeModule('Storage');
-    return Boolean(
-      storage &&
-      typeof storage.isPalavrasSemanaAtivo === 'function' &&
-      storage.isPalavrasSemanaAtivo()
-    );
+  function normalizePlainFallback(str) {
+    var txt = String(str == null ? '' : str);
+    if (typeof txt.normalize === 'function') {
+      txt = txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+    return txt.toUpperCase().replace(/[^A-Z]/g, '');
   }
 
   /**
-   * Retorna o banco de palavras ativo no momento (semana da professora ou padrao).
+   * Normaliza defensivamente uma palavra da semana para uso uniforme nas Fases 1, 2 e 3.
    */
-  function getActiveWordBank() {
+  function normalizeWeeklyItem(item, index, storage) {
+    if (!item || typeof item !== 'object') return null;
+
+    var rawWord = String(item.word || item.palavra || '').trim().toUpperCase();
+    if (!rawWord) return null;
+
+    var plain = String(item.plain || '').trim().toUpperCase();
+    if (!plain) {
+      plain = (storage && typeof storage.normalizarPlain === 'function')
+        ? String(storage.normalizarPlain(rawWord) || '').toUpperCase()
+        : normalizePlainFallback(rawWord);
+    }
+    if (!plain) {
+      plain = normalizePlainFallback(rawWord);
+    }
+    if (!plain) return null;
+
+    var rawSyls = Array.isArray(item.syllables) && item.syllables.length > 0
+      ? item.syllables
+      : (Array.isArray(item.silabas) && item.silabas.length > 0 ? item.silabas : [rawWord]);
+    var syllables = [];
+    for (var i = 0; i < rawSyls.length; i += 1) {
+      var syl = String(rawSyls[i] == null ? '' : rawSyls[i]).trim().toUpperCase();
+      if (syl) syllables.push(syl);
+    }
+    if (syllables.length === 0) {
+      syllables = [rawWord];
+    }
+
+    var ownSylMap = {};
+    for (var sIdx = 0; sIdx < syllables.length; sIdx += 1) {
+      ownSylMap[syllables[sIdx]] = true;
+    }
+
+    var intruders = [];
+    var seenIntruders = {};
+    var rawIntruders = Array.isArray(item.intruders) ? item.intruders : [];
+    for (var j = 0; j < rawIntruders.length; j += 1) {
+      var cand = String(rawIntruders[j] == null ? '' : rawIntruders[j]).trim().toUpperCase();
+      if (cand && !ownSylMap[cand] && !seenIntruders[cand]) {
+        seenIntruders[cand] = true;
+        intruders.push(cand);
+      }
+    }
+    for (var f = 0; f < FALLBACK_INTRUDERS.length && intruders.length < 2; f += 1) {
+      var fb = FALLBACK_INTRUDERS[f];
+      if (!ownSylMap[fb] && !seenIntruders[fb]) {
+        seenIntruders[fb] = true;
+        intruders.push(fb);
+      }
+    }
+
+    var dicaOriginal = String(
+      item.dicaOriginal !== undefined ? item.dicaOriginal : (item.dica || '')
+    ).trim().toUpperCase();
+
+    var clue = String(
+      item.clue || dicaOriginal || 'JUNTE OS PEDACINHOS PARA FORMAR A PALAVRA!'
+    ).trim().toUpperCase();
+
+    var clues = Array.isArray(item.clues) && item.clues.length > 0
+      ? item.clues.slice()
+      : [clue];
+
+    var silabaInicial = String(
+      item.silabaInicial || syllables[0] || rawWord.slice(0, 2)
+    ).trim().toUpperCase();
+
+    var sentence = String(item.sentence || item.frase || '').trim().toUpperCase();
+    if (!sentence) {
+      sentence = dicaOriginal
+        ? ('DICA: ' + dicaOriginal + ' — ESCREVA A PALAVRA: ___!')
+        : 'PALAVRA DA SEMANA! ESCREVA NO TECLADO: ___!';
+    } else if (sentence.indexOf('___') === -1) {
+      sentence = sentence + ' (___)';
+    }
+
+    var sentences = Array.isArray(item.sentences) && item.sentences.length > 0
+      ? item.sentences.slice()
+      : [sentence];
+
+    var svg = item.svg || (storage && storage.SVGs && storage.SVGs.ILUSTRACAO_SEMANA) || '';
+
+    return {
+      id: item.id ? String(item.id) : ('WEEKLY_' + index + '_' + plain),
+      word: rawWord,
+      plain: plain,
+      syllables: syllables,
+      intruders: intruders,
+      emoji: '',
+      clue: clue,
+      clues: clues,
+      dicaOriginal: dicaOriginal,
+      silabaInicial: silabaInicial,
+      sentence: sentence,
+      sentences: sentences,
+      sentenceBefore: '',
+      sentenceAfter: '',
+      svg: svg,
+      isWeeklyWord: true
+    };
+  }
+
+  /**
+   * Retorna metadados unificados do banco ativo no momento (Palavras da Semana ou Padrao).
+   */
+  function getActiveBankInfo() {
     var storage = getSaudeModule('Storage');
     if (storage && typeof storage.isPalavrasSemanaAtivo === 'function' && storage.isPalavrasSemanaAtivo()) {
       var weeklyBank = typeof storage.getBancoPalavrasSemanaParaJogo === 'function'
         ? storage.getBancoPalavrasSemanaParaJogo()
         : null;
       if (Array.isArray(weeklyBank) && weeklyBank.length >= 4) {
-        return weeklyBank;
+        var normalized = [];
+        for (var i = 0; i < weeklyBank.length; i += 1) {
+          var normItem = normalizeWeeklyItem(weeklyBank[i], i, storage);
+          if (normItem) {
+            normalized.push(normItem);
+          }
+        }
+        if (normalized.length >= 4) {
+          return {
+            isWeekly: true,
+            words: normalized,
+            count: normalized.length
+          };
+        }
       }
     }
-    return DEFAULT_WORDS;
+
+    return {
+      isWeekly: false,
+      words: DEFAULT_WORDS,
+      count: DEFAULT_WORDS.length
+    };
+  }
+
+  /**
+   * Indica se o modo personalizado "Palavras da Semana" esta ativo no Storage.
+   */
+  function isWeeklyWordsActive() {
+    return getActiveBankInfo().isWeekly;
+  }
+
+  /**
+   * Retorna o banco de palavras ativo no momento (semana da professora ou padrao).
+   */
+  function getActiveWordBank() {
+    return getActiveBankInfo().words;
   }
 
   /* ----------------------------------------------------------------------
@@ -721,10 +860,12 @@
 
   /**
    * Retorna a proxima dica pedagogica da fila persistente para a palavra na Fase 2.
+   * Palavras customizadas da semana ou com dica unica retornam direto sem alterar filas padrao.
    */
   function getNextClueForWord(wordItem) {
-    if (!wordItem || !Array.isArray(wordItem.clues) || wordItem.clues.length === 0) {
-      return wordItem ? wordItem.clue : '';
+    if (!wordItem) return '';
+    if (wordItem.isWeeklyWord || !Array.isArray(wordItem.clues) || wordItem.clues.length <= 1) {
+      return (Array.isArray(wordItem.clues) && wordItem.clues[0]) || wordItem.clue || '';
     }
 
     var nextIndex = pickNextQueueIndex(
@@ -739,11 +880,14 @@
 
   /**
    * Retorna a proxima frase da fila persistente para a palavra na Fase 3.
+   * Palavras customizadas da semana ou com frase unica retornam direto sem alterar filas padrao.
    */
   function getNextSentenceForWord(wordItem) {
-    if (!wordItem || !Array.isArray(wordItem.sentences) || wordItem.sentences.length === 0) {
-      if (!wordItem) return '';
-      return wordItem.sentence || (String(wordItem.sentenceBefore) + '___' + String(wordItem.sentenceAfter));
+    if (!wordItem) return '';
+    if (wordItem.isWeeklyWord || !Array.isArray(wordItem.sentences) || wordItem.sentences.length <= 1) {
+      return (Array.isArray(wordItem.sentences) && wordItem.sentences[0]) ||
+        wordItem.sentence ||
+        (String(wordItem.sentenceBefore || '') + '___' + String(wordItem.sentenceAfter || ''));
     }
 
     var nextIndex = pickNextQueueIndex(
@@ -767,6 +911,7 @@
     DEFAULT_WORDS: DEFAULT_WORDS,
     SVGS: SVGS,
     getMedalSvg: getMedalSvg,
+    getActiveBankInfo: getActiveBankInfo,
     isWeeklyWordsActive: isWeeklyWordsActive,
     getActiveWordBank: getActiveWordBank,
     getNextClueForWord: getNextClueForWord,

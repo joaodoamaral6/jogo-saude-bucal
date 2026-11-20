@@ -145,6 +145,37 @@
     }
 
     /**
+     * Cria a estrutura vazia de estatísticas por fase para uma sessão.
+     */
+    function criarFasesStatsVazio() {
+        return {
+            fase1: { tentativas: 0, acertos: 0, acertosPrimeira: 0 },
+            fase2: { tentativas: 0, acertos: 0, acertosPrimeira: 0 },
+            fase3: { tentativas: 0, acertos: 0, acertosPrimeira: 0 }
+        };
+    }
+
+    /**
+     * Atualiza os contadores da fase informada ('fase1', 'fase2' ou 'fase3') na sessão atual.
+     */
+    function atualizarStatsFase(chaveFase, acertou, primeiraTentativa) {
+        if (!sessaoAtual.fasesStats || typeof sessaoAtual.fasesStats !== 'object') {
+            sessaoAtual.fasesStats = criarFasesStatsVazio();
+        }
+        if (!sessaoAtual.fasesStats[chaveFase]) {
+            sessaoAtual.fasesStats[chaveFase] = { tentativas: 0, acertos: 0, acertosPrimeira: 0 };
+        }
+        var faseStat = sessaoAtual.fasesStats[chaveFase];
+        faseStat.tentativas += 1;
+        if (acertou) {
+            faseStat.acertos += 1;
+            if (primeiraTentativa) {
+                faseStat.acertosPrimeira += 1;
+            }
+        }
+    }
+
+    /**
      * Classifica o desvio ortográfico entre letra esperada (e) e digitada (u).
      */
     function classificarErroOrtografico(e, u) {
@@ -205,11 +236,36 @@
             errosSilabas: {},
             errosOrtograficos: {},
             palavrasStats: {},
+            fasesStats: criarFasesStatsVazio(),
             atividadesRegistradas: 0,
             consolidada: false
         };
 
         return sessaoAtual;
+    }
+
+    /**
+     * Registra uma tentativa de par na Fase 1 (Jogo da Memória).
+     */
+    function registrarTentativaFase1(dados) {
+        var info = dados && typeof dados === 'object' ? dados : {};
+        garantirSessaoAtiva('FASE_1');
+
+        var palavraLimpa = normalizarPalavra(info.palavra);
+        var acertou = Boolean(info.acertou);
+        var primeiraTentativa = Boolean(info.primeiraTentativa);
+
+        sessaoAtual.tentativas += 1;
+        sessaoAtual.atividadesRegistradas += 1;
+        atualizarStatsPalavra(palavraLimpa, acertou);
+        atualizarStatsFase('fase1', acertou, primeiraTentativa);
+
+        if (acertou) {
+            sessaoAtual.acertos += 1;
+            if (primeiraTentativa) {
+                sessaoAtual.acertosPrimeira += 1;
+            }
+        }
     }
 
     /**
@@ -228,6 +284,7 @@
         sessaoAtual.tentativas += 1;
         sessaoAtual.atividadesRegistradas += 1;
         atualizarStatsPalavra(palavraLimpa, acertou);
+        atualizarStatsFase('fase2', acertou, primeiraTentativa);
 
         if (acertou) {
             sessaoAtual.acertos += 1;
@@ -298,6 +355,7 @@
         sessaoAtual.tentativas += 1;
         sessaoAtual.atividadesRegistradas += 1;
         atualizarStatsPalavra(palavraLimpa, acertou);
+        atualizarStatsFase('fase3', acertou, primeiraTentativa);
 
         if (acertou) {
             sessaoAtual.acertos += 1;
@@ -366,7 +424,8 @@
             atividadesRegistradas: sessaoAtual.atividadesRegistradas,
             errosSilabas: clonarObjeto(sessaoAtual.errosSilabas),
             errosOrtograficos: clonarObjeto(sessaoAtual.errosOrtograficos),
-            palavrasStats: clonarObjeto(sessaoAtual.palavrasStats)
+            palavrasStats: clonarObjeto(sessaoAtual.palavrasStats),
+            fasesStats: clonarObjeto(sessaoAtual.fasesStats || criarFasesStatsVazio())
         };
 
         if (storage && typeof storage.salvarSessao === 'function') {
@@ -458,12 +517,52 @@
         var palavras = {};
         var errosOrtograficos = {};
         var errosSilabas = {};
+        var porFase = {
+            fase1: { tentativas: 0, acertos: 0, acertosPrimeira: 0, taxaAcerto: null, taxaPrimeira: null, temDados: false },
+            fase2: { tentativas: 0, acertos: 0, acertosPrimeira: 0, taxaAcerto: null, taxaPrimeira: null, temDados: false },
+            fase3: { tentativas: 0, acertos: 0, acertosPrimeira: 0, taxaAcerto: null, taxaPrimeira: null, temDados: false }
+        };
+        var temDadosLegadosSemFase = false;
 
         for (var i = 0; i < lista.length; i++) {
             var s = lista[i];
-            tentativas += Number(s.tentativas) || 0;
-            acertos += Number(s.acertos) || 0;
-            acertosPrimeira += Number(s.acertosPrimeira) || 0;
+            var sTentativas = Number(s.tentativas) || 0;
+            var sAcertos = Number(s.acertos) || 0;
+            var sPrimeira = Number(s.acertosPrimeira) || 0;
+            tentativas += sTentativas;
+            acertos += sAcertos;
+            acertosPrimeira += sPrimeira;
+
+            // Consolida estatísticas por fase (com fallback retrocompatível para sessões antigas)
+            if (s.fasesStats && typeof s.fasesStats === 'object') {
+                var chavesFases = ['fase1', 'fase2', 'fase3'];
+                for (var fk = 0; fk < chavesFases.length; fk++) {
+                    var chaveF = chavesFases[fk];
+                    var fItem = s.fasesStats[chaveF];
+                    if (fItem && typeof fItem === 'object') {
+                        porFase[chaveF].tentativas += Number(fItem.tentativas) || 0;
+                        porFase[chaveF].acertos += Number(fItem.acertos) || 0;
+                        porFase[chaveF].acertosPrimeira += Number(fItem.acertosPrimeira) || 0;
+                    }
+                }
+            } else if (sTentativas > 0) {
+                var modoNorm = String(s.modoJogo || '').trim().toUpperCase();
+                if (modoNorm === 'PHASE1' || modoNorm === 'FASE_1' || modoNorm === 'FASE1') {
+                    porFase.fase1.tentativas += sTentativas;
+                    porFase.fase1.acertos += sAcertos;
+                    porFase.fase1.acertosPrimeira += sPrimeira;
+                } else if (modoNorm === 'PHASE2' || modoNorm === 'FASE_2' || modoNorm === 'FASE2') {
+                    porFase.fase2.tentativas += sTentativas;
+                    porFase.fase2.acertos += sAcertos;
+                    porFase.fase2.acertosPrimeira += sPrimeira;
+                } else if (modoNorm === 'PHASE3' || modoNorm === 'FASE_3' || modoNorm === 'FASE3') {
+                    porFase.fase3.tentativas += sTentativas;
+                    porFase.fase3.acertos += sAcertos;
+                    porFase.fase3.acertosPrimeira += sPrimeira;
+                } else {
+                    temDadosLegadosSemFase = true;
+                }
+            }
 
             // Consolida estatísticas por palavra
             var pStats = s.palavrasStats && typeof s.palavrasStats === 'object' ? s.palavrasStats : {};
@@ -538,6 +637,14 @@
         var taxaAcerto = tentativas > 0 ? Math.round((acertos / tentativas) * 100) : 0;
         var taxaPrimeira = tentativas > 0 ? Math.round((acertosPrimeira / tentativas) * 100) : 0;
 
+        var chavesCalc = ['fase1', 'fase2', 'fase3'];
+        for (var fc = 0; fc < chavesCalc.length; fc++) {
+            var pf = porFase[chavesCalc[fc]];
+            pf.temDados = pf.tentativas > 0;
+            pf.taxaAcerto = pf.temDados ? Math.round((pf.acertos / pf.tentativas) * 100) : null;
+            pf.taxaPrimeira = pf.temDados ? Math.round((pf.acertosPrimeira / pf.tentativas) * 100) : null;
+        }
+
         return {
             tentativas: tentativas,
             acertos: acertos,
@@ -545,6 +652,8 @@
             taxaAcerto: taxaAcerto,
             taxaPrimeira: taxaPrimeira,
             sessoesCount: lista.length,
+            porFase: porFase,
+            temDadosLegadosSemFase: temDadosLegadosSemFase,
             palavras: palavras,
             errosOrtograficos: errosOrtograficos,
             errosSilabas: errosSilabas
@@ -911,6 +1020,19 @@
         var datasJanelaAsc = datasJanelaDesc.slice().reverse();
         var serieDiaria = [];
 
+        function copiarFaseResumo(porFaseDia, chave) {
+            var f = (porFaseDia && porFaseDia[chave]) ? porFaseDia[chave] : null;
+            if (!f || !f.temDados) {
+                return { tentativas: 0, acertos: 0, taxaAcerto: null, temDados: false };
+            }
+            return {
+                tentativas: f.tentativas,
+                acertos: f.acertos,
+                taxaAcerto: f.taxaAcerto,
+                temDados: true
+            };
+        }
+
         for (var d = 0; d < datasJanelaAsc.length; d++) {
             var dataItem = datasJanelaAsc[d];
             var met = obterMetricasData(dataItem);
@@ -920,6 +1042,12 @@
                 taxaAcerto: met.taxaAcerto,
                 tentativas: met.tentativas,
                 acertos: met.acertos,
+                porFase: {
+                    fase1: copiarFaseResumo(met.porFase, 'fase1'),
+                    fase2: copiarFaseResumo(met.porFase, 'fase2'),
+                    fase3: copiarFaseResumo(met.porFase, 'fase3')
+                },
+                temDadosLegadosSemFase: Boolean(met.temDadosLegadosSemFase),
                 isReferencia: dataItem === dataRef,
                 isAnterior: dataItem === dataAnterior
             });
@@ -943,6 +1071,7 @@
 
     SaudeEscola.Analytics = {
         iniciarSessao: iniciarSessao,
+        registrarTentativaFase1: registrarTentativaFase1,
         registrarTentativaFase2: registrarTentativaFase2,
         registrarTentativaFase3: registrarTentativaFase3,
         finalizarESalvarSessao: finalizarESalvarSessao,
