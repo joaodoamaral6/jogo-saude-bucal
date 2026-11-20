@@ -2071,6 +2071,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="css/teacher-panel.css">
 </head>
 <body>
 
@@ -2127,6 +2128,7 @@
     <!-- ================= SCREEN 0: MENU INICIAL ================= -->
     <section id="screenMenu" class="screen active">
       <div class="menu-hero">
+        <button type="button" id="btnTeacherPanel" class="tp-gear-btn" title="PAINEL DA PROFESSORA (SEGURE 3 SEGUNDOS)" aria-label="Painel da Professora - Segure por 3 segundos para abrir"></button>
         <div class="mascot-box" id="mascotHeroSvg">
           <svg viewBox="0 0 140 140" width="100%" height="100%">
             <!-- Capa de Super-Herói do Dentinho -->
@@ -2150,6 +2152,7 @@
         <div class="hero-text">
           <h1 class="hero-title">SORRISO BRILHANTE!</h1>
           <p class="hero-subtitle">TOQUE EM UM BOTÃO ABAIXO PARA COMEÇAR A BRINCAR E APRENDER!</p>
+          <div id="weeklyModeBadge" class="tp-weekly-badge" style="display: none;"></div>
         </div>
       </div>
 
@@ -2310,7 +2313,7 @@
               <path d="M13 15 A8 8 0 0 1 23 12" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"/>
             </svg>
           </span>
-          <span>ENCONTRE OS PARES: 1 FIGURA + 1 PALAVRA ESCRITA!</span>
+          <span id="p1InstructionText">ENCONTRE OS PARES: 1 FIGURA + 1 PALAVRA ESCRITA!</span>
         </div>
         <div class="p1-round-info">
           <div class="phase-pill" id="p1PairsCounter">PARES: 0 / 4</div>
@@ -2451,6 +2454,7 @@
             <span>SALVAR NO RANKING</span>
           </button>
         </div>
+        <div class="ranking-suggestions-row" id="rankingSuggestionsRow" style="display: none;"></div>
         <div class="mini-kb-grid" id="miniKeyboardGrid"></div>
       </div>
 
@@ -2521,6 +2525,10 @@
     </div>
   </div>
 
+  <script src="js/storage-service.js"></script>
+  <script src="js/analytics-engine.js"></script>
+  <script src="js/evolution-view.js"></script>
+  <script src="js/teacher-panel-ui.js"></script>
   <script>
     /**************************************************************
      * 1. BANCO DE PALAVRAS PEDAGÓGICO + ILUSTRAÇÕES SVG COLORIDAS
@@ -3019,6 +3027,7 @@
       currentPhase: 0,
       stars: 0,
       studentName: '',
+      selectedAlunoId: null,
       // Phase 1 state
       p1Cards: [],
       p1Flipped: [],
@@ -3084,22 +3093,74 @@
       document.getElementById('btnNextWord').style.display = showNavButtons ? 'inline-flex' : 'none';
     }
 
+    // Helpers para integração modular (Pilares 3 e 4) sem alterar o comportamento padrão
+    function getSaudeModule(name) {
+      return (window.SaudeEscola && window.SaudeEscola[name]) ? window.SaudeEscola[name] : null;
+    }
+
+    function isWeeklyWordsActive() {
+      const storage = getSaudeModule('Storage');
+      return Boolean(storage && storage.isPalavrasSemanaAtivo());
+    }
+
+    function getActiveWordBank() {
+      const storage = getSaudeModule('Storage');
+      if (storage && storage.isPalavrasSemanaAtivo()) {
+        const weeklyBank = storage.getBancoPalavrasSemanaParaJogo();
+        if (Array.isArray(weeklyBank) && weeklyBank.length >= 4) {
+          return weeklyBank;
+        }
+      }
+      return WORD_BANK;
+    }
+
+    function escapeHtmlSafe(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function flushPendingAnalyticsIfNeeded() {
+      const analytics = getSaudeModule('Analytics');
+      if (analytics && analytics.temSessaoPendente()) {
+        analytics.finalizarESalvarSessao();
+      }
+    }
+
+    function startAnalyticsSession(mode) {
+      const analytics = getSaudeModule('Analytics');
+      if (analytics) {
+        analytics.iniciarSessao({
+          modoJogo: mode || 'INDEFINIDO',
+          fontePalavras: isWeeklyWordsActive() ? 'PALAVRAS_SEMANA' : 'PADRAO'
+        });
+      }
+    }
+
     function goHome() {
       playSoundClick();
+      flushPendingAnalyticsIfNeeded();
       document.getElementById('celebrationModal').classList.remove('active');
       document.getElementById('rankingModal').classList.remove('active');
       gameState.mode = 'MENU';
       gameState.currentPhase = 0;
+      gameState.selectedAlunoId = null;
       showScreen('screenMenu', 'MENU INICIAL', false);
       setFeedback('ESCOLHA UMA ATIVIDADE PARA COMEÇAR!');
     }
 
     function startGameMode(mode) {
       playSoundPop();
+      flushPendingAnalyticsIfNeeded();
       gameState.mode = mode;
       gameState.stars = 0;
       gameState.studentName = '';
+      gameState.selectedAlunoId = null;
       document.getElementById('starCount').textContent = '0';
+      startAnalyticsSession(mode);
 
       if (mode === 'JOURNEY' || mode === 'PHASE1') {
         startPhase1();
@@ -3134,28 +3195,67 @@
     }
 
     function initPhase1Round() {
-      const selectedWords = shuffleArray(WORD_BANK).slice(0, 4);
+      const weeklyActive = isWeeklyWordsActive();
+      const storage = getSaudeModule('Storage');
+      const bank = getActiveWordBank();
+      const selectedWords = shuffleArray(bank).slice(0, 4);
       const deck = [];
 
+      const instrEl = document.getElementById('p1InstructionText');
+      let fase1Modo = 'dica';
+      if (weeklyActive && storage) {
+        const cfg = storage.getConfig();
+        fase1Modo = cfg && cfg.fase1ModoSemana === 'silaba' ? 'silaba' : 'dica';
+        if (instrEl) {
+          instrEl.textContent = fase1Modo === 'silaba'
+            ? 'ENCONTRE OS PARES DA SEMANA: PALAVRA + SÍLABA INICIAL!'
+            : 'ENCONTRE OS PARES DA SEMANA: PALAVRA + DICA OU SÍLABA!';
+        }
+      } else if (instrEl) {
+        instrEl.textContent = 'ENCONTRE OS PARES: 1 FIGURA + 1 PALAVRA ESCRITA!';
+      }
+
       selectedWords.forEach(item => {
-        // Card A: Figura + Emoji
-        deck.push({
-          uid: item.id + '_FIG',
-          pairId: item.id,
-          type: 'FIGURE',
-          word: item.word,
-          emoji: item.emoji,
-          svg: item.svg,
-          matched: false
-        });
-        // Card B: Apenas a Palavra Escrita
-        deck.push({
-          uid: item.id + '_WORD',
-          pairId: item.id,
-          type: 'WORD',
-          word: item.word,
-          matched: false
-        });
+        if (weeklyActive) {
+          const usaDica = fase1Modo === 'dica' && Boolean(item.dicaOriginal && item.dicaOriginal.trim());
+          deck.push({
+            uid: item.id + '_CLUE',
+            pairId: item.id,
+            type: 'CLUE_OR_SYL',
+            clueKind: usaDica ? 'DICA' : 'SILABA',
+            clueValue: usaDica ? item.dicaOriginal : (item.silabaInicial || item.syllables[0] || ''),
+            word: item.word,
+            isWeeklyWord: true,
+            matched: false
+          });
+          deck.push({
+            uid: item.id + '_WORD',
+            pairId: item.id,
+            type: 'WORD',
+            word: item.word,
+            isWeeklyWord: true,
+            matched: false
+          });
+        } else {
+          // Card A: Figura + SVG (modo padrão Saúde Bucal preservado)
+          deck.push({
+            uid: item.id + '_FIG',
+            pairId: item.id,
+            type: 'FIGURE',
+            word: item.word,
+            emoji: item.emoji,
+            svg: item.svg,
+            matched: false
+          });
+          // Card B: Apenas a Palavra Escrita
+          deck.push({
+            uid: item.id + '_WORD',
+            pairId: item.id,
+            type: 'WORD',
+            word: item.word,
+            matched: false
+          });
+        }
       });
 
       gameState.p1Cards = shuffleArray(deck);
@@ -3165,7 +3265,11 @@
       gameState.p1Lock = false;
 
       updateP1Counter();
-      setFeedback('VIRE DUAS CARTAS PARA ACHAR A FIGURA E SUA PALAVRA!');
+      setFeedback(
+        weeklyActive
+          ? 'VIRE DUAS CARTAS PARA ACHAR A PALAVRA E SUA DICA OU SÍLABA!'
+          : 'VIRE DUAS CARTAS PARA ACHAR A FIGURA E SUA PALAVRA!'
+      );
       renderMemoryGrid();
     }
 
@@ -3206,6 +3310,14 @@
 
     function renderMemoryGrid() {
       const grid = document.getElementById('memoryGrid');
+      const storage = getSaudeModule('Storage');
+      const svgWeeklyBack = storage && storage.SVGs && storage.SVGs.CARD_BACK_SEMANA
+        ? storage.SVGs.CARD_BACK_SEMANA
+        : SVG_CARD_TOOTH;
+      const svgMiniDica = storage && storage.SVGs && storage.SVGs.MINI_ESTRELA_DICA
+        ? storage.SVGs.MINI_ESTRELA_DICA
+        : '';
+
       grid.innerHTML = '';
 
       gameState.p1Cards.forEach((card, index) => {
@@ -3214,21 +3326,37 @@
         btn.id = `memCard_${index}`;
         btn.onclick = () => onMemoryCardTap(index);
 
+        const frontSvg = card.isWeeklyWord ? svgWeeklyBack : SVG_CARD_TOOTH;
         let backContent = '';
+
         if (card.type === 'FIGURE') {
           backContent = `
             <div class="mem-illustration">${card.svg}</div>
           `;
-        } else {
+        } else if (card.type === 'CLUE_OR_SYL') {
+          const isDica = card.clueKind === 'DICA';
+          const tagLabel = isDica ? 'DICA CURTA' : 'SÍLABA INICIAL';
+          const valueHtml = isDica
+            ? `<div class="mem-clue-text">${escapeHtmlSafe(card.clueValue)}</div>`
+            : `<div class="mem-clue-syllable">${escapeHtmlSafe(card.clueValue)}</div>`;
           backContent = `
-            <div class="mem-word-text">${card.word}</div>
+            <div class="mem-clue-card">
+              <span class="mem-clue-tag">${tagLabel}</span>
+              ${svgMiniDica ? `<span class="mem-clue-icon">${svgMiniDica}</span>` : ''}
+              ${valueHtml}
+            </div>
+          `;
+        } else {
+          const longClass = card.word && card.word.length >= 8 ? ' is-long' : '';
+          backContent = `
+            <div class="mem-word-text${longClass}">${escapeHtmlSafe(card.word)}</div>
           `;
         }
 
         btn.innerHTML = `
           <div class="mem-card-inner">
             <div class="mem-face mem-front">
-              <div class="mem-front-icon">${SVG_CARD_TOOTH}</div>
+              <div class="mem-front-icon">${frontSvg}</div>
               <div class="mem-front-label">TOQUE AQUI</div>
             </div>
             <div class="mem-face mem-back">
@@ -3323,7 +3451,9 @@
      **************************************************************/
     function startPhase2() {
       gameState.currentPhase = 2;
-      gameState.p2Queue = shuffleArray(WORD_BANK).slice(0, gameState.questionCount);
+      const bank = getActiveWordBank();
+      const count = Math.min(gameState.questionCount, bank.length);
+      gameState.p2Queue = shuffleArray(bank).slice(0, count);
       gameState.p2Index = 0;
       showScreen('screenPhase2', 'FASE 2: CONSTRUTOR DE SÍLABAS', true);
       document.getElementById('btnNextWordLabel').textContent = 'OUTRA PALAVRA';
@@ -3409,7 +3539,7 @@
       const totalWords = gameState.p2Queue.length;
       document.getElementById('p2ProgressTag').textContent = `PALAVRA ${gameState.p2Index + 1} DE ${totalWords}`;
       document.getElementById('p2SvgContainer').innerHTML = item.svg;
-      document.getElementById('p2EmojiCorner').textContent = item.emoji;
+      document.getElementById('p2EmojiCorner').textContent = item.emoji || '';
       document.getElementById('p2ClueText').textContent = getNextClueForWord(item);
 
       // Inicializa espaços vazios
@@ -3431,6 +3561,9 @@
     function renderPhase2() {
       const slotsRow = document.getElementById('p2SlotsRow');
       const poolRow = document.getElementById('p2PoolRow');
+      const manySyls = Boolean(gameState.p2CurrentWord && gameState.p2CurrentWord.syllables.length >= 4);
+      slotsRow.classList.toggle('many-syls', manySyls);
+      poolRow.classList.toggle('many-syls', manySyls);
       slotsRow.innerHTML = '';
       poolRow.innerHTML = '';
 
@@ -3488,7 +3621,19 @@
     function checkPhase2Answer() {
       gameState.p2Lock = true;
       const targetSyllables = gameState.p2CurrentWord.syllables;
+      const chosenSyllables = gameState.p2Slots.map(s => (s ? s.text : ''));
       const isCorrect = gameState.p2Slots.every((s, idx) => s.text === targetSyllables[idx]);
+
+      const analytics = getSaudeModule('Analytics');
+      if (analytics) {
+        analytics.registrarTentativaFase2({
+          palavra: gameState.p2CurrentWord.word,
+          silabasEsperadas: targetSyllables,
+          silabasEscolhidas: chosenSyllables,
+          acertou: isCorrect,
+          primeiraTentativa: gameState.p2FirstTry
+        });
+      }
 
       if (isCorrect) {
         playSoundSuccess();
@@ -3553,7 +3698,9 @@
      **************************************************************/
     function startPhase3() {
       gameState.currentPhase = 3;
-      gameState.p3Queue = shuffleArray(WORD_BANK).slice(0, gameState.questionCount);
+      const bank = getActiveWordBank();
+      const count = Math.min(gameState.questionCount, bank.length);
+      gameState.p3Queue = shuffleArray(bank).slice(0, count);
       gameState.p3Index = 0;
       showScreen('screenPhase3', 'FASE 3: ESCRITA ESPONTÂNEA', true);
       document.getElementById('btnNextWordLabel').textContent = 'OUTRA PALAVRA';
@@ -3711,7 +3858,7 @@
       const totalWords = gameState.p3Queue.length;
       document.getElementById('p3ProgressTag').textContent = `DESAFIO ${gameState.p3Index + 1} DE ${totalWords}`;
       document.getElementById('p3SvgContainer').innerHTML = item.svg;
-      document.getElementById('p3EmojiCorner').textContent = item.emoji;
+      document.getElementById('p3EmojiCorner').textContent = item.emoji || '';
 
       gameState.currentP3Sentence = getNextSentenceForWord(item);
       const blanks = '_'.repeat(item.word.length);
@@ -3737,6 +3884,7 @@
 
     function renderPhase3Boxes() {
       const row = document.getElementById('p3LetterBoxes');
+      row.classList.toggle('many-letters', gameState.p3Typed.length >= 8);
       row.innerHTML = '';
       const activeIdx = getActiveCursorIndex();
 
@@ -3786,6 +3934,8 @@
       const item = gameState.p3CurrentWord;
       const targetDisplayChars = item.word.split('');
       const targetPlainChars = item.plain.split('');
+      const typedBefore = gameState.p3Typed.slice();
+      const lockedBefore = gameState.p3Locked.slice();
 
       let allCorrect = true;
       let anyCorrectHit = false;
@@ -3805,6 +3955,18 @@
           allCorrect = false;
           gameState.p3Typed[i] = '';
         }
+      }
+
+      const analytics = getSaudeModule('Analytics');
+      if (analytics) {
+        analytics.registrarTentativaFase3({
+          palavra: item.word,
+          plain: item.plain,
+          digitado: typedBefore,
+          travadosAntes: lockedBefore,
+          acertou: allCorrect,
+          primeiraTentativa: gameState.p3FirstTry
+        });
       }
 
       renderPhase3Boxes();
@@ -3875,6 +4037,9 @@
           startGameMode('JOURNEY');
         }
       } else {
+        flushPendingAnalyticsIfNeeded();
+        gameState.selectedAlunoId = null;
+        startAnalyticsSession(gameState.mode);
         if (gameState.currentPhase === 1) startPhase1();
         else if (gameState.currentPhase === 2) startPhase2();
         else if (gameState.currentPhase === 3) startPhase3();
@@ -3958,22 +4123,48 @@
       if (show) {
         buildMiniKeyboard();
         gameState.studentName = '';
+        gameState.selectedAlunoId = null;
         updateRankingNameDisplay();
         box.classList.add('active');
       } else {
         box.classList.remove('active');
+        const rowEl = document.getElementById('rankingSuggestionsRow');
+        if (rowEl) {
+          rowEl.style.display = 'none';
+          rowEl.innerHTML = '';
+        }
       }
+    }
+
+    function renderRankingSuggestions() {
+      const rowEl = document.getElementById('rankingSuggestionsRow');
+      if (!rowEl) return;
+      const panel = getSaudeModule('TeacherPanel');
+      if (!panel || typeof panel.renderizarSugestoesRanking !== 'function') {
+        rowEl.style.display = 'none';
+        rowEl.innerHTML = '';
+        return;
+      }
+      panel.renderizarSugestoesRanking(rowEl, gameState.studentName, (aluno) => {
+        playSoundPop();
+        gameState.studentName = aluno && aluno.nome ? aluno.nome : '';
+        gameState.selectedAlunoId = aluno && aluno.id ? aluno.id : null;
+        updateRankingNameDisplay();
+      });
     }
 
     function updateRankingNameDisplay() {
       const disp = document.getElementById('rankingNameDisplay');
-      if (!disp) return;
-      disp.textContent = gameState.studentName.length > 0 ? gameState.studentName : '_';
+      if (disp) {
+        disp.textContent = gameState.studentName.length > 0 ? gameState.studentName : '_';
+      }
+      renderRankingSuggestions();
     }
 
     function onPressRankingChar(ch) {
-      if (gameState.studentName.length >= 12) return;
+      if (gameState.studentName.length >= 18) return;
       playSoundClick();
+      gameState.selectedAlunoId = null;
       gameState.studentName += ch;
       updateRankingNameDisplay();
     }
@@ -3981,6 +4172,7 @@
     function onBackspaceRankingChar() {
       if (gameState.studentName.length === 0) return;
       playSoundClick();
+      gameState.selectedAlunoId = null;
       gameState.studentName = gameState.studentName.slice(0, -1);
       updateRankingNameDisplay();
     }
@@ -3998,7 +4190,26 @@
 
     function saveStudentToRanking() {
       const trimmed = gameState.studentName.trim();
-      const finalName = trimmed.length > 0 ? trimmed : 'ALUNO';
+      const storage = getSaudeModule('Storage');
+      const analytics = getSaudeModule('Analytics');
+      const modoAula = Boolean(storage && storage.isModoAula());
+
+      let finalName = trimmed.length > 0 ? trimmed : 'ALUNO';
+      let alunoVinculado = null;
+
+      if (modoAula && storage) {
+        if (gameState.selectedAlunoId) {
+          const alunos = storage.listarAlunos();
+          alunoVinculado = alunos.find(a => String(a.id) === String(gameState.selectedAlunoId)) || null;
+        }
+        if (!alunoVinculado && trimmed.length > 0) {
+          alunoVinculado = storage.resolverAlunoPorTexto(trimmed);
+        }
+        if (alunoVinculado && alunoVinculado.nome) {
+          finalName = alunoVinculado.nome;
+        }
+      }
+
       const nowTs = Date.now();
       const newEntry = {
         name: finalName,
@@ -4015,8 +4226,29 @@
         localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(topList));
       } catch (e) {}
 
+      if (analytics) {
+        if (modoAula) {
+          analytics.finalizarESalvarSessao(
+            alunoVinculado
+              ? {
+                  alunoId: alunoVinculado.id,
+                  alunoNome: alunoVinculado.nome,
+                  alunoChave: alunoVinculado.chave
+                }
+              : {
+                  alunoId: null,
+                  alunoNome: finalName,
+                  alunoChave: storage ? storage.normalizarChave(finalName) : finalName.toLowerCase()
+                }
+          );
+        } else {
+          analytics.descartarSessao();
+        }
+      }
+
       lastSavedTimestamp = nowTs;
       gameState.studentName = '';
+      gameState.selectedAlunoId = null;
       updateRankingNameDisplay();
       playSoundSuccess();
 
@@ -4081,7 +4313,7 @@
             ${medalSvg}
             <span>${pos}º</span>
           </div>
-          <div class="rank-student-name">${entry.name}</div>
+          <div class="rank-student-name">${escapeHtmlSafe(entry.name)}</div>
           <div class="rank-stars-visual">${starsHtml}</div>
           <div class="rank-numeral-pill">${entry.stars}</div>
         `;
@@ -4091,6 +4323,18 @@
 
     // Suporte ao teclado físico para a Fase 3 e para o Registro do Ranking
     window.addEventListener('keydown', (e) => {
+      const teacherPanel = getSaudeModule('TeacherPanel');
+      if (teacherPanel && typeof teacherPanel.isOpen === 'function' && teacherPanel.isOpen()) {
+        return;
+      }
+
+      const activeTag = document.activeElement && document.activeElement.tagName
+        ? document.activeElement.tagName.toUpperCase()
+        : '';
+      if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+        return;
+      }
+
       const celebModalActive = document.getElementById('celebrationModal').classList.contains('active');
       const regBoxActive = document.getElementById('rankingRegisterBox').classList.contains('active');
 
@@ -4101,6 +4345,11 @@
         } else if (e.key === 'Enter') {
           e.preventDefault();
           saveStudentToRanking();
+        } else if (e.key === ' ') {
+          if (gameState.studentName.length > 0 && gameState.studentName.slice(-1) !== ' ') {
+            e.preventDefault();
+            onPressRankingChar(' ');
+          }
         } else if (/^[a-zA-ZáàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ]$/.test(e.key)) {
           e.preventDefault();
           const normalized = normalizeChar(e.key);
@@ -4158,6 +4407,17 @@
     }
 
     initMascotSvg();
+
+    const teacherPanelInstance = getSaudeModule('TeacherPanel');
+    if (teacherPanelInstance && typeof teacherPanelInstance.init === 'function') {
+      teacherPanelInstance.init({
+        onConfigChanged: () => {
+          if (typeof teacherPanelInstance.atualizarIndicadoresMenu === 'function') {
+            teacherPanelInstance.atualizarIndicadoresMenu();
+          }
+        }
+      });
+    }
   </script>
 </body>
 </html>
