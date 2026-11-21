@@ -12,6 +12,8 @@
   let initialized = false;
   let homeConfirming = false;
   let homeConfirmTimer = null;
+  let feedbackPopTimer = null;
+  const feedbackRotation = {};
 
   /**************************************************************
    * 1. ESTADO CENTRAL DO JOGO
@@ -28,6 +30,7 @@
     p1MatchedCount: 0,
     p1Mistakes: 0,
     p1PairMistakes: {},
+    p1StartTime: null,
     p1Lock: false,
     // Estado da Fase 2 (Construtor de Silabas)
     p2Queue: [],
@@ -251,15 +254,58 @@
   }
 
   /**
+   * Seleciona mensagens encorajadoras ou comemorativas de forma rotativa.
+   */
+  function pickRotatingMessage(list, key) {
+    if (!Array.isArray(list) || list.length === 0) return '';
+    const idx = feedbackRotation[key] || 0;
+    feedbackRotation[key] = (idx + 1) % list.length;
+    return list[idx];
+  }
+
+  /**
+   * Formata o plural correto de estrelas conquistadas nas mensagens finais.
+   */
+  function formatarEstrelas(total) {
+    const qtd = Math.max(0, Number(total) || 0);
+    return qtd === 1 ? '1 ESTRELA' : (qtd + ' ESTRELAS');
+  }
+
+  /**
    * Atualiza o banner inferior de feedback pedagogico (sempre via textContent).
    */
   function setFeedback(text, styleType) {
+    if (feedbackPopTimer) {
+      global.clearTimeout(feedbackPopTimer);
+      feedbackPopTimer = null;
+    }
+
+    const msg = String(text == null ? '' : text).trim();
     const banner = document.getElementById('feedbackBanner');
-    if (!banner) return;
-    banner.textContent = text;
-    banner.className = 'feedback-banner';
-    if (styleType === 'success') banner.classList.add('success');
-    if (styleType === 'encourage') banner.classList.add('encourage');
+    if (banner) {
+      banner.textContent = text;
+      banner.className = 'feedback-banner';
+      if (styleType === 'success' || styleType === 'encourage') {
+        banner.classList.add(styleType);
+      }
+      if (msg) {
+        if (typeof banner.getBoundingClientRect === 'function') {
+          banner.getBoundingClientRect();
+        }
+        banner.classList.add('is-popping');
+        feedbackPopTimer = global.setTimeout(function () {
+          feedbackPopTimer = null;
+          if (banner.classList) {
+            banner.classList.remove('is-popping');
+          }
+        }, 520);
+      }
+    }
+
+    const mascot = getSaudeModule('Mascot');
+    if (mascot && typeof mascot.onFeedback === 'function') {
+      mascot.onFeedback(text, styleType, gameState.currentPhase);
+    }
   }
 
   /**
@@ -267,6 +313,7 @@
    */
   function showScreen(screenId, phaseTitle, showNavButtons) {
     const showNav = showNavButtons !== false;
+    const isMenu = screenId === 'screenMenu';
     const screens = document.querySelectorAll('.screen');
     for (let i = 0; i < screens.length; i++) {
       screens[i].classList.remove('active');
@@ -280,6 +327,12 @@
     const headerLabel = document.getElementById('headerPhaseLabel');
     if (headerLabel) {
       headerLabel.textContent = phaseTitle;
+      headerLabel.style.display = isMenu ? 'none' : '';
+    }
+
+    const dockEl = document.querySelector('footer.bottom-dock');
+    if (dockEl) {
+      dockEl.classList.toggle('is-menu', isMenu);
     }
 
     const btnBack = document.getElementById('btnBackMenu');
@@ -291,6 +344,11 @@
     const btnNext = document.getElementById('btnNextWord');
     if (btnNext) {
       btnNext.style.display = showNav ? 'inline-flex' : 'none';
+    }
+
+    const mascot = getSaudeModule('Mascot');
+    if (mascot && typeof mascot.onScreenChange === 'function') {
+      mascot.onScreenChange(screenId);
     }
   }
 
@@ -403,7 +461,16 @@
     gameState.mode = 'MENU';
     gameState.currentPhase = 0;
     showScreen('screenMenu', 'MENU INICIAL', false);
-    setFeedback('ESCOLHA UMA ATIVIDADE PARA COMEÇAR!');
+
+    const bannerEl = document.getElementById('feedbackBanner');
+    if (bannerEl) {
+      if (feedbackPopTimer) {
+        global.clearTimeout(feedbackPopTimer);
+        feedbackPopTimer = null;
+      }
+      bannerEl.textContent = '';
+      bannerEl.className = 'feedback-banner';
+    }
 
     const teacherPanel = getSaudeModule('TeacherPanel');
     if (teacherPanel && typeof teacherPanel.atualizarIndicadoresMenu === 'function') {
@@ -572,13 +639,14 @@
     gameState.p1MatchedCount = 0;
     gameState.p1Mistakes = 0;
     gameState.p1PairMistakes = {};
+    gameState.p1StartTime = null;
     gameState.p1Lock = false;
 
     updateP1Counter();
     setFeedback(
       weeklyActive
-        ? 'VIRE DUAS CARTAS PARA ACHAR A PALAVRA E SUA DICA OU SÍLABA!'
-        : 'VIRE DUAS CARTAS PARA ACHAR A FIGURA E SUA PALAVRA!'
+        ? 'VIRE DUAS CARTAS PARA ENCONTRAR A PALAVRA E SUA DICA OU SÍLABA!'
+        : 'VIRE DUAS CARTAS PARA ENCONTRAR A FIGURA E A PALAVRA!'
     );
     renderMemoryGrid();
   }
@@ -656,6 +724,10 @@
     if (!card || card.matched) return;
     if (gameState.p1Flipped.indexOf(index) !== -1) return;
 
+    if (!gameState.p1StartTime) {
+      gameState.p1StartTime = Date.now();
+    }
+
     playAudio('playPop');
     gameState.p1Flipped.push(index);
 
@@ -698,15 +770,6 @@
       if (isMatch) {
         // Par correto!
         const matchedWord = card1.type === 'WORD' ? card1.word : card2.word;
-        const firstTryForPair = !gameState.p1PairMistakes[card1.pairId];
-        const analytics = getSaudeModule('Analytics');
-        if (analytics && typeof analytics.registrarTentativaFase1 === 'function') {
-          analytics.registrarTentativaFase1({
-            palavra: matchedWord,
-            acertou: true,
-            primeiraTentativa: firstTryForPair
-          });
-        }
         global.setTimeout(function () {
           if (gameState.currentPhase !== 1 || gameState.p1Cards !== roundCards) return;
 
@@ -723,12 +786,28 @@
           gameState.p1MatchedCount++;
           addStars(1);
           updateP1Counter();
-          setFeedback('MUITO BEM! VOCÊ ENCONTROU O PAR DE "' + matchedWord + '"!', 'success');
+          const msgAcertoP1 = pickRotatingMessage([
+            'MUITO BEM! VOCÊ ENCONTROU O PAR DE "' + matchedWord + '"!',
+            'ISSO MESMO! QUE BOA MEMÓRIA COM "' + matchedWord + '"!',
+            'PARABÉNS! VOCÊ ACERTOU O PAR DE "' + matchedWord + '"!'
+          ], 'p1Success');
+          setFeedback(msgAcertoP1, 'success');
           gameState.p1Lock = false;
 
           if (gameState.p1MatchedCount === 4) {
             if (gameState.p1Mistakes <= 2) {
               addStars(1);
+            }
+            const elapsedSec = gameState.p1StartTime
+              ? Math.max(1, Math.round((Date.now() - gameState.p1StartTime) / 1000))
+              : 1;
+            gameState.p1StartTime = null;
+            const analytics = getSaudeModule('Analytics');
+            if (analytics && typeof analytics.registrarConclusaoFase1 === 'function') {
+              analytics.registrarConclusaoFase1({
+                tempoSegundos: elapsedSec,
+                pares: 4
+              });
             }
             global.setTimeout(function () {
               if (gameState.currentPhase !== 1 || gameState.p1Cards !== roundCards) return;
@@ -742,20 +821,16 @@
         gameState.p1PairMistakes[card1.pairId] = true;
         gameState.p1PairMistakes[card2.pairId] = true;
 
-        const analytics = getSaudeModule('Analytics');
-        if (analytics && typeof analytics.registrarTentativaFase1 === 'function') {
-          analytics.registrarTentativaFase1({
-            palavra: card1.word || card2.word,
-            palavraComparada: card2.word || '',
-            acertou: false,
-            primeiraTentativa: false
-          });
-        }
         global.setTimeout(function () {
           if (gameState.currentPhase !== 1 || gameState.p1Cards !== roundCards) return;
           playAudio('playEncourage');
-          setFeedback('QUASE LÁ! OBSERVE BEM E TENTE NOVAMENTE!', 'encourage');
-        }, 350);
+          const msgErroP1 = pickRotatingMessage([
+            'QUASE LÁ! OBSERVE BEM AS CARTAS E TENTE DE NOVO!',
+            'OPS, ESSAS SÃO DIFERENTES! GUARDE NA MEMÓRIA E VAMOS LÁ!',
+            'BOA TENTATIVA! VOCÊ CONSEGUE ENCONTRAR O PAR CERTINHO!'
+          ], 'p1Encourage');
+          setFeedback(msgErroP1, 'encourage');
+        }, 220);
 
         global.setTimeout(function () {
           if (gameState.currentPhase !== 1 || gameState.p1Cards !== roundCards) return;
@@ -772,6 +847,10 @@
 
   function onPhase1Complete() {
     playAudio('playFanfare');
+    const mascot = getSaudeModule('Mascot');
+    if (mascot && typeof mascot.celebrate === 'function') {
+      mascot.celebrate('', true);
+    }
     const modal = document.getElementById('celebrationModal');
     const title = document.getElementById('modalTitle');
     const msg = document.getElementById('modalMessage');
@@ -783,11 +862,11 @@
       if (btn) btn.innerHTML = getWordBankSvg('PLAY_ICON') + '<span>IR PARA A FASE 2</span>';
       toggleRankingRegisterBox(false);
     } else {
-      if (title) title.textContent = 'MEMÓRIA DE CAMPEÃO!';
+      if (title) title.textContent = 'SUPER MEMÓRIA!';
       if (msg) {
         msg.textContent = isWeeklyWordsActive()
-          ? 'VOCÊ FEZ ' + gameState.stars + ' ESTRELAS NAS PALAVRAS DA SEMANA!'
-          : 'VOCÊ FEZ ' + gameState.stars + ' ESTRELAS NA SAÚDE BUCAL!';
+          ? 'VOCÊ CONQUISTOU ' + formatarEstrelas(gameState.stars) + ' NAS PALAVRAS DA SEMANA!'
+          : 'VOCÊ CONQUISTOU ' + formatarEstrelas(gameState.stars) + ' EM SAÚDE BUCAL!';
       }
       if (btn) btn.innerHTML = getWordBankSvg('REPLAY_ICON') + '<span>JOGAR OUTRA RODADA</span>';
       toggleRankingRegisterBox(true);
@@ -956,7 +1035,12 @@
       document.querySelectorAll('.syl-slot').forEach(function (el) {
         el.classList.add('correct');
       });
-      setFeedback('PARABÉNS! VOCÊ FORMOU A PALAVRA "' + currentItem.word + '"!', 'success');
+      const msgAcertoP2 = pickRotatingMessage([
+        'PARABÉNS! VOCÊ FORMOU A PALAVRA "' + currentItem.word + '"!',
+        'MUITO BEM! VOCÊ JUNTOU AS SÍLABAS DE "' + currentItem.word + '"!',
+        'ISSO AÍ! A PALAVRA "' + currentItem.word + '" FICOU CERTINHA!'
+      ], 'p2Success');
+      setFeedback(msgAcertoP2, 'success');
 
       global.setTimeout(function () {
         if (gameState.currentPhase !== 2 || gameState.p2CurrentWord !== currentItem) return;
@@ -974,7 +1058,12 @@
       document.querySelectorAll('.syl-slot').forEach(function (el) {
         el.classList.add('wrong');
       });
-      setFeedback('QUASE! TOQUE EM UMA SÍLABA PARA TROCAR OU TENTE DE NOVO!', 'encourage');
+      const msgErroP2 = pickRotatingMessage([
+        'QUASE LÁ! OBSERVE AS SÍLABAS QUE VOLTARAM E TENTE DE NOVO!',
+        'BOA TENTATIVA! FALE A PALAVRA DEVAGAR PARA OUVIR OS PEDACINHOS!',
+        'VOCÊ ESTÁ PERTO! OBSERVE A FIGURA E TESTE OUTRA SÍLABA!'
+      ], 'p2Encourage');
+      setFeedback(msgErroP2, 'encourage');
 
       global.setTimeout(function () {
         if (gameState.currentPhase !== 2 || gameState.p2CurrentWord !== currentItem) return;
@@ -993,6 +1082,10 @@
 
   function onPhase2Complete() {
     playAudio('playFanfare');
+    const mascot = getSaudeModule('Mascot');
+    if (mascot && typeof mascot.celebrate === 'function') {
+      mascot.celebrate('', true);
+    }
     const modal = document.getElementById('celebrationModal');
     const title = document.getElementById('modalTitle');
     const msg = document.getElementById('modalMessage');
@@ -1004,8 +1097,8 @@
       if (btn) btn.innerHTML = getWordBankSvg('PLAY_ICON') + '<span>IR PARA A FASE 3</span>';
       toggleRankingRegisterBox(false);
     } else {
-      if (title) title.textContent = 'MESTRE DAS SÍLABAS!';
-      if (msg) msg.textContent = 'VOCÊ CONQUISTOU ' + gameState.stars + ' ESTRELAS NAS SÍLABAS!';
+      if (title) title.textContent = 'SHOW DE SÍLABAS!';
+      if (msg) msg.textContent = 'VOCÊ CONQUISTOU ' + formatarEstrelas(gameState.stars) + ' NO CONSTRUTOR DE SÍLABAS!';
       if (btn) btn.innerHTML = getWordBankSvg('REPLAY_ICON') + '<span>JOGAR NOVAMENTE</span>';
       toggleRankingRegisterBox(true);
     }
@@ -1250,7 +1343,12 @@
       if (sentenceEl) {
         sentenceEl.innerHTML = formatPhase3SentenceHtml(gameState.currentP3Sentence || item.sentence, filledSpan);
       }
-      setFeedback('EXCELENTE! VOCÊ ESCREVEU "' + item.word + '" DIREITINHO!', 'success');
+      const msgAcertoP3 = pickRotatingMessage([
+        'EXCELENTE! VOCÊ ESCREVEU "' + item.word + '" DIREITINHO!',
+        'PARABÉNS! VOCÊ COMPLETOU A FRASE COM "' + item.word + '"!',
+        'MUITO BEM! A ESCRITA DE "' + item.word + '" FICOU PERFEITA!'
+      ], 'p3Success');
+      setFeedback(msgAcertoP3, 'success');
 
       global.setTimeout(function () {
         if (gameState.currentPhase !== 3 || gameState.p3CurrentWord !== item) return;
@@ -1266,17 +1364,30 @@
       gameState.p3FirstTry = false;
       playAudio('playEncourage');
       if (anyCorrectHit) {
-        setFeedback('MUITO BEM! VOCÊ JÁ ACERTOU ALGUMAS LETRAS, TENTE DESCOBRIR AS QUE FALTAM!', 'encourage');
+        const msgParcialP3 = pickRotatingMessage([
+          'MUITO BEM! VOCÊ JÁ ACERTOU ALGUMAS LETRAS! DESCUBRA AS QUE FALTAM!',
+          'QUASE LÁ! AS LETRAS VERDES ESTÃO CERTAS! COMPLETE O RESTANTE!'
+        ], 'p3Partial');
+        setFeedback(msgParcialP3, 'encourage');
       } else if (!anyTyped) {
-        setFeedback('DIGITE AS LETRAS DA PALAVRA NO TECLADO E DEPOIS TOQUE EM VERIFICAR!', 'encourage');
+        setFeedback('DIGITE AS LETRAS NO TECLADO E DEPOIS TOQUE EM VERIFICAR!', 'encourage');
       } else {
-        setFeedback('BOA TENTATIVA! OBSERVE A FIGURA E TENTE DESCOBRIR AS LETRAS DA PALAVRA!', 'encourage');
+        const msgErroP3 = pickRotatingMessage([
+          'BOA TENTATIVA! FALE A PALAVRA DEVAGAR E DESCUBRA AS LETRAS!',
+          'QUASE LÁ! OBSERVE A FIGURA E TENTE ESCREVER NOVAMENTE!',
+          'NÃO DESISTA! CADA TENTATIVA AJUDA A APRENDER A PALAVRA!'
+        ], 'p3Encourage');
+        setFeedback(msgErroP3, 'encourage');
       }
     }
   }
 
   function onPhase3Complete() {
     playAudio('playFanfare');
+    const mascot = getSaudeModule('Mascot');
+    if (mascot && typeof mascot.celebrate === 'function') {
+      mascot.celebrate('', true);
+    }
     const modal = document.getElementById('celebrationModal');
     const title = document.getElementById('modalTitle');
     const msg = document.getElementById('modalMessage');
@@ -1284,11 +1395,11 @@
 
     if (gameState.mode === 'JOURNEY') {
       if (title) title.textContent = 'JORNADA COMPLETA!';
-      if (msg) msg.textContent = 'PARABÉNS! VOCÊ COMPLETOU AS 3 FASES E CONQUISTOU ' + gameState.stars + ' ESTRELAS!';
+      if (msg) msg.textContent = 'PARABÉNS! VOCÊ COMPLETOU AS 3 FASES E CONQUISTOU ' + formatarEstrelas(gameState.stars) + '!';
       if (btn) btn.innerHTML = getWordBankSvg('REPLAY_ICON') + '<span>JOGAR NOVA JORNADA</span>';
     } else {
-      if (title) title.textContent = 'CAMPEÃO DA ESCRITA!';
-      if (msg) msg.textContent = 'VOCÊ CONQUISTOU ' + gameState.stars + ' ESTRELAS NA ESCRITA!';
+      if (title) title.textContent = 'SHOW DE ESCRITA!';
+      if (msg) msg.textContent = 'VOCÊ CONQUISTOU ' + formatarEstrelas(gameState.stars) + ' NA ESCRITA ESPONTÂNEA!';
       if (btn) btn.innerHTML = getWordBankSvg('REPLAY_ICON') + '<span>JOGAR NOVAMENTE</span>';
     }
     toggleRankingRegisterBox(true);
@@ -1409,8 +1520,22 @@
       e.preventDefault();
     });
 
-    initMascotSvg();
+    const mascot = getSaudeModule('Mascot');
+    if (mascot && typeof mascot.init === 'function') {
+      mascot.init();
+    } else {
+      initMascotSvg();
+    }
     updatePhaseWeeklyBadges();
+
+    const headerLabel = document.getElementById('headerPhaseLabel');
+    if (headerLabel) {
+      headerLabel.style.display = 'none';
+    }
+    const dockEl = document.querySelector('footer.bottom-dock');
+    if (dockEl) {
+      dockEl.classList.add('is-menu');
+    }
 
     const teacherPanelInstance = getSaudeModule('TeacherPanel');
     if (teacherPanelInstance && typeof teacherPanelInstance.init === 'function') {

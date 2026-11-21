@@ -4,6 +4,47 @@ Todas as alterações notáveis, evoluções pedagógicas e decisões técnicas 
 
 ---
 
+## [v2.1.3 / CSS v2.3] — Métrica de Tempo na Fase 1, Visão Aluno por Aluno, Anotações, Relatório PDF Offline, Mascote Falante e Revisão Linguística
+
+### 1. Resumo Executivo
+Esta atualização evolui o software em torno do seu **foco principal em Desktop e Lousas Digitais Interativas** (Windows — padrão das lousas escolares —, macOS e Linux, em telas grandes e widescreen), mantendo a responsividade mobile como visualização secundária de demonstração. A versão **v2.1.3** torna a avaliação da Fase 1 (Memória) mais justa por tempo médio de conclusão, adiciona painel panorâmico **Aluno por Aluno**, cria o CRUD de **Anotações Pedagógicas da Professora** integrado ao Backup JSON e ao **Relatório Pedagógico PDF Offline (`@media print`)**, introduz o **Mascote Dentinho falante** com boca animada e balão brotando sincronizado, corrige o rodapé das fases e executa uma revisão linguística e pedagógica completa de toda a interface.
+
+### 2. Registro de Decisões de Arquitetura (Mini-ADRs)
+
+#### ADR-08: Avaliação da Fase 1 por Tempo Médio, Visão Aluno por Aluno e Anotações no Backup JSON
+- **Contexto:** Na Fase 1 (Jogo da Memória), contar cartas viradas que ainda não formavam par penalizava artificialmente a taxa de acerto ortográfica geral, já que o jogo depende de exploração visual da memória. Além disso, a professora precisava comparar rapidamente o progresso entre todos os alunos da turma e registrar observações qualitativas preservadas nos backups locais.
+- **Decisão:**
+  - Introduzir `Analytics.registrarConclusaoFase1({ tempoSegundos, pares })` para registrar o tempo entre a primeira carta virada e a conclusão da rodada, mantendo leitura retrocompatível de sessões antigas com `modoMetrica: 'tempo' | 'legado_taxa'` e sem contaminar a taxa ortográfica das Fases 2 e 3.
+  - Criar `Analytics.gerarResumoPorAluno({ escopo, dataReferencia })` e renderizar a tabela panorâmica **Aluno por Aluno** em `js/evolution-view.js` 100% via DOM seguro (`textContent`), com alternância entre *Acumulado geral* e *Dia analisado*.
+  - Implementar CRUD completo de **Anotações da Professora** (`listarAnotacoes`, `adicionarAnotacao`, `atualizarAnotacao`, `removerAnotacao`) em `js/storage-service.js` com sanitização estrita contra XSS (`sanitizarTextoSeguro`), limite de 200 registros, confirmação em 2 toques na exclusão e inclusão automática em `gerarBackupJSON()` / `importarBackupJSON()`.
+- **Consequência:** Diagnóstico pedagógico fiel por fase e por aluno, preservando 100% dos backups v2.1.x anteriores.
+
+#### ADR-09: Relatório Pedagógico Imprimível / PDF 100% Offline (`@media print`)
+- **Contexto:** A docente precisava gerar documento imprimível ou PDF da turma e das anotações para reuniões pedagógicas e portfólios escolares em computadores sem internet.
+- **Decisão:** Criar o módulo isolado `js/report-print.js` (`window.SaudeEscola.ReportPrint`) e regras `@page` + `@media print` em `css/teacher-panel.css` para construir em `#tpPrintReport` um documento A4 limpo, construído 100% via `document.createElement` / `textContent` / `createElementNS` (zero `innerHTML` e zero bibliotecas externas), disparando `window.print()`.
+- **Consequência:** Impressão e exportação nativa para PDF em qualquer navegador moderno (Windows/macOS/Linux), mesmo operando via `file://`.
+
+#### ADR-10: Mascote Interativo Falante (`Dentinho`), Voz Única no Menu e Compatibilidade SVG Cross-Browser
+- **Contexto:** Era necessário dar mais vida ao guia infantil **Dentinho**, eliminar elementos sem ação ou repetidos no Menu Inicial (`#headerPhaseLabel` e texto duplicado no rodapé), impedir sobreposição do balão com os botões do rodapé em resoluções de desktop/lousa e sincronizar o movimento real da boca com o brotar do balão de fala.
+- **Decisão:**
+  - Ocultar `#headerPhaseLabel` e `.feedback-wrap` quando `screenMenu` estiver ativa (`footer.bottom-dock.is-menu`), concentrando a voz do Dentinho no balão principal e centralizando **"SOM LIGADO"** no rodapé.
+  - Criar `js/mascot-controller.js` (`window.SaudeEscola.Mascot`) coordenando a classe temporária `.is-talking` (`1400ms`–`1800ms` conforme extensão da frase), camada vetorial `.mascot-mouth-talking` / `.mascot-mouth-talk-jaw`, expressões completas para comemoração (`.is-celebrating`) e incentivo acolhedor em erros (`.is-encouraging` com `.mascot-eyes-encourage`, `.mascot-mouth-encourage` e `.mascot-encourage-badge`), além da animação `.is-popping` (`speechBubbleSprout` com `transform-origin: left center`).
+  - Reestruturar o flexbox do rodapé (`.feedback-wrap { flex: 1 1 0; max-width: 52vw; }` e remoção de `min-width: 44vw` rígido em `.feedback-banner`), manter zero atributos `id` internos em `MASCOT_HERO` e aplicar `transform-box: fill-box` com `transform-origin` percentual em todas as camadas SVG animadas, preservando `@media (prefers-reduced-motion: reduce)`.
+- **Consequência:** Comportamento visual consistente em Chrome, Edge, Firefox e Safari (Windows/Lousas, macOS e Linux), com fala expressiva, sem cortes nem sobreposição no rodapé.
+
+#### ADR-11: Revisão Linguística/Pedagógica (BNCC/MEC) e Governança de Releases em ZIP
+- **Contexto:** Pequenas inconsistências coloquiais em pistas e rótulos (`"1a tentativa"`, `"usamos ela"`, concordância singular/plural em `"1 ESTRELAS"`) precisavam ser adequadas à Norma Culta vigente e à alfabetização no 1º/2º Ano, além de formalizar um fluxo leve de histórico local em `.zip`.
+- **Decisão:** Revisar todos os textos visíveis de interface, dicas e frases em `index.html`, `js/word-bank.js`, `js/game-engine.js`, `js/analytics-engine.js`, `js/evolution-view.js`, `js/teacher-panel-ui.js` e `js/report-print.js`, atualizar cache busting CSS para `?v=2.3`, configurar `.gitignore` para ignorar `releases/` e `*.zip`, e arquivar snapshots limpos por versão em `releases/saude-na-escola-vX.Y.Z.zip`.
+- **Consequência:** Interface linguística rigorosa e acolhedora para alfabetização inicial e histórico organizado de pacotes offline prontos para uso escolar.
+
+### 3. Histórico de Entregas desta Atualização (`feat/v2.1.3-melhorias`)
+- **Bloco 1 (Lógica Pedagógica, Painel e PDF):** Métrica de tempo em segundos na Fase 1, tabela **Aluno por Aluno**, CRUD de **Anotações da Professora** no Backup JSON, módulo `js/report-print.js` (`@media print` A4) e ocultação de `#headerPhaseLabel` no Menu Inicial.
+- **Bloco 2 (Mascote Interativo, SVGs e Upgrade Visual):** Criação de `js/mascot-controller.js`, upgrade visual de cards/menus/botões, `#mobileMascotToast` isolado e polimento de SVGs sem alterar as 10 ilustrações padrão.
+- **Ajustes Pós-Teste e Fala Real do Mascote:** Correção de espaçamento flexbox no rodapé das fases, voz única no Menu Inicial, reação visual e rotativa completa nos erros das Fases 1/2/3, refinamento dos SVGs de troféu/estrela/medalhas/som/casinha, revisão linguística integral e animação real de boca falando (`.is-talking`) com balão brotando (`speechBubbleSprout`, `transform-box: fill-box`).
+- **Bloco 3 (Fechamento v2.1.3):** Cache busting `?v=2.3` em `index.html`, atualização de `README.md`, `CHANGELOG.md`, `docs/REQUISITOS.md`, `docs/ROADMAP.md` e `GEMINI.md`, autovalidação completa e geração de `releases/saude-na-escola-v2.1.3.zip`.
+
+---
+
 ## [v2.1.2 / CSS v2.2] — Responsividade Fluida Mobile (iOS Safari e Android Chrome)
 
 ### 1. Resumo Executivo

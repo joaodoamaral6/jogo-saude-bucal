@@ -8,6 +8,9 @@
   var STORAGE_KEY = 'saudeEscola_v2_dados';
   var MAX_PALAVRAS_SEMANA = 12;
   var MAX_SESSOES = 500;
+  var MAX_ANOTACOES = 200;
+  var MAX_ANOTACAO_TEXTO = 1000;
+  var MAX_ANOTACAO_ALUNO_NOME = 60;
 
   var POOL_SILABAS_AUXILIAR = [
     'PA', 'TO', 'LA', 'MI', 'BO', 'CA', 'RE', 'SU',
@@ -120,8 +123,34 @@
       },
       turma: [],
       palavrasSemana: [],
-      sessoes: []
+      sessoes: [],
+      anotacoes: []
     };
+  }
+
+  /**
+   * Remove scripts, tags HTML e caracteres de controle para sanitizacao contra XSS.
+   */
+  function sanitizarTextoSeguro(valor, maxLen, preservarQuebras) {
+    var limite = typeof maxLen === 'number' && maxLen > 0 ? Math.floor(maxLen) : 1000;
+    var texto = String(valor == null ? '' : valor)
+      .replace(/\r\n?/g, '\n')
+      .replace(/<script\b[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style\b[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]*>/g, '')
+      .replace(/[<>]/g, '')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+
+    if (preservarQuebras) {
+      var linhas = texto.split('\n').map(function (linha) {
+        return linha.replace(/[ \t]+/g, ' ').trim();
+      });
+      texto = linhas.join('\n').replace(/\n{3,}/g, '\n\n');
+    } else {
+      texto = texto.replace(/\s+/g, ' ');
+    }
+
+    return texto.trim().slice(0, limite);
   }
 
   /**
@@ -313,8 +342,97 @@
     return limpo;
   }
 
+  function clonarAnotacao(item) {
+    return {
+      id: item.id,
+      dataISO: item.dataISO,
+      alunoId: item.alunoId || null,
+      alunoNome: item.alunoNome || '',
+      texto: item.texto,
+      criadaEm: item.criadaEm,
+      atualizadaEm: item.atualizadaEm
+    };
+  }
+
+  function sanitizarAnotacao(entrada) {
+    var raw = entrada && typeof entrada === 'object' ? entrada : {};
+    var textoLimpo = sanitizarTextoSeguro(raw.texto, MAX_ANOTACAO_TEXTO, true);
+    if (!textoLimpo) {
+      return null;
+    }
+
+    var criadaEm = typeof raw.criadaEm === 'number' && isFinite(raw.criadaEm) && raw.criadaEm > 0
+      ? Math.floor(raw.criadaEm)
+      : Date.now();
+    var atualizadaEm = typeof raw.atualizadaEm === 'number' && isFinite(raw.atualizadaEm) && raw.atualizadaEm > 0
+      ? Math.floor(raw.atualizadaEm)
+      : criadaEm;
+
+    var dataValida = typeof raw.dataISO === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.dataISO.trim())
+      ? raw.dataISO.trim()
+      : getDataLocalISO(new Date(criadaEm));
+
+    var alunoIdBruto = raw.alunoId !== undefined && raw.alunoId !== null
+      ? sanitizarTextoSeguro(raw.alunoId, 60, false)
+      : '';
+    var alunoIdLimpo = (alunoIdBruto && alunoIdBruto !== 'TURMA' && alunoIdBruto !== 'TODOS')
+      ? alunoIdBruto
+      : null;
+
+    var alunoNomeLimpo = alunoIdLimpo || raw.alunoNome
+      ? sanitizarTextoSeguro(raw.alunoNome, MAX_ANOTACAO_ALUNO_NOME, false)
+      : '';
+    if (!alunoIdLimpo && alunoNomeLimpo === 'Turma geral') {
+      alunoNomeLimpo = '';
+    }
+
+    var idLimpo = raw.id ? sanitizarTextoSeguro(raw.id, 60, false) : '';
+
+    return {
+      id: idLimpo || gerarId('ano'),
+      dataISO: dataValida,
+      alunoId: alunoIdLimpo,
+      alunoNome: alunoNomeLimpo,
+      texto: textoLimpo,
+      criadaEm: criadaEm,
+      atualizadaEm: atualizadaEm
+    };
+  }
+
+  function sanitizarAnotacoes(lista) {
+    var limpas = [];
+    var idsVistos = {};
+
+    if (typeof lista === 'string') {
+      var unica = sanitizarAnotacao({ texto: lista });
+      if (unica) {
+        limpas.push(unica);
+      }
+      return limpas;
+    }
+
+    if (!Array.isArray(lista)) {
+      return limpas;
+    }
+
+    for (var i = 0; i < lista.length && limpas.length < MAX_ANOTACOES; i += 1) {
+      var item = sanitizarAnotacao(lista[i]);
+      if (!item) {
+        continue;
+      }
+      if (idsVistos[item.id]) {
+        item.id = gerarId('ano');
+      }
+      idsVistos[item.id] = true;
+      limpas.push(item);
+    }
+
+    return limpas;
+  }
+
   /**
    * Sanitiza estatisticas por fase preservando null para sessoes antigas sem esse campo.
+   * Na Fase 1, preserva metricas de tempo (v2.1.3+) e contadores legados (v2.1.x).
    */
   function sanitizarFasesStats(mapa) {
     if (!mapa || typeof mapa !== 'object' || Array.isArray(mapa)) {
@@ -334,12 +452,20 @@
           acertos: sanitizarNumeroNaoNegativo(bruto.acertos),
           acertosPrimeira: sanitizarNumeroNaoNegativo(bruto.acertosPrimeira)
         };
+        if (chave === 'fase1') {
+          limpo[chave].tempoSegundos = sanitizarNumeroNaoNegativo(bruto.tempoSegundos);
+          limpo[chave].rodadas = sanitizarNumeroNaoNegativo(bruto.rodadas);
+        }
       } else {
         limpo[chave] = {
           tentativas: 0,
           acertos: 0,
           acertosPrimeira: 0
         };
+        if (chave === 'fase1') {
+          limpo[chave].tempoSegundos = 0;
+          limpo[chave].rodadas = 0;
+        }
       }
     }
 
@@ -498,6 +624,9 @@
         }
       }
     }
+
+    // Anotacoes pedagogicas da professora (retrocompativel com backups sem este campo)
+    base.anotacoes = sanitizarAnotacoes(bruto.anotacoes);
 
     // Configuracao
     if (bruto.config && typeof bruto.config === 'object') {
@@ -1183,6 +1312,165 @@
   }
 
   // =========================================================================
+  // ANOTACOES PEDAGOGICAS DA PROFESSORA
+  // =========================================================================
+
+  function resolverNomeAlunoParaAnotacao(dados, alunoId, alunoNomeInformado) {
+    var idLimpo = alunoId !== undefined && alunoId !== null
+      ? sanitizarTextoSeguro(alunoId, 60, false)
+      : '';
+    if (!idLimpo || idLimpo === 'TURMA' || idLimpo === 'TODOS') {
+      return { alunoId: null, alunoNome: '' };
+    }
+
+    var nomeLimpo = sanitizarTextoSeguro(alunoNomeInformado, MAX_ANOTACAO_ALUNO_NOME, false);
+    if (!nomeLimpo && dados && Array.isArray(dados.turma)) {
+      for (var i = 0; i < dados.turma.length; i += 1) {
+        if (String(dados.turma[i].id) === String(idLimpo)) {
+          nomeLimpo = dados.turma[i].nome;
+          break;
+        }
+      }
+    }
+
+    return {
+      alunoId: idLimpo,
+      alunoNome: nomeLimpo
+    };
+  }
+
+  function listarAnotacoes() {
+    var lista = carregarDados().anotacoes.map(clonarAnotacao);
+    lista.sort(function (a, b) {
+      return ((b.atualizadaEm || b.criadaEm || 0) - (a.atualizadaEm || a.criadaEm || 0));
+    });
+    return lista;
+  }
+
+  function adicionarAnotacao(entrada) {
+    var dados = carregarDados();
+    var bruto = typeof entrada === 'string'
+      ? { texto: entrada }
+      : (entrada && typeof entrada === 'object' ? entrada : {});
+
+    var textoLimpo = sanitizarTextoSeguro(bruto.texto, MAX_ANOTACAO_TEXTO, true);
+    if (!textoLimpo) {
+      return {
+        ok: false,
+        erro: 'Escreva uma anotação antes de salvar.'
+      };
+    }
+
+    var vinculo = resolverNomeAlunoParaAnotacao(dados, bruto.alunoId, bruto.alunoNome);
+    var agora = Date.now();
+    var item = sanitizarAnotacao({
+      id: gerarId('ano'),
+      dataISO: bruto.dataISO || getDataLocalISO(new Date(agora)),
+      alunoId: vinculo.alunoId,
+      alunoNome: vinculo.alunoNome,
+      texto: textoLimpo,
+      criadaEm: agora,
+      atualizadaEm: agora
+    });
+
+    if (!item) {
+      return {
+        ok: false,
+        erro: 'Escreva uma anotação antes de salvar.'
+      };
+    }
+
+    dados.anotacoes.unshift(item);
+    if (dados.anotacoes.length > MAX_ANOTACOES) {
+      dados.anotacoes.sort(function (a, b) {
+        return ((b.atualizadaEm || b.criadaEm || 0) - (a.atualizadaEm || a.criadaEm || 0));
+      });
+      dados.anotacoes = dados.anotacoes.slice(0, MAX_ANOTACOES);
+    }
+
+    salvarDados(dados);
+    return {
+      ok: true,
+      anotacao: clonarAnotacao(item)
+    };
+  }
+
+  function atualizarAnotacao(id, entrada) {
+    var dados = carregarDados();
+    var idx = -1;
+    for (var i = 0; i < dados.anotacoes.length; i += 1) {
+      if (String(dados.anotacoes[i].id) === String(id)) {
+        idx = i;
+        break;
+      }
+    }
+
+    if (idx === -1) {
+      return {
+        ok: false,
+        erro: 'Anotação não encontrada.'
+      };
+    }
+
+    var existente = dados.anotacoes[idx];
+    var bruto = typeof entrada === 'string'
+      ? { texto: entrada }
+      : (entrada && typeof entrada === 'object' ? entrada : {});
+
+    var textoLimpo = sanitizarTextoSeguro(bruto.texto, MAX_ANOTACAO_TEXTO, true);
+    if (!textoLimpo) {
+      return {
+        ok: false,
+        erro: 'Escreva uma anotação antes de salvar.'
+      };
+    }
+
+    var vinculo;
+    if (bruto.alunoId !== undefined || bruto.alunoNome !== undefined) {
+      vinculo = resolverNomeAlunoParaAnotacao(dados, bruto.alunoId, bruto.alunoNome);
+    } else {
+      vinculo = {
+        alunoId: existente.alunoId || null,
+        alunoNome: existente.alunoNome || ''
+      };
+    }
+
+    var atualizada = sanitizarAnotacao({
+      id: existente.id,
+      dataISO: bruto.dataISO || existente.dataISO,
+      alunoId: vinculo.alunoId,
+      alunoNome: vinculo.alunoNome,
+      texto: textoLimpo,
+      criadaEm: existente.criadaEm,
+      atualizadaEm: Date.now()
+    });
+
+    dados.anotacoes[idx] = atualizada;
+    salvarDados(dados);
+
+    return {
+      ok: true,
+      anotacao: clonarAnotacao(atualizada)
+    };
+  }
+
+  function removerAnotacao(id) {
+    var dados = carregarDados();
+    var tamanhoInicial = dados.anotacoes.length;
+
+    dados.anotacoes = dados.anotacoes.filter(function (item) {
+      return String(item.id) !== String(id);
+    });
+
+    if (dados.anotacoes.length === tamanhoInicial) {
+      return false;
+    }
+
+    salvarDados(dados);
+    return true;
+  }
+
+  // =========================================================================
   // BACKUP COMPLETO EM JSON (EXPORTACAO E IMPORTACAO SANITIZADA)
   // =========================================================================
 
@@ -1325,7 +1613,8 @@
       parsed.config ||
       Array.isArray(parsed.turma) ||
       Array.isArray(parsed.palavrasSemana) ||
-      Array.isArray(parsed.sessoes)
+      Array.isArray(parsed.sessoes) ||
+      Array.isArray(parsed.anotacoes)
     );
 
     if (!possuiEnvelope && !possuiChavesDiretas) {
@@ -1361,6 +1650,7 @@
         alunos: dadosSanitizados.turma.length,
         palavras: dadosSanitizados.palavrasSemana.length,
         sessoes: dadosSanitizados.sessoes.length,
+        anotacoes: dadosSanitizados.anotacoes.length,
         ranking: rankingSanitizado.length
       }
     };
@@ -1378,6 +1668,7 @@
 
     normalizarChave: normalizarChave,
     normalizarPlain: normalizarPlain,
+    sanitizarTextoSeguro: sanitizarTextoSeguro,
     getDataLocalISO: getDataLocalISO,
     sanitizarDados: sanitizarDados,
     carregarDados: carregarDados,
@@ -1408,6 +1699,11 @@
 
     salvarSessao: salvarSessao,
     listarSessoes: listarSessoes,
-    limparHistoricoSessoes: limparHistoricoSessoes
+    limparHistoricoSessoes: limparHistoricoSessoes,
+
+    listarAnotacoes: listarAnotacoes,
+    adicionarAnotacao: adicionarAnotacao,
+    atualizarAnotacao: atualizarAnotacao,
+    removerAnotacao: removerAnotacao
   };
 })(typeof window !== 'undefined' ? window : globalThis);

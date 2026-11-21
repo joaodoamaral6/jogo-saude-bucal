@@ -26,7 +26,9 @@
         ALERT: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><circle cx="12" cy="17" r="0.8" fill="currentColor"></circle></svg>',
         SPARKLE: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l1.9 4.7L18.6 9.6l-4.7 1.9L12 16.2l-1.9-4.7-4.7-1.9 4.7-1.9L12 3z"></path><path d="M5 18l.8 1.7L7.5 20.5l-1.7.8L5 23l-.8-1.7-1.7-.8 1.7-.8L5 18z"></path><path d="M19 15l.7 1.3 1.3.7-1.3.7-.7 1.3-.7-1.3-1.3-.7 1.3-.7.7-1.3z"></path></svg>',
         DOWNLOAD: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
-        UPLOAD: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>'
+        UPLOAD: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>',
+        PRINTER: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg>',
+        NOTE: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="13" y2="17"></line></svg>'
     };
 
     SaudeEscola.SVGs = SVGs;
@@ -423,12 +425,13 @@
             '  </div>',
             '  <div class="tp-card tp-backup-card">',
             '    <div class="tp-card-header-row">',
-            '      <h3 class="tp-card-title">' + SVGs.DOWNLOAD + '<span>Backup dos Dados</span></h3>',
+            '      <h3 class="tp-card-title">' + SVGs.DOWNLOAD + '<span>Backup e Relatório</span></h3>',
             '    </div>',
-            '    <p class="tp-backup-desc">Salve uma cópia da turma, palavras da semana, evolução e ranking em arquivo JSON, ou restaure um backup anterior.</p>',
+            '    <p class="tp-backup-desc">Salve uma cópia da turma, palavras da semana, evolução, anotações e ranking em arquivo JSON, restaure um backup anterior ou imprima o relatório pedagógico em PDF.</p>',
             '    <div class="tp-inline-actions">',
             '      <button type="button" id="tpExportBackupBtn" class="tp-btn tp-btn-outline">' + SVGs.DOWNLOAD + '<span>Exportar JSON</span></button>',
             '      <button type="button" id="tpImportBackupBtn" class="tp-btn tp-btn-outline">' + SVGs.UPLOAD + '<span>Importar JSON</span></button>',
+            '      <button type="button" id="tpExportPdfBtn" class="tp-btn tp-btn-primary">' + SVGs.PRINTER + '<span>Exportar Relatório (PDF)</span></button>',
             '      <input type="file" id="tpImportBackupInput" accept=".json,application/json" style="display:none;" aria-hidden="true">',
             '    </div>',
             '  </div>',
@@ -656,8 +659,16 @@
                     }
 
                     var r = res.resumo || {};
+                    var qtdAlunos = r.alunos || 0;
+                    var qtdPalavras = r.palavras || 0;
+                    var qtdSessoes = r.sessoes || 0;
+                    var extraNotas = r.anotacoes ? (', ' + r.anotacoes + (r.anotacoes === 1 ? ' anotação' : ' anotações')) : '';
                     showToast(
-                        'Backup restaurado (' + (r.alunos || 0) + ' alunos, ' + (r.palavras || 0) + ' palavras, ' + (r.sessoes || 0) + ' sessões)!',
+                        'Backup restaurado (' +
+                        qtdAlunos + (qtdAlunos === 1 ? ' aluno, ' : ' alunos, ') +
+                        qtdPalavras + (qtdPalavras === 1 ? ' palavra, ' : ' palavras, ') +
+                        qtdSessoes + (qtdSessoes === 1 ? ' sessão' : ' sessões') +
+                        extraNotas + ')!',
                         'success'
                     );
                     renderAbaTurma(containerEl);
@@ -666,6 +677,22 @@
                     showToast('Erro ao ler o arquivo selecionado.', 'error');
                 };
                 reader.readAsText(file, 'utf-8');
+            });
+        }
+
+        /* Exportar Relatorio Pedagogico em PDF (@media print) */
+        var exportPdfBtn = containerEl.querySelector('#tpExportPdfBtn');
+        if (exportPdfBtn) {
+            exportPdfBtn.addEventListener('click', function () {
+                var rp = SaudeEscola.ReportPrint;
+                if (!rp || typeof rp.print !== 'function') {
+                    showToast('Módulo de relatório PDF não disponível.', 'error');
+                    return;
+                }
+                var resPrint = rp.print();
+                if (resPrint && resPrint.ok === false) {
+                    showToast(resPrint.erro || 'Não foi possível gerar o relatório PDF.', 'error');
+                }
             });
         }
     }
@@ -684,7 +711,7 @@
             return '<span class="tp-syl-chip">' + escapeHtml(syl.toUpperCase()) + '</span>';
         }).join('');
 
-        previewEl.innerHTML = chips + '<span class="tp-preview-meta">' + silabas.length + ' ' + (silabas.length === 1 ? 'sílaba' : 'sílabas') + ' / ' + letrasTotal + ' letras</span>';
+        previewEl.innerHTML = chips + '<span class="tp-preview-meta">' + silabas.length + ' ' + (silabas.length === 1 ? 'sílaba' : 'sílabas') + ' / ' + letrasTotal + ' ' + (letrasTotal === 1 ? 'letra' : 'letras') + '</span>';
     }
 
     function renderAbaPalavras(containerEl) {
@@ -764,7 +791,7 @@
             '    <div class="tp-field">',
             '      <label class="tp-label" for="tpFase1ModeSelect">Par da carta na Fase 1 (Memória) quando ativo</label>',
             '      <select id="tpFase1ModeSelect" class="tp-select">',
-            '        <option value="dica"' + (fase1Selected === 'dica' ? ' selected' : '') + '>Dica curta (ou sílaba inicial se sem dica)</option>',
+            '        <option value="dica"' + (fase1Selected === 'dica' ? ' selected' : '') + '>Dica curta (ou sílaba inicial quando não houver dica)</option>',
             '        <option value="silaba"' + (fase1Selected === 'silaba' ? ' selected' : '') + '>Sempre sílaba inicial</option>',
             '      </select>',
             '    </div>',
@@ -778,7 +805,7 @@
             '        <div id="tpSyllablePreview" class="tp-syllable-preview"></div>',
             '      </div>',
             '      <div class="tp-field tp-field-full">',
-            '        <label class="tp-label" for="tpWordHintInput">Dica curta (opcional — usada na Fase 1 e Fase 2)</label>',
+            '        <label class="tp-label" for="tpWordHintInput">Dica curta (opcional — usada nas Fases 1 e 2)</label>',
             '        <input id="tpWordHintInput" class="tp-input" type="text" value="' + escapeHtml(state.draftDica) + '" placeholder="Ex.: Animal que corre no campo" maxlength="90" autocomplete="off">',
             '      </div>',
             '      <div class="tp-field tp-field-full">',

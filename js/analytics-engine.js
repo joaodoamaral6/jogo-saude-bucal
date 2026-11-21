@@ -145,11 +145,22 @@
     }
 
     /**
+     * Formata tempo em segundos para exibição legível (ex.: 34s ou 1m 12s).
+     */
+    function formatarTempoSegundosSimples(seg) {
+        var s = Math.max(0, Math.round(Number(seg) || 0));
+        if (s < 60) return s + 's';
+        var min = Math.floor(s / 60);
+        var resto = s % 60;
+        return resto > 0 ? (min + 'm ' + resto + 's') : (min + 'm');
+    }
+
+    /**
      * Cria a estrutura vazia de estatísticas por fase para uma sessão.
      */
     function criarFasesStatsVazio() {
         return {
-            fase1: { tentativas: 0, acertos: 0, acertosPrimeira: 0 },
+            fase1: { tentativas: 0, acertos: 0, acertosPrimeira: 0, tempoSegundos: 0, rodadas: 0 },
             fase2: { tentativas: 0, acertos: 0, acertosPrimeira: 0 },
             fase3: { tentativas: 0, acertos: 0, acertosPrimeira: 0 }
         };
@@ -163,7 +174,9 @@
             sessaoAtual.fasesStats = criarFasesStatsVazio();
         }
         if (!sessaoAtual.fasesStats[chaveFase]) {
-            sessaoAtual.fasesStats[chaveFase] = { tentativas: 0, acertos: 0, acertosPrimeira: 0 };
+            sessaoAtual.fasesStats[chaveFase] = chaveFase === 'fase1'
+                ? { tentativas: 0, acertos: 0, acertosPrimeira: 0, tempoSegundos: 0, rodadas: 0 }
+                : { tentativas: 0, acertos: 0, acertosPrimeira: 0 };
         }
         var faseStat = sessaoAtual.fasesStats[chaveFase];
         faseStat.tentativas += 1;
@@ -245,27 +258,35 @@
     }
 
     /**
-     * Registra uma tentativa de par na Fase 1 (Jogo da Memória).
+     * Registra a conclusão de uma rodada da Fase 1 (Jogo da Memória) pelo tempo de execução.
+     * Não contabiliza erros por cartas viradas nem altera a taxa ortográfica geral.
      */
-    function registrarTentativaFase1(dados) {
+    function registrarConclusaoFase1(dados) {
         var info = dados && typeof dados === 'object' ? dados : {};
         garantirSessaoAtiva('FASE_1');
 
-        var palavraLimpa = normalizarPalavra(info.palavra);
-        var acertou = Boolean(info.acertou);
-        var primeiraTentativa = Boolean(info.primeiraTentativa);
+        var brutoSeg = Number(info.tempoSegundos);
+        var seg = (isFinite(brutoSeg) && brutoSeg > 0) ? Math.max(1, Math.round(brutoSeg)) : 1;
 
-        sessaoAtual.tentativas += 1;
-        sessaoAtual.atividadesRegistradas += 1;
-        atualizarStatsPalavra(palavraLimpa, acertou);
-        atualizarStatsFase('fase1', acertou, primeiraTentativa);
-
-        if (acertou) {
-            sessaoAtual.acertos += 1;
-            if (primeiraTentativa) {
-                sessaoAtual.acertosPrimeira += 1;
-            }
+        if (!sessaoAtual.fasesStats || typeof sessaoAtual.fasesStats !== 'object') {
+            sessaoAtual.fasesStats = criarFasesStatsVazio();
         }
+        if (!sessaoAtual.fasesStats.fase1 || typeof sessaoAtual.fasesStats.fase1 !== 'object') {
+            sessaoAtual.fasesStats.fase1 = { tentativas: 0, acertos: 0, acertosPrimeira: 0, tempoSegundos: 0, rodadas: 0 };
+        }
+
+        var f1 = sessaoAtual.fasesStats.fase1;
+        f1.tempoSegundos = (Number(f1.tempoSegundos) || 0) + seg;
+        f1.rodadas = (Number(f1.rodadas) || 0) + 1;
+        sessaoAtual.atividadesRegistradas += 1;
+    }
+
+    /**
+     * Mantida por compatibilidade de contrato: na v2.1.3+ a Fase 1 é avaliada pelo
+     * tempo de conclusão via registrarConclusaoFase1(), sem registrar erros de cartas viradas.
+     */
+    function registrarTentativaFase1() {
+        return;
     }
 
     /**
@@ -468,9 +489,27 @@
     }
 
     /**
+     * Resolve a chave normalizada associada a um alunoId cadastrado, quando existir.
+     */
+    function obterChaveAlunoCadastrado(alunoId) {
+        if (!alunoId || alunoId === 'TODOS' || alunoId === '__TURMA_SEM_ID__') return null;
+        var storage = getStorage();
+        if (!storage || typeof storage.listarAlunos !== 'function') return null;
+        var lista = storage.listarAlunos();
+        if (!Array.isArray(lista)) return null;
+        for (var i = 0; i < lista.length; i++) {
+            var a = lista[i];
+            if (a && a.id !== undefined && String(a.id) === String(alunoId)) {
+                return a.chave ? String(a.chave) : null;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Verifica se uma sessão pertence ao filtro de aluno selecionado.
      */
-    function sessaoPertenceAoAluno(sessao, alunoId) {
+    function sessaoPertenceAoAluno(sessao, alunoId, chaveAlunoFiltro) {
         if (!sessao || typeof sessao !== 'object') return false;
         if (!alunoId || alunoId === 'TODOS') return true;
 
@@ -485,6 +524,7 @@
         if (sessao.alunoChave) {
             if (String(sessao.alunoChave) === String(alunoId)) return true;
             if ('chave:' + String(sessao.alunoChave) === String(alunoId)) return true;
+            if (chaveAlunoFiltro && String(sessao.alunoChave) === String(chaveAlunoFiltro)) return true;
         }
 
         return false;
@@ -495,12 +535,13 @@
      */
     function listarDatasDisponiveis(alunoId) {
         var filtro = alunoId || 'TODOS';
+        var chaveFiltro = obterChaveAlunoCadastrado(filtro);
         var sessoes = obterSessoesArmazenadas();
         var mapaDatas = {};
 
         for (var i = 0; i < sessoes.length; i++) {
             var s = sessoes[i];
-            if (!sessaoPertenceAoAluno(s, filtro)) continue;
+            if (!sessaoPertenceAoAluno(s, filtro, chaveFiltro)) continue;
             if (s.dataISO && typeof s.dataISO === 'string') {
                 mapaDatas[s.dataISO] = true;
             }
@@ -523,7 +564,18 @@
         var errosOrtograficos = {};
         var errosSilabas = {};
         var porFase = {
-            fase1: { tentativas: 0, acertos: 0, acertosPrimeira: 0, taxaAcerto: null, taxaPrimeira: null, temDados: false },
+            fase1: {
+                tentativas: 0,
+                acertos: 0,
+                acertosPrimeira: 0,
+                tempoTotalSegundos: 0,
+                rodadas: 0,
+                tempoMedioSegundos: null,
+                taxaAcerto: null,
+                taxaPrimeira: null,
+                temDados: false,
+                modoMetrica: 'vazio'
+            },
             fase2: { tentativas: 0, acertos: 0, acertosPrimeira: 0, taxaAcerto: null, taxaPrimeira: null, temDados: false },
             fase3: { tentativas: 0, acertos: 0, acertosPrimeira: 0, taxaAcerto: null, taxaPrimeira: null, temDados: false }
         };
@@ -548,6 +600,10 @@
                         porFase[chaveF].tentativas += Number(fItem.tentativas) || 0;
                         porFase[chaveF].acertos += Number(fItem.acertos) || 0;
                         porFase[chaveF].acertosPrimeira += Number(fItem.acertosPrimeira) || 0;
+                        if (chaveF === 'fase1') {
+                            porFase.fase1.tempoTotalSegundos += Number(fItem.tempoSegundos) || 0;
+                            porFase.fase1.rodadas += Number(fItem.rodadas) || 0;
+                        }
                     }
                 }
             } else if (sTentativas > 0) {
@@ -642,7 +698,29 @@
         var taxaAcerto = tentativas > 0 ? Math.round((acertos / tentativas) * 100) : 0;
         var taxaPrimeira = tentativas > 0 ? Math.round((acertosPrimeira / tentativas) * 100) : 0;
 
-        var chavesCalc = ['fase1', 'fase2', 'fase3'];
+        // Fase 1 prioriza tempo médio (v2.1.3+), mantendo fallback retrocompatível para sessões antigas
+        var f1 = porFase.fase1;
+        if (f1.rodadas > 0) {
+            f1.modoMetrica = 'tempo';
+            f1.tempoMedioSegundos = Math.max(1, Math.round(f1.tempoTotalSegundos / f1.rodadas));
+            f1.temDados = true;
+            f1.taxaAcerto = null;
+            f1.taxaPrimeira = null;
+        } else if (f1.tentativas > 0) {
+            f1.modoMetrica = 'legado_taxa';
+            f1.tempoMedioSegundos = null;
+            f1.temDados = true;
+            f1.taxaAcerto = Math.round((f1.acertos / f1.tentativas) * 100);
+            f1.taxaPrimeira = Math.round((f1.acertosPrimeira / f1.tentativas) * 100);
+        } else {
+            f1.modoMetrica = 'vazio';
+            f1.tempoMedioSegundos = null;
+            f1.temDados = false;
+            f1.taxaAcerto = null;
+            f1.taxaPrimeira = null;
+        }
+
+        var chavesCalc = ['fase2', 'fase3'];
         for (var fc = 0; fc < chavesCalc.length; fc++) {
             var pf = porFase[chavesCalc[fc]];
             pf.temDados = pf.tentativas > 0;
@@ -672,10 +750,82 @@
         if (!dataAnterior || !metricasAnterior) {
             return {
                 temDiaAnterior: false,
+                tipoComparativo: 'primeiro_dia',
                 variacaoTaxaAcerto: null,
+                variacaoTempoFase1: null,
                 tendencia: 'first',
                 mensagensMelhoria: [
                     'Primeiro dia registrado para esta seleção. Continue praticando para comparar a evolução.'
+                ]
+            };
+        }
+
+        var f1Dia = (metricasDia.porFase && metricasDia.porFase.fase1) ? metricasDia.porFase.fase1 : null;
+        var f1Ant = (metricasAnterior.porFase && metricasAnterior.porFase.fase1) ? metricasAnterior.porFase.fase1 : null;
+        var f1AmbosTempo = Boolean(
+            f1Dia && f1Dia.modoMetrica === 'tempo' &&
+            f1Ant && f1Ant.modoMetrica === 'tempo'
+        );
+
+        // Quando um dos dias possui apenas registros por tempo na Fase 1 (sem tentativas de F2/F3)
+        if (metricasDia.tentativas === 0 || metricasAnterior.tentativas === 0) {
+            if (f1AmbosTempo) {
+                var diffSeg = f1Dia.tempoMedioSegundos - f1Ant.tempoMedioSegundos;
+                var tendTempo = 'flat';
+                if (diffSeg <= -3) {
+                    tendTempo = 'up';
+                } else if (diffSeg >= 3) {
+                    tendTempo = 'down';
+                }
+
+                var msgsTempo = [];
+                if (diffSeg <= -3) {
+                    msgsTempo.push(
+                        'Mais agilidade na Fase 1 (Memória): tempo médio caiu ' + Math.abs(diffSeg) +
+                        's (de ' + formatarTempoSegundosSimples(f1Ant.tempoMedioSegundos) +
+                        ' para ' + formatarTempoSegundosSimples(f1Dia.tempoMedioSegundos) + ').'
+                    );
+                } else if (diffSeg < 0) {
+                    msgsTempo.push(
+                        'Leve melhora de tempo na Fase 1 (Memória): -' + Math.abs(diffSeg) +
+                        's em relação ao dia anterior.'
+                    );
+                } else if (diffSeg === 0) {
+                    msgsTempo.push(
+                        'Manteve o tempo médio da Fase 1 (Memória) em ' +
+                        formatarTempoSegundosSimples(f1Dia.tempoMedioSegundos) + '.'
+                    );
+                } else if (diffSeg < 3) {
+                    msgsTempo.push(
+                        'Tempo médio estável na Fase 1 (Memória): ' +
+                        formatarTempoSegundosSimples(f1Dia.tempoMedioSegundos) + '.'
+                    );
+                } else {
+                    msgsTempo.push(
+                        'A Fase 1 (Memória) levou ' + diffSeg +
+                        's a mais em média (' + formatarTempoSegundosSimples(f1Dia.tempoMedioSegundos) +
+                        ' contra ' + formatarTempoSegundosSimples(f1Ant.tempoMedioSegundos) + ').'
+                    );
+                }
+
+                return {
+                    temDiaAnterior: true,
+                    tipoComparativo: 'tempo_fase1',
+                    variacaoTaxaAcerto: null,
+                    variacaoTempoFase1: diffSeg,
+                    tendencia: tendTempo,
+                    mensagensMelhoria: msgsTempo
+                };
+            }
+
+            return {
+                temDiaAnterior: true,
+                tipoComparativo: 'sem_base_comum',
+                variacaoTaxaAcerto: null,
+                variacaoTempoFase1: null,
+                tendencia: 'flat',
+                mensagensMelhoria: [
+                    'As atividades registradas nesta data usaram fases ou métricas diferentes do dia anterior.'
                 ]
             };
         }
@@ -697,7 +847,8 @@
             );
         } else if (variacao > 0) {
             mensagens.push(
-                'Leve ganho na taxa de acerto (+' + variacao + '% em comparação ao dia anterior).'
+                'Leve ganho na taxa de acerto (+' + variacao +
+                (variacao === 1 ? ' ponto percentual' : ' pontos percentuais') + ' em relação ao dia anterior).'
             );
         } else if (variacao === 0) {
             mensagens.push(
@@ -710,16 +861,28 @@
         } else {
             mensagens.push(
                 'A taxa de acerto ficou ' + Math.abs(variacao) +
-                '% abaixo do dia anterior (bom momento para retomar as palavras).'
+                (Math.abs(variacao) === 1 ? ' ponto percentual' : ' pontos percentuais') +
+                ' abaixo do dia anterior (bom momento para retomar as palavras).'
             );
         }
 
         var difPrimeira = metricasDia.taxaPrimeira - metricasAnterior.taxaPrimeira;
         if (difPrimeira >= 5) {
             mensagens.push(
-                'Mais respostas corretas logo na 1a tentativa (' +
+                'Mais respostas corretas logo na 1ª tentativa (' +
                 metricasDia.taxaPrimeira + '% contra ' + metricasAnterior.taxaPrimeira + '% antes).'
             );
+        }
+
+        if (mensagens.length < 3 && f1AmbosTempo) {
+            var diffF1 = f1Dia.tempoMedioSegundos - f1Ant.tempoMedioSegundos;
+            if (diffF1 <= -3) {
+                mensagens.push(
+                    'Mais agilidade na Fase 1 (Memória): tempo médio caiu de ' +
+                    formatarTempoSegundosSimples(f1Ant.tempoMedioSegundos) + ' para ' +
+                    formatarTempoSegundosSimples(f1Dia.tempoMedioSegundos) + '.'
+                );
+            }
         }
 
         // Destaca reduções em erros ortográficos específicos
@@ -744,9 +907,15 @@
         for (var r = 0; r < reducoesOrt.length && mensagens.length < 3; r++) {
             var red = reducoesOrt[r];
             if (red.depois === 0) {
-                mensagens.push('Nenhuma ocorrência de "' + red.label + '" (foram ' + red.antes + ' no dia anterior).');
+                mensagens.push(
+                    'Nenhuma ocorrência de "' + red.label + '" (' +
+                    (red.antes === 1 ? 'foi 1 no dia anterior' : 'foram ' + red.antes + ' no dia anterior') + ').'
+                );
             } else {
-                mensagens.push('Redução em "' + red.label + '" de ' + red.antes + ' para ' + red.depois + ' ocorrência(s).');
+                mensagens.push(
+                    'Redução em "' + red.label + '" de ' + red.antes + ' para ' + red.depois +
+                    (red.depois === 1 ? ' ocorrência.' : ' ocorrências.')
+                );
             }
         }
 
@@ -780,7 +949,9 @@
 
         return {
             temDiaAnterior: true,
+            tipoComparativo: 'taxa',
             variacaoTaxaAcerto: variacao,
+            variacaoTempoFase1: f1AmbosTempo ? (f1Dia.tempoMedioSegundos - f1Ant.tempoMedioSegundos) : null,
             tendencia: tendencia,
             mensagensMelhoria: mensagens
         };
@@ -791,13 +962,24 @@
      */
     function gerarPontosFortes(metricasDia) {
         var fortes = [];
+        var f1 = (metricasDia.porFase && metricasDia.porFase.fase1) ? metricasDia.porFase.fase1 : null;
 
-        if (metricasDia.taxaAcerto >= 80) {
-            fortes.push('Ótimo aproveitamento geral: ' + metricasDia.taxaAcerto + '% de acertos no dia.');
+        if (metricasDia.tentativas > 0) {
+            if (metricasDia.taxaAcerto >= 80) {
+                fortes.push('Ótimo aproveitamento geral: ' + metricasDia.taxaAcerto + '% de acertos no dia.');
+            }
+
+            if (metricasDia.taxaPrimeira >= 70) {
+                fortes.push('Boa segurança na escrita: ' + metricasDia.taxaPrimeira + '% de acertos na 1ª tentativa.');
+            }
         }
 
-        if (metricasDia.taxaPrimeira >= 70) {
-            fortes.push('Boa segurança na escrita: ' + metricasDia.taxaPrimeira + '% de acertos na 1a tentativa.');
+        if (f1 && f1.modoMetrica === 'tempo') {
+            fortes.push(
+                'Fase 1 (Memória) concluída com média de ' +
+                formatarTempoSegundosSimples(f1.tempoMedioSegundos) +
+                ' em ' + f1.rodadas + (f1.rodadas === 1 ? ' rodada.' : ' rodadas.')
+            );
         }
 
         // Seleciona palavras com >= 80% de acerto
@@ -826,17 +1008,24 @@
         var qtdOrt = Object.keys(metricasDia.errosOrtograficos).length;
         var qtdSil = Object.keys(metricasDia.errosSilabas).length;
 
-        if (qtdOrt === 0 && qtdSil === 0) {
-            fortes.push('Ausência de trocas ortográficas e travas silábicas nesta data.');
-        } else if (qtdOrt === 0) {
-            fortes.push('Nenhuma troca ortográfica frequente registrada na escrita.');
+        if (metricasDia.tentativas > 0) {
+            if (qtdOrt === 0 && qtdSil === 0) {
+                fortes.push('Ausência de trocas ortográficas e travas silábicas nesta data.');
+            } else if (qtdOrt === 0) {
+                fortes.push('Nenhuma troca ortográfica frequente registrada na escrita.');
+            }
         }
 
         if (fortes.length === 0) {
-            fortes.push(
-                'Participação registrada com ' + metricasDia.tentativas +
-                ' tentativa(s) e ' + metricasDia.acertos + ' acerto(s) nesta data.'
-            );
+            if (metricasDia.tentativas > 0) {
+                fortes.push(
+                    'Participação registrada com ' + metricasDia.tentativas +
+                    (metricasDia.tentativas === 1 ? ' tentativa e ' : ' tentativas e ') +
+                    metricasDia.acertos + (metricasDia.acertos === 1 ? ' acerto nesta data.' : ' acertos nesta data.')
+                );
+            } else {
+                fortes.push('Participação registrada na Fase 1 (Jogo da Memória) nesta data.');
+            }
         }
 
         return fortes.slice(0, 4);
@@ -968,6 +1157,7 @@
     function gerarResumoEvolucao(filtros) {
         var cfg = filtros && typeof filtros === 'object' ? filtros : {};
         var alunoId = cfg.alunoId || 'TODOS';
+        var chaveAlunoFiltro = obterChaveAlunoCadastrado(alunoId);
         var dataSolicitada = cfg.dataReferencia || null;
 
         var todasSessoes = obterSessoesArmazenadas();
@@ -976,7 +1166,7 @@
 
         for (var i = 0; i < todasSessoes.length; i++) {
             var s = todasSessoes[i];
-            if (!sessaoPertenceAoAluno(s, alunoId)) continue;
+            if (!sessaoPertenceAoAluno(s, alunoId, chaveAlunoFiltro)) continue;
             if (!s.dataISO || typeof s.dataISO !== 'string') continue;
 
             if (!sessoesPorData[s.dataISO]) {
@@ -1028,7 +1218,30 @@
         function copiarFaseResumo(porFaseDia, chave) {
             var f = (porFaseDia && porFaseDia[chave]) ? porFaseDia[chave] : null;
             if (!f || !f.temDados) {
-                return { tentativas: 0, acertos: 0, taxaAcerto: null, temDados: false };
+                return chave === 'fase1'
+                    ? {
+                        tentativas: 0,
+                        acertos: 0,
+                        taxaAcerto: null,
+                        tempoTotalSegundos: 0,
+                        rodadas: 0,
+                        tempoMedioSegundos: null,
+                        modoMetrica: 'vazio',
+                        temDados: false
+                    }
+                    : { tentativas: 0, acertos: 0, taxaAcerto: null, temDados: false };
+            }
+            if (chave === 'fase1') {
+                return {
+                    tentativas: f.tentativas,
+                    acertos: f.acertos,
+                    taxaAcerto: f.taxaAcerto,
+                    tempoTotalSegundos: f.tempoTotalSegundos || 0,
+                    rodadas: f.rodadas || 0,
+                    tempoMedioSegundos: f.tempoMedioSegundos !== undefined ? f.tempoMedioSegundos : null,
+                    modoMetrica: f.modoMetrica || 'vazio',
+                    temDados: true
+                };
             }
             return {
                 tentativas: f.tentativas,
@@ -1074,8 +1287,132 @@
         };
     }
 
+    /**
+     * Gera resumo individual de desempenho nas 3 fases para todos os alunos cadastrados
+     * (e alunos presentes apenas no histórico), ordenado alfabeticamente.
+     */
+    function gerarResumoPorAluno(opcoes) {
+        var cfg = opcoes && typeof opcoes === 'object' ? opcoes : {};
+        var escopo = cfg.escopo === 'DIA' ? 'DIA' : 'GERAL';
+        var dataReferencia = cfg.dataReferencia || null;
+
+        var storage = getStorage();
+        var alunosCadastrados = (storage && typeof storage.listarAlunos === 'function')
+            ? storage.listarAlunos()
+            : [];
+        if (!Array.isArray(alunosCadastrados)) alunosCadastrados = [];
+
+        var todasSessoes = obterSessoesArmazenadas();
+        var registros = [];
+        var mapaPorId = {};
+        var mapaPorChave = {};
+
+        for (var i = 0; i < alunosCadastrados.length; i++) {
+            var a = alunosCadastrados[i];
+            if (!a || !a.nome) continue;
+            var idStr = a.id ? String(a.id) : ('chave:' + String(a.chave || a.nome));
+            var chaveNorm = a.chave
+                ? String(a.chave)
+                : ((storage && typeof storage.normalizarChave === 'function')
+                    ? storage.normalizarChave(a.nome)
+                    : String(a.nome).toLowerCase());
+
+            if (mapaPorId[idStr]) continue;
+
+            var entry = {
+                id: idStr,
+                nome: String(a.nome),
+                chave: chaveNorm,
+                cadastrado: true,
+                sessoes: []
+            };
+            mapaPorId[idStr] = entry;
+            if (chaveNorm) {
+                mapaPorChave[chaveNorm] = entry;
+            }
+            registros.push(entry);
+        }
+
+        // Associa sessões filtradas pelo escopo sem duplicar alunos cadastrados
+        for (var j = 0; j < todasSessoes.length; j++) {
+            var s = todasSessoes[j];
+            if (!s || typeof s !== 'object') continue;
+            if (escopo === 'DIA') {
+                if (!dataReferencia || s.dataISO !== dataReferencia) continue;
+            }
+
+            var sId = (s.alunoId !== null && s.alunoId !== undefined && s.alunoId !== '')
+                ? String(s.alunoId)
+                : null;
+            var sChave = (s.alunoChave && s.alunoChave !== 'turma')
+                ? String(s.alunoChave)
+                : '';
+
+            var alvo = null;
+            if (sId && mapaPorId[sId]) {
+                alvo = mapaPorId[sId];
+            } else if (sChave && mapaPorChave[sChave]) {
+                alvo = mapaPorChave[sChave];
+            } else if (sId || sChave) {
+                var idFallback = sId || ('chave:' + sChave);
+                if (mapaPorId[idFallback]) {
+                    alvo = mapaPorId[idFallback];
+                } else {
+                    alvo = {
+                        id: idFallback,
+                        nome: s.alunoNome ? String(s.alunoNome) : (sChave || idFallback),
+                        chave: sChave,
+                        cadastrado: false,
+                        sessoes: []
+                    };
+                    mapaPorId[idFallback] = alvo;
+                    if (sChave && !mapaPorChave[sChave]) {
+                        mapaPorChave[sChave] = alvo;
+                    }
+                    registros.push(alvo);
+                }
+            }
+
+            if (alvo) {
+                alvo.sessoes.push(s);
+            }
+        }
+
+        var resultado = [];
+        for (var r = 0; r < registros.length; r++) {
+            var reg = registros[r];
+            var met = consolidarDia(reg.sessoes);
+            var ultimaDataISO = null;
+            for (var k = 0; k < reg.sessoes.length; k++) {
+                var dISO = reg.sessoes[k].dataISO;
+                if (dISO && (!ultimaDataISO || dISO > ultimaDataISO)) {
+                    ultimaDataISO = dISO;
+                }
+            }
+
+            resultado.push({
+                id: reg.id,
+                nome: reg.nome,
+                chave: reg.chave,
+                cadastrado: reg.cadastrado,
+                sessoesCount: met.sessoesCount,
+                ultimaDataISO: ultimaDataISO,
+                fase1: met.porFase.fase1,
+                fase2: met.porFase.fase2,
+                fase3: met.porFase.fase3
+            });
+        }
+
+        resultado.sort(function (x, y) {
+            return x.nome.localeCompare(y.nome, 'pt-BR', { sensitivity: 'base' });
+        });
+
+        return resultado;
+    }
+
     SaudeEscola.Analytics = {
         iniciarSessao: iniciarSessao,
+        registrarConclusaoFase1: registrarConclusaoFase1,
         registrarTentativaFase1: registrarTentativaFase1,
         registrarTentativaFase2: registrarTentativaFase2,
         registrarTentativaFase3: registrarTentativaFase3,
@@ -1083,6 +1420,7 @@
         descartarSessao: descartarSessao,
         temSessaoPendente: temSessaoPendente,
         listarDatasDisponiveis: listarDatasDisponiveis,
-        gerarResumoEvolucao: gerarResumoEvolucao
+        gerarResumoEvolucao: gerarResumoEvolucao,
+        gerarResumoPorAluno: gerarResumoPorAluno
     };
 })(window);
