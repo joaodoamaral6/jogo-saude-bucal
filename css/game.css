@@ -1982,17 +1982,18 @@ footer.bottom-dock {
 }
 
 /* Ajuste fino para telas estreitas em retrato (<= 600px):
-   oculta o feedback-banner na bottom-dock, compacta os 3 botões do rodapé
-   para caberem inteiros sem corte e oculta o texto secundário "RANKING" no topo */
+   oculta o feedback-banner na bottom-dock, distribui uniformemente os botões visíveis
+   no rodapé, dá folga aos botões APAGAR/VERIFICAR e oculta o texto "RANKING" no topo */
 @media (orientation: portrait) and (max-width: 600px) {
   footer.bottom-dock {
     padding-left: 0;
     padding-right: 0;
-    gap: 1vw;
+    justify-content: space-evenly;
+    gap: 1.5vw;
   }
 
   footer.bottom-dock .dock-group {
-    gap: 1vw;
+    display: contents;
   }
 
   footer.bottom-dock .btn-dock {
@@ -2012,6 +2013,22 @@ footer.bottom-dock {
   }
 
   .badge-pill span:last-child {
+    display: none;
+  }
+
+  /* Folga extra para APAGAR e VERIFICAR no teclado virtual em telas estreitas */
+  .key-btn.key-action {
+    font-size: clamp(0.56rem, 2.05vw, 0.76rem);
+    padding: 0 0.8vw;
+    gap: 0.35vw;
+    letter-spacing: 0;
+  }
+
+  .key-btn.key-verify {
+    flex: 2.3;
+  }
+
+  .key-btn.key-action svg {
     display: none;
   }
 }
