@@ -24,7 +24,9 @@
         CHECK: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><polyline points="20 6 9 17 4 12"></polyline></svg>',
         CLOSE: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
         ALERT: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><circle cx="12" cy="17" r="0.8" fill="currentColor"></circle></svg>',
-        SPARKLE: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l1.9 4.7L18.6 9.6l-4.7 1.9L12 16.2l-1.9-4.7-4.7-1.9 4.7-1.9L12 3z"></path><path d="M5 18l.8 1.7L7.5 20.5l-1.7.8L5 23l-.8-1.7-1.7-.8 1.7-.8L5 18z"></path><path d="M19 15l.7 1.3 1.3.7-1.3.7-.7 1.3-.7-1.3-1.3-.7 1.3-.7.7-1.3z"></path></svg>'
+        SPARKLE: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l1.9 4.7L18.6 9.6l-4.7 1.9L12 16.2l-1.9-4.7-4.7-1.9 4.7-1.9L12 3z"></path><path d="M5 18l.8 1.7L7.5 20.5l-1.7.8L5 23l-.8-1.7-1.7-.8 1.7-.8L5 18z"></path><path d="M19 15l.7 1.3 1.3.7-1.3.7-.7 1.3-.7-1.3-1.3-.7 1.3-.7.7-1.3z"></path></svg>',
+        DOWNLOAD: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
+        UPLOAD: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>'
     };
 
     SaudeEscola.SVGs = SVGs;
@@ -49,6 +51,8 @@
         toastTimer: null,
         clearWordsTimer: null,
         clearWordsConfirming: false,
+        removeStudentConfirmId: null,
+        removeStudentTimer: null,
         backdropPressStarted: false,
         lastFocusedEl: null
     };
@@ -141,6 +145,14 @@
             clearBtn.classList.remove('confirming');
             clearBtn.innerHTML = SVGs.TRASH + '<span>Limpar todas as palavras</span>';
         }
+    }
+
+    function resetRemoveStudentConfirmation() {
+        if (state.removeStudentTimer) {
+            global.clearTimeout(state.removeStudentTimer);
+            state.removeStudentTimer = null;
+        }
+        state.removeStudentConfirmId = null;
     }
 
     /* ----------------------------------------------------------------------
@@ -306,6 +318,7 @@
         }
         state.activeTab = aba;
         resetClearWordsConfirmation();
+        resetRemoveStudentConfirmation();
 
         var overlay = document.getElementById('teacherPanelOverlay');
         if (!overlay) return;
@@ -348,16 +361,26 @@
             alunosHtml = '<div class="tp-alert tp-alert-info">' + SVGs.ALERT + '<span>Nenhum aluno cadastrado ainda. Adicione os nomes abaixo para exibir sugestões clicáveis no Ranking durante o Modo Aula.</span></div>';
         } else {
             alunosHtml = '<div class="tp-pill-list">' + alunos.map(function (aluno) {
-                var id = escapeHtml(aluno && aluno.id !== undefined ? aluno.id : '');
+                var rawId = aluno && aluno.id !== undefined ? String(aluno.id) : '';
+                var id = escapeHtml(rawId);
                 var nome = escapeHtml(aluno && aluno.nome !== undefined ? aluno.nome : String(aluno || ''));
-                return '<span class="tp-student-pill"><span>' + nome + '</span><button type="button" class="tp-pill-remove" data-remove-student="' + id + '" aria-label="Remover ' + nome + '">' + SVGs.CLOSE + '</button></span>';
+                var isConfirming = state.removeStudentConfirmId !== null && String(state.removeStudentConfirmId) === rawId;
+                var pillClass = 'tp-student-pill' + (isConfirming ? ' is-confirming' : '');
+                var btnClass = 'tp-pill-remove' + (isConfirming ? ' confirming' : '');
+                var btnContent = isConfirming
+                    ? '<span>Confirmar?</span>'
+                    : SVGs.CLOSE;
+                var ariaLabel = isConfirming
+                    ? ('Toque novamente para remover ' + nome)
+                    : ('Remover ' + nome);
+                return '<span class="' + pillClass + '"><span>' + nome + '</span><button type="button" class="' + btnClass + '" data-remove-student="' + id + '" aria-label="' + ariaLabel + '">' + btnContent + '</button></span>';
             }).join('') + '</div>';
         }
 
         var batchHtml = state.batchBoxOpen ? [
             '<div class="tp-batch-box">',
-            '  <label class="tp-label" for="tpBatchStudentsInput">Adicionar vários alunos de uma vez (separe por vírgula ou uma linha por aluno):</label>',
-            '  <textarea id="tpBatchStudentsInput" class="tp-textarea" rows="4" placeholder="Ana Júlia&#10;João Pedro&#10;Maria Clara, Lucas"></textarea>',
+            '  <label class="tp-label" for="tpBatchStudentsInput">Adicionar vários alunos de uma vez (prefira Nome + Inicial por privacidade, separe por vírgula ou linha):</label>',
+            '  <textarea id="tpBatchStudentsInput" class="tp-textarea" rows="4" placeholder="Ana J.&#10;Pedro M.&#10;Maria C., Lucas S."></textarea>',
             '  <div class="tp-inline-actions">',
             '    <button type="button" id="tpSaveBatchBtn" class="tp-btn tp-btn-secondary">' + SVGs.CHECK + '<span>Importar lista</span></button>',
             '    <button type="button" id="tpCancelBatchBtn" class="tp-btn tp-btn-outline tp-btn-sm">Recolher</button>',
@@ -386,9 +409,9 @@
             '      <span class="tp-count-badge">' + alunos.length + ' ' + (alunos.length === 1 ? 'aluno' : 'alunos') + '</span>',
             '    </div>',
             '    <div class="tp-field">',
-            '      <label class="tp-label" for="tpStudentNameInput">Cadastro rápido de aluno</label>',
+            '      <label class="tp-label" for="tpStudentNameInput">Cadastro rápido de aluno (recomendado Nome + Inicial para privacidade na lousa)</label>',
             '      <div class="tp-input-row">',
-            '        <input id="tpStudentNameInput" class="tp-input" type="text" placeholder="Ex.: Ana Júlia" maxlength="60" autocomplete="off">',
+            '        <input id="tpStudentNameInput" class="tp-input" type="text" placeholder="Ex.: Ana J., Pedro M." maxlength="60" autocomplete="off">',
             '        <button type="button" id="tpAddStudentBtn" class="tp-btn tp-btn-primary">' + SVGs.CHECK + '<span>Adicionar aluno</span></button>',
             '      </div>',
             '    </div>',
@@ -397,6 +420,17 @@
             '    </div>',
             batchHtml,
             alunosHtml,
+            '  </div>',
+            '  <div class="tp-card tp-backup-card">',
+            '    <div class="tp-card-header-row">',
+            '      <h3 class="tp-card-title">' + SVGs.DOWNLOAD + '<span>Backup dos Dados</span></h3>',
+            '    </div>',
+            '    <p class="tp-backup-desc">Salve uma cópia da turma, palavras da semana, evolução e ranking em arquivo JSON, ou restaure um backup anterior.</p>',
+            '    <div class="tp-inline-actions">',
+            '      <button type="button" id="tpExportBackupBtn" class="tp-btn tp-btn-outline">' + SVGs.DOWNLOAD + '<span>Exportar JSON</span></button>',
+            '      <button type="button" id="tpImportBackupBtn" class="tp-btn tp-btn-outline">' + SVGs.UPLOAD + '<span>Importar JSON</span></button>',
+            '      <input type="file" id="tpImportBackupInput" accept=".json,application/json" style="display:none;" aria-hidden="true">',
+            '    </div>',
             '  </div>',
             '</div>'
         ].join('');
@@ -521,12 +555,27 @@
             });
         }
 
-        /* Remocao de alunos */
+        /* Remocao de alunos com confirmacao em 2 toques */
         var removeBtns = containerEl.querySelectorAll('.tp-pill-remove[data-remove-student]');
         for (var j = 0; j < removeBtns.length; j++) {
             (function (btn) {
                 btn.addEventListener('click', function () {
                     var id = btn.getAttribute('data-remove-student');
+                    if (state.removeStudentConfirmId !== id) {
+                        resetRemoveStudentConfirmation();
+                        state.removeStudentConfirmId = id;
+                        state.removeStudentTimer = global.setTimeout(function () {
+                            state.removeStudentConfirmId = null;
+                            state.removeStudentTimer = null;
+                            if (state.activeTab === 'turma' && TeacherPanel.isOpen()) {
+                                renderAbaTurma(containerEl);
+                            }
+                        }, 3500);
+                        renderAbaTurma(containerEl);
+                        return;
+                    }
+
+                    resetRemoveStudentConfirmation();
                     Storage.removerAluno(id);
                     state.hasConfigChanges = true;
                     TeacherPanel.atualizarIndicadoresMenu();
@@ -534,6 +583,90 @@
                     renderAbaTurma(containerEl);
                 });
             })(removeBtns[j]);
+        }
+
+        /* Exportar Backup JSON via Blob + download */
+        var exportBtn = containerEl.querySelector('#tpExportBackupBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function () {
+                if (typeof Storage.gerarBackupJSON !== 'function') {
+                    showToast('Função de exportação não disponível.', 'error');
+                    return;
+                }
+                try {
+                    var jsonStr = Storage.gerarBackupJSON();
+                    var dataStr = typeof Storage.getDataLocalISO === 'function'
+                        ? Storage.getDataLocalISO(new Date())
+                        : 'backup';
+                    var filename = 'backup-saude-escola-' + dataStr + '.json';
+                    var blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+                    var url = URL.createObjectURL(blob);
+                    var link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    global.setTimeout(function () {
+                        URL.revokeObjectURL(url);
+                    }, 1500);
+                    showToast('Backup JSON exportado com sucesso!', 'success');
+                } catch (errExport) {
+                    showToast('Não foi possível exportar o arquivo JSON.', 'error');
+                }
+            });
+        }
+
+        /* Importar Backup JSON via FileReader */
+        var importBtn = containerEl.querySelector('#tpImportBackupBtn');
+        var importInput = containerEl.querySelector('#tpImportBackupInput');
+        if (importBtn && importInput) {
+            importBtn.addEventListener('click', function () {
+                importInput.value = '';
+                importInput.click();
+            });
+
+            importInput.addEventListener('change', function () {
+                var file = importInput.files && importInput.files[0];
+                if (!file) return;
+
+                if (typeof FileReader !== 'function') {
+                    showToast('Leitor de arquivos não suportado neste navegador.', 'error');
+                    return;
+                }
+
+                var reader = new FileReader();
+                reader.onload = function (ev) {
+                    var content = ev && ev.target ? ev.target.result : '';
+                    if (typeof Storage.importarBackupJSON !== 'function') {
+                        showToast('Função de importação não disponível.', 'error');
+                        return;
+                    }
+
+                    var res = Storage.importarBackupJSON(content);
+                    if (!res || !res.ok) {
+                        showToast((res && res.erro) ? res.erro : 'Não foi possível importar o backup JSON.', 'error');
+                        return;
+                    }
+
+                    state.hasConfigChanges = true;
+                    TeacherPanel.atualizarIndicadoresMenu();
+                    if (SaudeEscola.Ranking && typeof SaudeEscola.Ranking.renderList === 'function') {
+                        SaudeEscola.Ranking.renderList();
+                    }
+
+                    var r = res.resumo || {};
+                    showToast(
+                        'Backup restaurado (' + (r.alunos || 0) + ' alunos, ' + (r.palavras || 0) + ' palavras, ' + (r.sessoes || 0) + ' sessões)!',
+                        'success'
+                    );
+                    renderAbaTurma(containerEl);
+                };
+                reader.onerror = function () {
+                    showToast('Erro ao ler o arquivo selecionado.', 'error');
+                };
+                reader.readAsText(file, 'utf-8');
+            });
         }
     }
 
@@ -980,6 +1113,7 @@
             if (!overlay) return;
 
             resetClearWordsConfirmation();
+            resetRemoveStudentConfirmation();
             overlay.classList.remove('is-open', 'active');
             document.body.classList.remove('tp-modal-open');
 

@@ -398,7 +398,12 @@
         }
 
         var infoAluno = opcoes && typeof opcoes === 'object' ? opcoes : {};
-        var alunoNome = infoAluno.alunoNome || 'Turma (sem identificação)';
+        var alunoNome = String(infoAluno.alunoNome || '').trim();
+        if (!alunoNome && !infoAluno.alunoId) {
+            // Descarta sessões órfãs sem identificação de aluno (ex.: saída antecipada pelo Menu Inicial)
+            sessaoAtual = null;
+            return { salvo: false, motivo: 'sem_identificacao' };
+        }
         var alunoChave = infoAluno.alunoChave;
         if (!alunoChave) {
             if (storage && typeof storage.normalizarChave === 'function') {

@@ -22,6 +22,8 @@
     var studentName = '';
     var selectedAlunoId = null;
     var lastSavedTimestamp = null;
+    var clearConfirming = false;
+    var clearConfirmTimer = null;
     var getStarsCallback = function () { return 0; };
     var resetStarsCallback = function () {};
     var goHomeCallback = null;
@@ -73,7 +75,7 @@
     }
 
     /**
-     * Monta o mini-teclado A-Z + botão APAGAR no modal de registro (uma única vez).
+     * Monta o mini-teclado A-Z + botões ESPAÇO e APAGAR no modal de registro (uma única vez).
      */
     function buildMiniKeyboard() {
         var grid = document.getElementById('miniKeyboardGrid');
@@ -92,6 +94,16 @@
                 grid.appendChild(btn);
             })(letters[i]);
         }
+
+        // Tecla ESPAÇO para permitir nomes compostos (ex.: ANA J) direto na lousa digital
+        var spaceBtn = document.createElement('button');
+        spaceBtn.type = 'button';
+        spaceBtn.className = 'mini-key mini-key-space';
+        spaceBtn.innerHTML = '<span>ESPAÇO</span>';
+        spaceBtn.onclick = function () {
+            onPressSpace();
+        };
+        grid.appendChild(spaceBtn);
 
         // Usa o ícone SVG do WordBank quando carregado, com fallback textual seguro
         var wordBank = getModule('WordBank');
@@ -240,10 +252,22 @@
      */
     function onPressChar(ch) {
         if (studentName.length >= MAX_NAME_LENGTH) return;
+        var val = String(ch == null ? '' : ch);
+        if (val === ' ' && (studentName.length === 0 || studentName.slice(-1) === ' ')) {
+            return;
+        }
         playAudio('playClick');
         selectedAlunoId = null;
-        studentName += String(ch == null ? '' : ch);
+        studentName += val;
         updateNameDisplay();
+    }
+
+    /**
+     * Adiciona um espaço simples para nomes compostos (sem permitir espaço inicial ou duplo).
+     */
+    function onPressSpace() {
+        if (studentName.length === 0 || studentName.slice(-1) === ' ') return;
+        onPressChar(' ');
     }
 
     /**
@@ -444,10 +468,32 @@
     }
 
     /**
+     * Reseta o estado de confirmação em 2 toques do botão ZERAR RANKING.
+     */
+    function resetClearConfirmation() {
+        if (clearConfirmTimer) {
+            global.clearTimeout(clearConfirmTimer);
+            clearConfirmTimer = null;
+        }
+        clearConfirming = false;
+
+        if (typeof document === 'undefined') return;
+        var btn = document.querySelector('#rankingModal .btn-clear-ranking');
+        if (!btn) return;
+        btn.classList.remove('confirming');
+        var spans = btn.querySelectorAll('span');
+        var labelSpan = spans.length > 0 ? spans[spans.length - 1] : null;
+        if (labelSpan) {
+            labelSpan.textContent = 'ZERAR RANKING';
+        }
+    }
+
+    /**
      * Abre o modal do Ranking da Turma e atualiza a listagem exibida.
      */
     function openModal() {
         playAudio('playPop');
+        resetClearConfirmation();
         renderList();
         var modal = document.getElementById('rankingModal');
         if (modal) {
@@ -459,24 +505,25 @@
      * Fecha o modal do Ranking da Turma e retorna diretamente ao Menu Inicial.
      */
     function closeModal() {
+        resetClearConfirmation();
         var modal = document.getElementById('rankingModal');
         if (modal) {
             modal.classList.remove('active');
         }
 
         if (typeof goHomeCallback === 'function') {
-            goHomeCallback();
+            goHomeCallback(true);
             return;
         }
 
         var game = getModule('Game');
         if (game && typeof game.goHome === 'function') {
-            game.goHome();
+            game.goHome(true);
             return;
         }
 
         if (typeof global.goHome === 'function') {
-            global.goHome();
+            global.goHome(true);
             return;
         }
 
@@ -484,10 +531,35 @@
     }
 
     /**
-     * Apaga todos os dados do Ranking, zera a pontuação atual e atualiza a lista.
+     * Apaga todos os dados do Ranking após confirmação em 2 toques rápidos.
      */
-    function clearData() {
+    function clearData(forceImmediate) {
         playAudio('playClick');
+
+        if (!forceImmediate && !clearConfirming) {
+            clearConfirming = true;
+            if (typeof document !== 'undefined') {
+                var btn = document.querySelector('#rankingModal .btn-clear-ranking');
+                if (btn) {
+                    btn.classList.add('confirming');
+                    var spans = btn.querySelectorAll('span');
+                    var labelSpan = spans.length > 0 ? spans[spans.length - 1] : null;
+                    if (labelSpan) {
+                        labelSpan.textContent = 'TOQUE NOVAMENTE PARA ZERAR';
+                    }
+                }
+            }
+            if (clearConfirmTimer) {
+                global.clearTimeout(clearConfirmTimer);
+            }
+            clearConfirmTimer = global.setTimeout(function () {
+                resetClearConfirmation();
+            }, 4000);
+            return false;
+        }
+
+        resetClearConfirmation();
+
         try {
             if (global.localStorage) {
                 global.localStorage.removeItem(STORAGE_KEY);
@@ -499,6 +571,7 @@
             resetStarsCallback();
         }
         renderList();
+        return true;
     }
 
     SaudeEscola.Ranking = {
@@ -511,12 +584,14 @@
         isRegisterBoxActive: isRegisterBoxActive,
         toggleRegisterBox: toggleRegisterBox,
         onPressChar: onPressChar,
+        onPressSpace: onPressSpace,
         onBackspace: onBackspace,
         handleKeydown: handleKeydown,
         saveStudent: saveStudent,
         openModal: openModal,
         closeModal: closeModal,
         clearData: clearData,
+        resetClearConfirmation: resetClearConfirmation,
         renderList: renderList
     };
 

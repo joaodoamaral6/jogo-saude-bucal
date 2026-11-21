@@ -255,6 +255,12 @@ footer.bottom-dock {
 }
 .btn-home:active { box-shadow: 0 1px 0 #D84315; }
 
+.btn-home.confirming {
+  background: #D32F2F;
+  box-shadow: 0 6px 0 #8E0000;
+  animation: gentlePulse 0.45s ease;
+}
+
 .btn-sound {
   background: #26A69A;
   box-shadow: 0 6px 0 #00796B;
@@ -1214,6 +1220,20 @@ footer.bottom-dock {
   box-shadow: 0 1px 0 #F57C00;
 }
 
+.mini-key.mini-key-space {
+  width: 9.2vw;
+  min-width: 72px;
+  background: #E0F7FA;
+  border-color: #26C6DA;
+  box-shadow: 0 4px 0 #00838F;
+  color: #006064;
+  font-size: clamp(0.85rem, 1.3vw, 1.15rem);
+}
+
+.mini-key.mini-key-space:active {
+  box-shadow: 0 1px 0 #00838F;
+}
+
 .mini-key.mini-key-back {
   width: 9vw;
   min-width: 68px;
@@ -1369,6 +1389,12 @@ footer.bottom-dock {
   font-size: clamp(1.1rem, 1.8vw, 1.65rem);
   padding: 1.5vh 2.5vw;
   border-radius: 22px;
+}
+
+.btn-clear-ranking.confirming {
+  background: linear-gradient(180deg, #B71C1C 0%, #7F0000 100%);
+  border-color: #FFF59D;
+  animation: gentlePulse 0.45s ease;
 }
 
 /* ================= REGRA A: CELULAR EM PÉ (PORTRAIT) ================= */
@@ -1706,6 +1732,7 @@ footer.bottom-dock {
     font-size: clamp(0.9rem, 3.2vw, 1.2rem);
   }
 
+  .mini-key.mini-key-space,
   .mini-key.mini-key-back {
     width: 18vw;
   }

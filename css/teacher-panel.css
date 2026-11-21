@@ -770,6 +770,12 @@ body.tp-modal-open {
     font-weight: 800;
 }
 
+.tp-student-pill.is-confirming {
+    background: #FFEBEE;
+    border-color: #EF9A9A;
+    color: #B71C1C;
+}
+
 .tp-pill-remove {
     width: 30px;
     height: 30px;
@@ -786,14 +792,37 @@ body.tp-modal-open {
     transition: background-color 0.14s ease, color 0.14s ease;
 }
 
+.tp-pill-remove.confirming {
+    width: auto;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #D32F2F;
+    color: #FFFFFF;
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
 .tp-pill-remove:hover {
     background: #FFCDD2;
     color: #B71C1C;
 }
 
+.tp-pill-remove.confirming:hover {
+    background: #B71C1C;
+    color: #FFFFFF;
+}
+
 .tp-pill-remove svg {
     width: 15px;
     height: 15px;
+}
+
+.tp-backup-desc {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #475569;
+    line-height: 1.4;
 }
 
 /* Preview de silabas e lista de palavras */

@@ -1183,19 +1183,207 @@
   }
 
   // =========================================================================
+  // BACKUP COMPLETO EM JSON (EXPORTACAO E IMPORTACAO SANITIZADA)
+  // =========================================================================
+
+  var RANKING_STORAGE_KEY = 'saudeBucalRanking';
+  var MAX_RANKING_BACKUP_ENTRIES = 30;
+  var MAX_RANKING_NAME_LENGTH = 18;
+  var rankingFallback = null;
+
+  /**
+   * Sanitiza a lista de pontuacoes do Ranking (saudeBucalRanking).
+   */
+  function sanitizarListaRanking(listaBruta) {
+    if (!Array.isArray(listaBruta)) {
+      return [];
+    }
+
+    var limpa = [];
+    for (var i = 0; i < listaBruta.length; i += 1) {
+      var item = listaBruta[i];
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        continue;
+      }
+
+      var rawName = String(item.name == null ? '' : item.name)
+        .replace(/\s+/g, ' ')
+        .trim();
+      var nomeLimpo = rawName
+        ? rawName.slice(0, MAX_RANKING_NAME_LENGTH)
+        : 'ALUNO';
+
+      var starsNum = sanitizarNumeroNaoNegativo(item.stars);
+      var dateNum = typeof item.date === 'number' && isFinite(item.date) && item.date > 0
+        ? Math.floor(item.date)
+        : Date.now();
+
+      limpa.push({
+        name: nomeLimpo,
+        stars: starsNum,
+        date: dateNum
+      });
+    }
+
+    limpa.sort(function (a, b) {
+      return (b.stars - a.stars) || (b.date - a.date);
+    });
+
+    return limpa.slice(0, MAX_RANKING_BACKUP_ENTRIES);
+  }
+
+  function carregarRankingSeguro() {
+    try {
+      if (global.localStorage) {
+        var raw = global.localStorage.getItem(RANKING_STORAGE_KEY);
+        if (!raw) {
+          return [];
+        }
+        var parsed = JSON.parse(raw);
+        return sanitizarListaRanking(parsed);
+      }
+    } catch (e) {}
+
+    return Array.isArray(rankingFallback) ? sanitizarListaRanking(rankingFallback) : [];
+  }
+
+  function salvarRankingSeguro(lista) {
+    var limpa = sanitizarListaRanking(lista);
+    rankingFallback = limpa;
+    try {
+      if (global.localStorage) {
+        global.localStorage.setItem(RANKING_STORAGE_KEY, JSON.stringify(limpa));
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  /**
+   * Gera a string JSON formatada do backup completo (saudeEscola_v2_dados + saudeBucalRanking).
+   */
+  function gerarBackupJSON() {
+    var dados = carregarDados();
+    var ranking = carregarRankingSeguro();
+    var payload = {
+      tipo: 'saude_escola_backup',
+      versaoBackup: 1,
+      exportadoEm: new Date().toISOString(),
+      dataISO: getDataLocalISO(new Date()),
+      saudeEscola_v2_dados: dados,
+      saudeBucalRanking: ranking
+    };
+    return JSON.stringify(payload, null, 2);
+  }
+
+  /**
+   * Importa um backup JSON aplicando sanitizarDados() e sanitizacao de Ranking.
+   */
+  function importarBackupJSON(conteudoBruto) {
+    var parsed = null;
+
+    if (typeof conteudoBruto === 'string') {
+      var texto = conteudoBruto.trim();
+      if (!texto) {
+        return {
+          ok: false,
+          erro: 'O arquivo de backup selecionado está vazio.'
+        };
+      }
+      try {
+        parsed = JSON.parse(texto);
+      } catch (erroParse) {
+        return {
+          ok: false,
+          erro: 'Arquivo inválido: o conteúdo não é um JSON válido.'
+        };
+      }
+    } else if (conteudoBruto && typeof conteudoBruto === 'object' && !Array.isArray(conteudoBruto)) {
+      parsed = conteudoBruto;
+    } else {
+      return {
+        ok: false,
+        erro: 'Formato de backup não reconhecido.'
+      };
+    }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {
+        ok: false,
+        erro: 'Estrutura de backup inválida.'
+      };
+    }
+
+    // Aceita tanto o envelope completo de backup quanto o objeto direto de saudeEscola_v2_dados
+    var possuiEnvelope = Boolean(
+      parsed.saudeEscola_v2_dados ||
+      parsed.dados ||
+      parsed.saudeBucalRanking ||
+      parsed.ranking
+    );
+    var possuiChavesDiretas = Boolean(
+      parsed.config ||
+      Array.isArray(parsed.turma) ||
+      Array.isArray(parsed.palavrasSemana) ||
+      Array.isArray(parsed.sessoes)
+    );
+
+    if (!possuiEnvelope && !possuiChavesDiretas) {
+      return {
+        ok: false,
+        erro: 'O arquivo JSON não contém dados válidos do jogo Saúde na Escola.'
+      };
+    }
+
+    var origemDados = parsed.saudeEscola_v2_dados || parsed.dados || (possuiChavesDiretas ? parsed : {});
+    if (!origemDados || typeof origemDados !== 'object' || Array.isArray(origemDados)) {
+      return {
+        ok: false,
+        erro: 'A seção de dados pedagógicos do backup está corrompida.'
+      };
+    }
+
+    var dadosSanitizados = sanitizarDados(origemDados);
+    salvarDados(dadosSanitizados);
+
+    var temCampoRanking = Array.isArray(parsed.saudeBucalRanking) || Array.isArray(parsed.ranking);
+    var rankingSanitizado = temCampoRanking
+      ? sanitizarListaRanking(parsed.saudeBucalRanking || parsed.ranking)
+      : carregarRankingSeguro();
+
+    if (temCampoRanking) {
+      salvarRankingSeguro(rankingSanitizado);
+    }
+
+    return {
+      ok: true,
+      resumo: {
+        alunos: dadosSanitizados.turma.length,
+        palavras: dadosSanitizados.palavrasSemana.length,
+        sessoes: dadosSanitizados.sessoes.length,
+        ranking: rankingSanitizado.length
+      }
+    };
+  }
+
+  // =========================================================================
   // EXPORTACAO GLOBAL (100% OFFLINE / SEM MODULOS ES)
   // =========================================================================
 
   global.SaudeEscola = global.SaudeEscola || {};
   global.SaudeEscola.Storage = {
     STORAGE_KEY: STORAGE_KEY,
+    RANKING_STORAGE_KEY: RANKING_STORAGE_KEY,
     SVGs: SVGs,
 
     normalizarChave: normalizarChave,
     normalizarPlain: normalizarPlain,
     getDataLocalISO: getDataLocalISO,
+    sanitizarDados: sanitizarDados,
     carregarDados: carregarDados,
     salvarDados: salvarDados,
+    gerarBackupJSON: gerarBackupJSON,
+    importarBackupJSON: importarBackupJSON,
 
     getConfig: getConfig,
     setModo: setModo,

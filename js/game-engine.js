@@ -10,6 +10,8 @@
 
   // Flag para garantir que listeners e componentes sejam inicializados uma unica vez
   let initialized = false;
+  let homeConfirming = false;
+  let homeConfirmTimer = null;
 
   /**************************************************************
    * 1. ESTADO CENTRAL DO JOGO
@@ -284,6 +286,7 @@
     if (btnBack) {
       btnBack.style.display = showNav ? 'inline-flex' : 'none';
     }
+    resetHomeConfirmation();
 
     const btnNext = document.getElementById('btnNextWord');
     if (btnNext) {
@@ -292,12 +295,31 @@
   }
 
   /**
-   * Salva silenciosamente a sessao pendente no Analytics antes de trocar ou encerrar atividade.
+   * Reseta o estado de confirmacao em 2 toques do botao MENU INICIAL na barra inferior.
    */
-  function flushPendingAnalyticsIfNeeded() {
+  function resetHomeConfirmation() {
+    if (homeConfirmTimer) {
+      global.clearTimeout(homeConfirmTimer);
+      homeConfirmTimer = null;
+    }
+    homeConfirming = false;
+    const btnBack = document.getElementById('btnBackMenu');
+    if (!btnBack) return;
+    btnBack.classList.remove('confirming');
+    const spans = btnBack.querySelectorAll('span');
+    const labelSpan = spans.length > 0 ? spans[spans.length - 1] : null;
+    if (labelSpan) {
+      labelSpan.textContent = 'MENU INICIAL';
+    }
+  }
+
+  /**
+   * Descarta qualquer sessao pendente nao identificada (evita gravar sessoes orfas ao sair no meio).
+   */
+  function discardPendingAnalyticsIfNeeded() {
     const analytics = getSaudeModule('Analytics');
-    if (analytics && typeof analytics.temSessaoPendente === 'function' && analytics.temSessaoPendente()) {
-      analytics.finalizarESalvarSessao();
+    if (analytics && typeof analytics.descartarSessao === 'function') {
+      analytics.descartarSessao();
     }
   }
 
@@ -332,16 +354,45 @@
   }
 
   /**
-   * Retorna para o Menu Inicial encerrando sessao pendente e limpando rascunho do Ranking.
+   * Retorna para o Menu Inicial descartando sessao pendente nao identificada e limpando rascunho do Ranking.
+   * Quando acionado na barra inferior durante uma fase ativa, exige confirmacao em 2 toques.
    */
-  function goHome() {
+  function goHome(forceImmediate) {
     playAudio('playClick');
-    flushPendingAnalyticsIfNeeded();
 
     const celebModal = document.getElementById('celebrationModal');
-    if (celebModal) celebModal.classList.remove('active');
-
     const rankingModal = document.getElementById('rankingModal');
+    const anyModalOpen = Boolean(
+      (celebModal && celebModal.classList.contains('active')) ||
+      (rankingModal && rankingModal.classList.contains('active'))
+    );
+
+    if (!forceImmediate && gameState.currentPhase > 0 && !anyModalOpen) {
+      if (!homeConfirming) {
+        homeConfirming = true;
+        const btnBack = document.getElementById('btnBackMenu');
+        if (btnBack) {
+          btnBack.classList.add('confirming');
+          const spans = btnBack.querySelectorAll('span');
+          const labelSpan = spans.length > 0 ? spans[spans.length - 1] : null;
+          if (labelSpan) {
+            labelSpan.textContent = 'TOQUE NOVAMENTE PARA SAIR';
+          }
+        }
+        if (homeConfirmTimer) {
+          global.clearTimeout(homeConfirmTimer);
+        }
+        homeConfirmTimer = global.setTimeout(function () {
+          resetHomeConfirmation();
+        }, 3500);
+        return false;
+      }
+    }
+
+    resetHomeConfirmation();
+    discardPendingAnalyticsIfNeeded();
+
+    if (celebModal) celebModal.classList.remove('active');
     if (rankingModal) rankingModal.classList.remove('active');
 
     const ranking = getSaudeModule('Ranking');
@@ -359,6 +410,7 @@
       teacherPanel.atualizarIndicadoresMenu();
     }
     updatePhaseWeeklyBadges();
+    return true;
   }
 
   /**
@@ -366,7 +418,8 @@
    */
   function startGameMode(mode) {
     playAudio('playPop');
-    flushPendingAnalyticsIfNeeded();
+    resetHomeConfirmation();
+    discardPendingAnalyticsIfNeeded();
 
     gameState.mode = mode;
     resetStars();
@@ -1259,7 +1312,7 @@
         startGameMode('JOURNEY');
       }
     } else {
-      flushPendingAnalyticsIfNeeded();
+      discardPendingAnalyticsIfNeeded();
       const ranking = getSaudeModule('Ranking');
       if (ranking && typeof ranking.resetDraft === 'function') {
         ranking.resetDraft();
