@@ -4,6 +4,31 @@ Todas as alterações notáveis, evoluções pedagógicas e decisões técnicas 
 
 ---
 
+## [v2.1.2 / CSS v2.2] — Responsividade Fluida Mobile (iOS Safari e Android Chrome)
+
+### 1. Resumo Executivo
+Esta entrega consolida o suporte responsivo fluido para smartphones **iOS (Safari)** e **Android (Chrome)** em larguras de **360px a 430px+** (retrato e paisagem), preservando **0% de alteração** no layout validado de lousa digital e desktop (`> 1024px`).
+
+### 2. Registro de Decisão de Arquitetura (Mini-ADR)
+
+#### ADR-07: Responsividade Mobile Fluida com Isolamento Estrito da Lousa Digital
+- **Contexto:** Em testes reais em celulares (360px–430px), regras de altura fixa em `vh` e larguras mínimas rígidas causavam quebra/corte na barra superior, estouro horizontal do botão de ação na barra inferior, sobreposição da engrenagem no Menu Inicial, teclas estreitas/cortadas na Fase 3, ocultação da 3ª aba no Painel da Professora e risco de zoom automático em inputs no iOS Safari.
+- **Decisão:**
+  - **Safe Area & Viewport:** Adicionado `viewport-fit=cover` no `index.html` e aplicado `env(safe-area-inset-*)` nas barras superior/inferior e overlays de modais para proteção contra notch, Dynamic Island e barras de gestos.
+  - **Prevenção de Zoom no iOS:** Definido `font-size: max(16px, 1rem)` em `.tp-input`, `.tp-textarea`, `.tp-select` e `.ev-select` nas media queries mobile.
+  - **Barra Superior e Inferior:** Conversão de `header.top-bar` para altura fluida (`min-height` + `overflow: hidden`) com pílulas em `white-space: nowrap`; em retrato (`<= 600px`), ocultado o `.feedback-banner` e aplicado `.dock-group { display: contents; }` com `footer.bottom-dock { justify-content: space-evenly; }` para distribuir uniformemente os botões sem cortes nem espaços vazios.
+  - **Menu Inicial e Teclado Virtual (Fase 3):** Espaço reservado à direita no `.hero-text` para a engrenagem, `flex-wrap` no seletor de questões, cards fluidos via `clamp()`/`flex: 1` com folga inferior e redução ergonômica de `.keyboard-container` com folga dedicada nos botões `APAGAR` e `VERIFICAR`.
+  - **Painel da Professora e Modais:** `.tp-tab` com `flex: 1 1 0; min-width: 0;` mantendo as **3 abas visíveis simultaneamente** sem rolagem horizontal; `.modal-card` e `.ranking-modal-card` com `max-height: 92dvh; overflow-y: auto;` e mini-teclado ajustado para `ESPAÇO` e `APAGAR`.
+  - **Cache Busting:** Adicionado `?v=2.2` nos links de `css/game.css` e `css/teacher-panel.css` no `index.html` para forçar atualização imediata em navegadores móveis.
+- **Consequência:** Experiência fluida e confortável em smartphones iOS e Android (retrato e paisagem) mantendo **100% intacto** o layout de lousa digital e desktop (`> 1024px`).
+
+### 3. Histórico de Entregas desta Atualização
+- **`3b80dec`**: Centralização uniforme dos botões do rodapé (`display: contents` + `space-evenly`), folga adicional em `APAGAR`/`VERIFICAR` na Fase 3 e atualização do cache busting para `?v=2.2`.
+- **`c5d67ab`**: Ajuste de largura dos botões do rodapé em telas `<= 480px` e introdução do cache busting nos links de CSS.
+- **`21acfc5` (`feat/responsividade-mobile`)**: Implementação das 3 etapas de responsividade fluida mobile em `index.html`, `css/game.css` e `css/teacher-panel.css`.
+
+---
+
 ## [v2.1.1] — Auditoria de Segurança, IHC para Lousa Digital, Evolução por Fase e Refinamento Visual
 
 ### 1. Resumo Executivo

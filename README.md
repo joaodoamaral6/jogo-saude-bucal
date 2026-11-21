@@ -43,6 +43,8 @@ O projeto **Saúde na Escola: Saúde Bucal** une Engenharia de Software e práti
   - Exportação e restauração local de todo o banco da turma (`saudeEscola_v2_dados` e `saudeBucalRanking`) em arquivo `.json`, com validação estrita de esquema e sanitização contra XSS.
 - **IHC para Lousa Digital Touch (Confirmação em 2 Toques):**
   - Ergonomia projetada para a estatura de crianças de 6 a 7 anos (controles interativos na metade inferior da tela) e proteção contra toques acidentais por confirmação em 2 toques rápidos com reset automático nas ações destrutivas (`MENU INICIAL` durante partida ativa, `ZERAR RANKING`, exclusão de aluno e limpeza de dados).
+- **Compatibilidade Responsiva para Celulares (iOS e Android) e Tablets:**
+  - Além do uso principal na lousa digital (`> 1024px`), o jogo conta com layout mobile fluido (retrato e paisagem, de `360px` a `430px+`) compatível com **iOS Safari** e **Android Chrome**, incluindo suporte a *safe areas* (`viewport-fit=cover` + `env(safe-area-inset-*)`), prevenção de zoom automático em formulários, teclado virtual ergonômico e acesso completo ao Painel da Professora em telas pequenas.
 - **Amplificação Segura de Áudio (`Web Audio API`):**
   - Cadeia master com `DynamicsCompressorNode` (`threshold: -18dB`, `ratio: 6`) e `GainNode` (`1.35`) calibrada para alto-falantes de TVs e lousas HDMI em salas de aula ruidosas, sem distorção (*clipping*).
 
