@@ -48,7 +48,7 @@
         'DENTRO DA MINHA ___ MORAM OS DENTES E A LÍNGUA.',
         'QUANDO VOU CANTAR, ABRO BEM A MINHA ___!',
         'CUIDAR DA ___ FAZ MUITO BEM PARA A NOSSA SAÚDE.',
-        'DEPOIS DO LANCHE, LAVO E ESCOVO A MINHA ___!'
+        'DEPOIS DO LANCHE, ENXÁGUO E DEIXO A MINHA ___ LIMPINHA!'
       ],
       sentenceBefore: 'ABRO BEM A ',
       sentenceAfter: ' PARA ESCOVAR OS DENTES.',
@@ -85,11 +85,11 @@
       clues: [
         'BRANQUINHO E DURO, SERVE PARA MASTIGAR A COMIDA!',
         'TEMOS VÁRIOS DELES ENFILEIRADOS DENTRO DA BOCA.',
-        'QUANDO SOMOS CRIANÇAS, ELE É CHAMADO DE LEITE!',
+        'QUANDO SOMOS CRIANÇAS, ELE É DE LEITE E DEPOIS TROCA!',
         'PRECISA SER ESCOVADO TODOS OS DIAS PARA BRILHAR!',
         'ELE CORTA E TRITURA OS ALIMENTOS QUE COMEMOS.',
         'QUANDO ELE CAI NA INFÂNCIA, A FADA VEM VISITAR!',
-        'O DENTISTA OLHA UM POR UM PARA VER SE ESTÃO FORTES.',
+        'CADA UM PRECISA FICAR BEM LIMPINHO E FORTE NA BOCA!',
         'JUNTO COM OS OUTROS, FORMA O NOSSO SORRISO!'
       ],
       sentence: 'QUANDO O ___ DE LEITE CAI, NASCE OUTRO NO LUGAR!',
@@ -100,8 +100,8 @@
         'PASSO A ESCOVA COM CARINHO EM CIMA DE CADA ___.',
         'SE NÃO CUIDARMOS BEM, O ___ PODE FICAR DOENTE.',
         'MEU ___ BRILHA QUANDO TERMINO A ESCOVAÇÃO!',
-        'O DENTISTA CUIDA DE CADA ___ COM MUITO CAPRICHO.',
-        'USAMOS O ___ PARA MASTIGAR TODA A COMIDA.'
+        'CUIDAMOS DE CADA ___ COM MUITO CAPRICHO TODOS OS DIAS.',
+        'CADA ___ AJUDA A MASTIGAR TODA A COMIDA.'
       ],
       sentenceBefore: 'MEU ',
       sentenceAfter: ' FICA BRANQUINHO E FORTE!',
@@ -198,8 +198,8 @@
       clue: 'TEM CERDAS MACIAS PARA LIMPAR TODOS OS DENTES.',
       clues: [
         'TEM CERDAS MACIAS PARA LIMPAR TODOS OS DENTES.',
-        'COLOCAMOS A PASTA EM CIMA DELA PARA ESCOVAR.',
-        'FAZ MOVIMENTOS DE VAI E VEM PARA LIMPAR O SORRISO!',
+        'COLOCAMOS A PASTA EM CIMA DELA PARA LIMPAR OS DENTES.',
+        'FAZ MOVIMENTOS DE VAIVÉM PARA LIMPAR O SORRISO!',
         'CADA PESSOA TEM A SUA E NÃO PODE EMPRESTAR!',
         'É USADA DEPOIS DO CAFÉ, DO ALMOÇO E DO JANTAR!',
         'QUANDO AS CERDAS FICAM VELHINHAS, PRECISAMOS DE UMA NOVA.',
@@ -214,7 +214,7 @@
         'CADA CRIANÇA TEM A SUA PRÓPRIA ___ DE DENTE!',
         'MOVIMENTO A ___ PARA LÁ E PARA CÁ COM CUIDADO.',
         'QUANDO A ___ FICA VELHINHA, TROCAMOS POR UMA NOVA.',
-        'LEVO A MINHA ___ NA MOCHILA PARA ESCOVAR NA ESCOLA!',
+        'LEVO A MINHA ___ NA MOCHILA PARA LIMPAR OS DENTES NA ESCOLA!',
         'COLOCO O CREME DENTAL EM CIMA DA ___!'
       ],
       sentenceBefore: 'EU USO A ',
@@ -418,9 +418,9 @@
       syllables: ['CÁ', 'RI', 'E'],
       intruders: ['CO', 'RA', 'I', 'TU'],
       emoji: '',
-      clue: 'BICHINHO QUE APARECE NOS DENTES SE NÃO ESCOVAR APÓS COMER.',
+      clue: 'BICHINHO QUE APARECE NOS DENTES SE NÃO ESCOVARMOS APÓS COMER.',
       clues: [
-        'BICHINHO QUE APARECE NOS DENTES SE NÃO ESCOVAR APÓS COMER.',
+        'BICHINHO QUE APARECE NOS DENTES SE NÃO ESCOVARMOS APÓS COMER.',
         'GOSTA DE RESTINHOS DE DOCE QUE FICAM ESQUECIDOS NO DENTE.',
         'PODE FAZER UM BURAQUINHO NO DENTE SE NÃO CUIDARMOS BEM.',
         'VAI EMBORA CORRENDO QUANDO USAMOS A ESCOVA, A PASTA E O FIO!',
@@ -483,7 +483,7 @@
       clues: [
         'SENTE O GOSTO DOS ALIMENTOS DOCES E SALGADOS!',
         'MORA DENTRO DA BOCA E NOS AJUDA A FALAR E ENGOLIR.',
-        'É ROSINHA, SE MEXE BASTANTE E TAMBÉM PRECISA SER ESCOVADA!',
+        'É ROSINHA, ELA SE MEXE BASTANTE E TAMBÉM PRECISA SER ESCOVADA!',
         'SENTE SE A COMIDA ESTÁ QUENTE OU SE O SORVETE ESTÁ GELADO.',
         'NO FINAL DA ESCOVAÇÃO, PASSAMOS A ESCOVA NELA DE LEVE.',
         'AJUDA A MISTURAR A COMIDA ENQUANTO ESTAMOS MASTIGANDO.',
@@ -585,71 +585,54 @@
   /* ----------------------------------------------------------------------
      3. SVGs base da interface (mantidos separados de SaudeEscola.SVGs)
      ---------------------------------------------------------------------- */
-  var SVGS = {
-    SOUND_ON: [
-      '',
-      '      <svg viewBox="0 0 44 44" aria-hidden="true">',
-      '        <ellipse cx="19" cy="39" rx="12" ry="2.2" fill="#004D40" fill-opacity="0.18"/>',
-      '        <rect x="4" y="15" width="9.5" height="14" rx="4.2" fill="#FF9800"/>',
-      '        <path d="M4.5 23 H13.5 V25.5 C13.5 27.5 11.8 29 9.5 29 H8 C5.8 29 4.5 27.5 4.5 25.5 Z" fill="#F57C00"/>',
-      '        <path d="M6.5 17.5 H11.5" fill="none" stroke="#FFE082" stroke-width="2" stroke-linecap="round"/>',
-      '        <rect x="4" y="15" width="9.5" height="14" rx="4.2" fill="none" stroke="#E65100" stroke-width="2.6"/>',
-      '        <path d="M13.5 15.2 L24.5 7.4 C26 6.4 27.5 7.4 27.5 9.2 L27.5 34.8 C27.5 36.6 26 37.6 24.5 36.6 L13.5 28.8 Z" fill="#FFD54F"/>',
-      '        <path d="M14 25 L27 29.5 L27 34.5 C27 36.2 25.7 36.8 24.5 36 L14 28.6 Z" fill="#FFB300" fill-opacity="0.6"/>',
-      '        <path d="M16.5 15.8 L24 10.6 L24 15.8 L16.5 19 Z" fill="#FFFDE7" fill-opacity="0.88"/>',
-      '        <path d="M13.5 15.2 L24.5 7.4 C26 6.4 27.5 7.4 27.5 9.2 L27.5 34.8 C27.5 36.6 26 37.6 24.5 36.6 L13.5 28.8 Z" fill="none" stroke="#E65100" stroke-width="2.6" stroke-linejoin="round"/>',
-      '        <path d="M27.5 17 C30 18.2 30 25.8 27.5 27" fill="#FFCA28" stroke="#E65100" stroke-width="2" stroke-linecap="round"/>',
-      '        <path d="M32 14.5 Q37 22 32 29.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"/>',
-      '        <path d="M36 9.5 Q42.5 22 36 34.5" fill="none" stroke="#FFF59D" stroke-width="3.2" stroke-linecap="round"/>',
-      '        <circle cx="38.5" cy="9" r="1.5" fill="#FFFFFF"/>',
-      '      </svg>',
-      '    '
-    ].join('\n'),
+  function getUiIcon(key, fallback) {
+    var ui = global.SaudeEscola && global.SaudeEscola.UiIcons;
+    return (ui && typeof ui[key] === 'string' && ui[key]) ? ui[key] : (fallback || '');
+  }
 
-    SOUND_OFF: [
-      '',
-      '      <svg viewBox="0 0 44 44" aria-hidden="true">',
-      '        <ellipse cx="19" cy="39" rx="12" ry="2.2" fill="#263238" fill-opacity="0.18"/>',
-      '        <rect x="4" y="15" width="9.5" height="14" rx="4.2" fill="#90A4AE"/>',
-      '        <path d="M4.5 23 H13.5 V25.5 C13.5 27.5 11.8 29 9.5 29 H8 C5.8 29 4.5 27.5 4.5 25.5 Z" fill="#607D8B" fill-opacity="0.5"/>',
-      '        <path d="M6.5 17.5 H11.5" fill="none" stroke="#ECEFF1" stroke-width="1.8" stroke-linecap="round"/>',
-      '        <rect x="4" y="15" width="9.5" height="14" rx="4.2" fill="none" stroke="#37474F" stroke-width="2.6"/>',
-      '        <path d="M13.5 15.2 L24.5 7.4 C26 6.4 27.5 7.4 27.5 9.2 L27.5 34.8 C27.5 36.6 26 37.6 24.5 36.6 L13.5 28.8 Z" fill="#CFD8DC"/>',
-      '        <path d="M14 25 L27 29.5 L27 34.5 C27 36.2 25.7 36.8 24.5 36 L14 28.6 Z" fill="#90A4AE" fill-opacity="0.55"/>',
-      '        <path d="M16.5 15.8 L24 10.6 L24 15.8 L16.5 19 Z" fill="#FFFFFF" fill-opacity="0.78"/>',
-      '        <path d="M13.5 15.2 L24.5 7.4 C26 6.4 27.5 7.4 27.5 9.2 L27.5 34.8 C27.5 36.6 26 37.6 24.5 36.6 L13.5 28.8 Z" fill="none" stroke="#37474F" stroke-width="2.6" stroke-linejoin="round"/>',
-      '        <circle cx="34" cy="22" r="8.2" fill="#EF5350" stroke="#B71C1C" stroke-width="2.4"/>',
-      '        <path d="M29.5 17.5 A6.2 6.2 0 0 1 36.5 16" fill="none" stroke="#FFCDD2" stroke-width="1.6" stroke-linecap="round"/>',
-      '        <path d="M30.8 18.8 L37.2 25.2 M37.2 18.8 L30.8 25.2" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round"/>',
-      '      </svg>',
-      '    '
-    ].join('\n'),
+  var SVGS = {
+    SOUND_ON: getUiIcon('SOUND_ON', [
+      '<svg viewBox="0 0 44 44" aria-hidden="true">',
+      '  <ellipse cx="19" cy="39" rx="12" ry="2.2" fill="#004D40" fill-opacity="0.18"/>',
+      '  <rect x="4" y="15" width="9.5" height="14" rx="4.2" fill="#FF9800" stroke="#E65100" stroke-width="2.6"/>',
+      '  <path d="M13.5 15.2 L24.5 7.4 C26 6.4 27.5 7.4 27.5 9.2 L27.5 34.8 C27.5 36.6 26 37.6 24.5 36.6 L13.5 28.8 Z" fill="#FFD54F" stroke="#E65100" stroke-width="2.6" stroke-linejoin="round"/>',
+      '  <path d="M32 14.5 Q37 22 32 29.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"/>',
+      '  <path d="M36 9.5 Q42.5 22 36 34.5" fill="none" stroke="#FFF59D" stroke-width="3.2" stroke-linecap="round"/>',
+      '</svg>'
+    ].join('\n')),
+
+    SOUND_OFF: getUiIcon('SOUND_OFF', [
+      '<svg viewBox="0 0 44 44" aria-hidden="true">',
+      '  <ellipse cx="19" cy="39" rx="12" ry="2.2" fill="#263238" fill-opacity="0.18"/>',
+      '  <rect x="4" y="15" width="9.5" height="14" rx="4.2" fill="#90A4AE" stroke="#37474F" stroke-width="2.6"/>',
+      '  <path d="M13.5 15.2 L24.5 7.4 C26 6.4 27.5 7.4 27.5 9.2 L27.5 34.8 C27.5 36.6 26 37.6 24.5 36.6 L13.5 28.8 Z" fill="#CFD8DC" stroke="#37474F" stroke-width="2.6" stroke-linejoin="round"/>',
+      '  <circle cx="34" cy="22" r="8.2" fill="#EF5350" stroke="#B71C1C" stroke-width="2.4"/>',
+      '  <path d="M30.8 18.8 L37.2 25.2 M37.2 18.8 L30.8 25.2" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round"/>',
+      '</svg>'
+    ].join('\n')),
 
     PLAY_ICON: [
-      '',
-      '      <span style="display:inline-flex;align-items:center;">',
-      '        <svg viewBox="0 0 40 40" aria-hidden="true">',
-      '          <circle cx="20" cy="20" r="16" fill="#FFEE58" stroke="#F57F17" stroke-width="2.8"/>',
-      '          <path d="M10 12 A12 12 0 0 1 25 8.5" fill="none" stroke="#FFFDE7" stroke-width="2.8" stroke-linecap="round"/>',
-      '          <polygon points="15.5,11.5 29.5,20 15.5,28.5" fill="#2E7D32" stroke="#1B5E20" stroke-width="2.2" stroke-linejoin="round"/>',
-      '        </svg>',
-      '      </span>',
-      '    '
+      '<svg viewBox="0 0 40 40" aria-hidden="true">',
+      '  <circle cx="20" cy="20" r="16" fill="#FFEE58" stroke="#F57F17" stroke-width="2.8"/>',
+      '  <path d="M10 12 A12 12 0 0 1 25 8.5" fill="none" stroke="#FFFDE7" stroke-width="2.8" stroke-linecap="round"/>',
+      '  <polygon points="15.5,11.5 29.5,20 15.5,28.5" fill="#2E7D32" stroke="#1B5E20" stroke-width="2.2" stroke-linejoin="round"/>',
+      '</svg>'
     ].join('\n'),
 
-    REPLAY_ICON: [
-      '',
-      '      <span style="display:inline-flex;align-items:center;">',
-      '        <svg viewBox="0 0 40 40" aria-hidden="true">',
-      '          <circle cx="20" cy="20" r="16" fill="#FFFFFF" fill-opacity="0.18"/>',
-      '          <path d="M9.5 17 A11.5 11.5 0 0 1 29.5 12" fill="none" stroke="#FFF176" stroke-width="4.2" stroke-linecap="round"/>',
-      '          <polygon points="31.5,5.5 34.5,15.5 24,14.5" fill="#FFF176" stroke="#F57F17" stroke-width="1.6" stroke-linejoin="round"/>',
-      '          <path d="M30.5 23 A11.5 11.5 0 0 1 10.5 28" fill="none" stroke="#80DEEA" stroke-width="4.2" stroke-linecap="round"/>',
-      '          <polygon points="8.5,34.5 5.5,24.5 16,25.5" fill="#80DEEA" stroke="#00838F" stroke-width="1.6" stroke-linejoin="round"/>',
-      '        </svg>',
-      '      </span>',
-      '    '
-    ].join('\n'),
+    NEXT_CYCLE: getUiIcon('NEXT_CYCLE', [
+      '<svg viewBox="0 0 40 40" aria-hidden="true">',
+      '  <circle cx="20" cy="20" r="16" fill="#FFFFFF" fill-opacity="0.18"/>',
+      '  <path d="M9.5 17 A11.5 11.5 0 0 1 29.5 12" fill="none" stroke="#FFF176" stroke-width="4.2" stroke-linecap="round"/>',
+      '  <polygon points="31.5,5.5 34.5,15.5 24,14.5" fill="#FFF176" stroke="#F57F17" stroke-width="1.6" stroke-linejoin="round"/>',
+      '  <path d="M30.5 23 A11.5 11.5 0 0 1 10.5 28" fill="none" stroke="#80DEEA" stroke-width="4.2" stroke-linecap="round"/>',
+      '  <polygon points="8.5,34.5 5.5,24.5 16,25.5" fill="#80DEEA" stroke="#00838F" stroke-width="1.6" stroke-linejoin="round"/>',
+      '</svg>'
+    ].join('\n')),
+
+    HOME: getUiIcon('HOME', ''),
+    TROPHY_HEADER: getUiIcon('TROPHY_HEADER', ''),
+    TROPHY_MODAL: getUiIcon('TROPHY_MODAL', ''),
+    TROPHY_RANKING: getUiIcon('TROPHY_RANKING', ''),
 
     CARD_TOOTH: [
       '',
@@ -684,128 +667,169 @@
     ].join('\n'),
 
     MASCOT_HERO: [
-      '',
-      '        <svg class="mascot-svg" viewBox="0 0 150 150" width="100%" height="100%" aria-hidden="true">',
-      '          <ellipse class="mascot-shadow" cx="75" cy="138" rx="35" ry="6.5" fill="#0288D1" fill-opacity="0.16"/>',
-      '          <g class="mascot-cape">',
-      '            <path d="M34 56 Q16 96 14 126 Q46 133 75 127 Q104 133 136 126 Q134 96 116 56 Z" fill="#FF7043"/>',
-      '            <path d="M110 58 Q128 96 131 124 Q112 128 94 126 Q106 94 102 60 Z" fill="#E64A19" fill-opacity="0.45"/>',
-      '            <path d="M34 56 Q16 96 14 126 Q46 133 75 127 Q104 133 136 126 Q134 96 116 56 Z" fill="none" stroke="#BF360C" stroke-width="4" stroke-linejoin="round"/>',
-      '          </g>',
-      '          <g class="mascot-arm-left">',
-      '            <path d="M40 76 Q22 86 24 100 Q26 108 34 106 Q41 102 42 88 Z" fill="#FFFFFF" stroke="#0288D1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>',
-      '            <circle cx="29" cy="100" r="6.5" fill="#FFFFFF" stroke="#0288D1" stroke-width="3.6"/>',
-      '          </g>',
-      '          <g class="mascot-arm-right">',
-      '            <path d="M108 75 Q126 62 128 48 Q129 40 121 41 Q113 44 109 62 Z" fill="#FFFFFF" stroke="#0288D1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>',
-      '            <circle cx="125" cy="45" r="7" fill="#FFFFFF" stroke="#0288D1" stroke-width="3.6"/>',
-      '            <path d="M132 33 Q138 38 136 45" fill="none" stroke="#FFD54F" stroke-width="2.6" stroke-linecap="round"/>',
-      '          </g>',
-      '          <g class="mascot-body-group">',
-      '            <path d="M42 26 C24 26 21 63 32 90 C38 106 41 128 53 128 C61 128 65 103 75 103 C85 103 89 128 97 128 C109 128 112 106 118 90 C129 63 126 26 108 26 C92 26 86 36 75 36 C64 36 58 26 42 26 Z" fill="#FFFFFF"/>',
-      '            <path d="M106 28 C120 34 123 62 113 88 C107 104 104 124 96 124 C90 124 86 108 81 101 C90 100 98 92 104 78 C113 59 113 39 103 29 Z" fill="#E1F5FE"/>',
-      '            <path d="M39 38 C32 45 32 61 36 73" fill="none" stroke="#E0F7FA" stroke-width="5.5" stroke-linecap="round"/>',
-      '            <path d="M42 26 C24 26 21 63 32 90 C38 106 41 128 53 128 C61 128 65 103 75 103 C85 103 89 128 97 128 C109 128 112 106 118 90 C129 63 126 26 108 26 C92 26 86 36 75 36 C64 36 58 26 42 26 Z" fill="none" stroke="#0288D1" stroke-width="4.6" stroke-linejoin="round"/>',
-      '            <g class="mascot-eyes-normal">',
-      '              <path d="M48 48 Q55 43 62 48" fill="none" stroke="#0288D1" stroke-width="2.6" stroke-linecap="round"/>',
-      '              <path d="M88 48 Q95 43 102 48" fill="none" stroke="#0288D1" stroke-width="2.6" stroke-linecap="round"/>',
-      '              <circle cx="55" cy="59" r="6.5" fill="#01579B"/>',
-      '              <circle cx="95" cy="59" r="6.5" fill="#01579B"/>',
-      '              <circle cx="52.8" cy="56.6" r="2.3" fill="#FFFFFF"/>',
-      '              <circle cx="92.8" cy="56.6" r="2.3" fill="#FFFFFF"/>',
-      '              <circle cx="57.4" cy="61.6" r="1.1" fill="#FFFFFF" fill-opacity="0.85"/>',
-      '              <circle cx="97.4" cy="61.6" r="1.1" fill="#FFFFFF" fill-opacity="0.85"/>',
-      '            </g>',
-      '            <g class="mascot-eyes-happy">',
-      '              <path d="M47 61 Q55 51 63 61" fill="none" stroke="#01579B" stroke-width="4.2" stroke-linecap="round"/>',
-      '              <path d="M87 61 Q95 51 103 61" fill="none" stroke="#01579B" stroke-width="4.2" stroke-linecap="round"/>',
-      '            </g>',
-      '            <g class="mascot-eyes-encourage">',
-      '              <path d="M47 47 Q55 41 63 44" fill="none" stroke="#0288D1" stroke-width="3" stroke-linecap="round"/>',
-      '              <path d="M103 47 Q95 41 87 44" fill="none" stroke="#0288D1" stroke-width="3" stroke-linecap="round"/>',
-      '              <circle cx="57" cy="59" r="6.6" fill="#01579B"/>',
-      '              <circle cx="97" cy="59" r="6.6" fill="#01579B"/>',
-      '              <circle cx="54.8" cy="56.4" r="2.4" fill="#FFFFFF"/>',
-      '              <circle cx="94.8" cy="56.4" r="2.4" fill="#FFFFFF"/>',
-      '              <circle cx="59.4" cy="61.5" r="1.2" fill="#FFFFFF" fill-opacity="0.88"/>',
-      '              <circle cx="99.4" cy="61.5" r="1.2" fill="#FFFFFF" fill-opacity="0.88"/>',
-      '            </g>',
-      '            <g class="mascot-cheeks">',
-      '              <ellipse cx="42" cy="70" rx="6.5" ry="3.8" fill="#FF80AB" fill-opacity="0.78"/>',
-      '              <ellipse cx="108" cy="70" rx="6.5" ry="3.8" fill="#FF80AB" fill-opacity="0.78"/>',
-      '            </g>',
-      '            <path class="mascot-mouth-normal" d="M58 76 Q75 91 92 76" fill="none" stroke="#01579B" stroke-width="4.5" stroke-linecap="round"/>',
-      '            <g class="mascot-mouth-happy">',
-      '              <path d="M57 74 Q75 96 93 74 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>',
-      '              <path d="M64 82 Q75 88 86 82 Q75 91 64 82 Z" fill="#FF80AB"/>',
-      '            </g>',
-      '            <g class="mascot-mouth-encourage">',
-      '              <path d="M62 76 Q75 73 88 76 Q89 91 75 91 Q61 91 62 76 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>',
-      '              <path d="M67 84 Q75 80 83 84 Q75 89 67 84 Z" fill="#FF80AB"/>',
-      '            </g>',
-      '            <g class="mascot-mouth-talking">',
-      '              <g class="mascot-mouth-talk-jaw">',
-      '                <path d="M61 76 Q75 74 89 76 Q89 93 75 93 Q61 93 61 76 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>',
-      '                <path d="M67 86 Q75 81 83 86 Q75 91 67 86 Z" fill="#FF80AB"/>',
-      '                <path d="M66 77.5 Q75 76.5 84 77.5" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>',
-      '              </g>',
-      '              <path class="mascot-mouth-talk-upper" d="M60 76 Q75 73 90 76" fill="none" stroke="#01579B" stroke-width="3.8" stroke-linecap="round"/>',
-      '            </g>',
-      '          </g>',
-      '          <g class="mascot-sparkles">',
-      '            <path d="M122 10 L124.8 17.2 L132 20 L124.8 22.8 L122 30 L119.2 22.8 L112 20 L119.2 17.2 Z" fill="#FFD54F" stroke="#F57F17" stroke-width="1.6" stroke-linejoin="round"/>',
-      '            <circle cx="24" cy="26" r="4" fill="#FFF176" stroke="#F57F17" stroke-width="1.4"/>',
-      '            <circle cx="139" cy="64" r="3" fill="#FFF176"/>',
-      '          </g>',
-      '          <g class="mascot-encourage-badge">',
-      '            <circle cx="126" cy="24" r="14" fill="#FFF8E1" stroke="#FB8C00" stroke-width="3"/>',
-      '            <path d="M126 15.5 L128.4 21.4 L134.6 22.1 L129.9 26.2 L131.2 32.3 L126 29.1 L120.8 32.3 L122.1 26.2 L117.4 22.1 L123.6 21.4 Z" fill="#FF9800" stroke="#E65100" stroke-width="1.6" stroke-linejoin="round"/>',
-      '            <circle cx="141" cy="14" r="3" fill="#FFB300"/>',
-      '          </g>',
-      '        </svg>',
-      '      '
+      '<svg class="mascot-svg" viewBox="0 0 150 150" width="100%" height="100%" aria-hidden="true">',
+      '  <ellipse class="mascot-shadow" cx="75" cy="138" rx="35" ry="6.5" fill="#0288D1" fill-opacity="0.16"/>',
+      '  <g class="mascot-cape">',
+      '    <path d="M34 56 Q16 96 14 126 Q46 133 75 127 Q104 133 136 126 Q134 96 116 56 Z" fill="#FF7043"/>',
+      '    <path d="M110 58 Q128 96 131 124 Q112 128 94 126 Q106 94 102 60 Z" fill="#E64A19" fill-opacity="0.45"/>',
+      '    <path d="M34 56 Q16 96 14 126 Q46 133 75 127 Q104 133 136 126 Q134 96 116 56 Z" fill="none" stroke="#BF360C" stroke-width="4" stroke-linejoin="round"/>',
+      '  </g>',
+      '  <g class="mascot-arm-left">',
+      '    <path d="M40 76 Q22 86 24 100 Q26 108 34 106 Q41 102 42 88 Z" fill="#FFFFFF" stroke="#0288D1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>',
+      '    <circle cx="29" cy="100" r="6.5" fill="#FFFFFF" stroke="#0288D1" stroke-width="3.6"/>',
+      '  </g>',
+      '  <g class="mascot-arm-right">',
+      '    <path d="M108 75 Q126 62 128 48 Q129 40 121 41 Q113 44 109 62 Z" fill="#FFFFFF" stroke="#0288D1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>',
+      '    <circle cx="125" cy="45" r="7" fill="#FFFFFF" stroke="#0288D1" stroke-width="3.6"/>',
+      '    <path d="M132 33 Q138 38 136 45" fill="none" stroke="#FFD54F" stroke-width="2.6" stroke-linecap="round"/>',
+      '  </g>',
+      '  <g class="mascot-body-group">',
+      '    <path d="M42 26 C24 26 21 63 32 90 C38 106 41 128 53 128 C61 128 65 103 75 103 C85 103 89 128 97 128 C109 128 112 106 118 90 C129 63 126 26 108 26 C92 26 86 36 75 36 C64 36 58 26 42 26 Z" fill="#FFFFFF"/>',
+      '    <path d="M106 28 C120 34 123 62 113 88 C107 104 104 124 96 124 C90 124 86 108 81 101 C90 100 98 92 104 78 C113 59 113 39 103 29 Z" fill="#E1F5FE"/>',
+      '    <path d="M39 38 C32 45 32 61 36 73" fill="none" stroke="#E0F7FA" stroke-width="5.5" stroke-linecap="round"/>',
+      '    <path d="M42 26 C24 26 21 63 32 90 C38 106 41 128 53 128 C61 128 65 103 75 103 C85 103 89 128 97 128 C109 128 112 106 118 90 C129 63 126 26 108 26 C92 26 86 36 75 36 C64 36 58 26 42 26 Z" fill="none" stroke="#0288D1" stroke-width="4.6" stroke-linejoin="round"/>',
+      '    <g class="mascot-eyes-normal">',
+      '      <g class="mascot-brows-normal">',
+      '        <path d="M48 48 Q55 43 62 48" fill="none" stroke="#0288D1" stroke-width="2.6" stroke-linecap="round"/>',
+      '        <path d="M88 48 Q95 43 102 48" fill="none" stroke="#0288D1" stroke-width="2.6" stroke-linecap="round"/>',
+      '      </g>',
+      '      <g class="mascot-eye-orbs">',
+      '        <circle cx="55" cy="59" r="6.5" fill="#01579B"/>',
+      '        <circle cx="95" cy="59" r="6.5" fill="#01579B"/>',
+      '        <circle cx="52.8" cy="56.6" r="2.3" fill="#FFFFFF"/>',
+      '        <circle cx="92.8" cy="56.6" r="2.3" fill="#FFFFFF"/>',
+      '        <circle cx="57.4" cy="61.6" r="1.1" fill="#FFFFFF" fill-opacity="0.85"/>',
+      '        <circle cx="97.4" cy="61.6" r="1.1" fill="#FFFFFF" fill-opacity="0.85"/>',
+      '      </g>',
+      '    </g>',
+      '    <g class="mascot-eyes-happy">',
+      '      <path d="M47 61 Q55 51 63 61" fill="none" stroke="#01579B" stroke-width="4.2" stroke-linecap="round"/>',
+      '      <path d="M87 61 Q95 51 103 61" fill="none" stroke="#01579B" stroke-width="4.2" stroke-linecap="round"/>',
+      '    </g>',
+      '    <g class="mascot-eyes-encourage">',
+      '      <path d="M47 47 Q55 41 63 44" fill="none" stroke="#0288D1" stroke-width="3" stroke-linecap="round"/>',
+      '      <path d="M103 47 Q95 41 87 44" fill="none" stroke="#0288D1" stroke-width="3" stroke-linecap="round"/>',
+      '      <circle cx="57" cy="59" r="6.6" fill="#01579B"/>',
+      '      <circle cx="97" cy="59" r="6.6" fill="#01579B"/>',
+      '      <circle cx="54.8" cy="56.4" r="2.4" fill="#FFFFFF"/>',
+      '      <circle cx="94.8" cy="56.4" r="2.4" fill="#FFFFFF"/>',
+      '      <circle cx="59.4" cy="61.5" r="1.2" fill="#FFFFFF" fill-opacity="0.88"/>',
+      '      <circle cx="99.4" cy="61.5" r="1.2" fill="#FFFFFF" fill-opacity="0.88"/>',
+      '    </g>',
+      '    <g class="mascot-eyes-curious">',
+      '      <path d="M47 44 Q55 37 63 43" fill="none" stroke="#0288D1" stroke-width="3" stroke-linecap="round"/>',
+      '      <path d="M88 49 Q95 46 102 49" fill="none" stroke="#0288D1" stroke-width="2.6" stroke-linecap="round"/>',
+      '      <circle cx="56.5" cy="58.2" r="6.5" fill="#01579B"/>',
+      '      <circle cx="96.5" cy="58.2" r="6.5" fill="#01579B"/>',
+      '      <circle cx="58.3" cy="55.8" r="2.3" fill="#FFFFFF"/>',
+      '      <circle cx="98.3" cy="55.8" r="2.3" fill="#FFFFFF"/>',
+      '      <circle cx="54.4" cy="60.8" r="1.1" fill="#FFFFFF" fill-opacity="0.82"/>',
+      '      <circle cx="94.4" cy="60.8" r="1.1" fill="#FFFFFF" fill-opacity="0.82"/>',
+      '    </g>',
+      '    <g class="mascot-eyes-triumph">',
+      '      <path d="M47 45 Q55 39 63 45" fill="none" stroke="#E65100" stroke-width="2.8" stroke-linecap="round"/>',
+      '      <path d="M87 45 Q95 39 103 45" fill="none" stroke="#E65100" stroke-width="2.8" stroke-linecap="round"/>',
+      '      <polygon points="55,49.5 57.6,55.2 63.8,56 59.2,60.3 60.4,66.4 55,63.4 49.6,66.4 50.8,60.3 46.2,56 52.4,55.2" fill="#FFD54F" stroke="#E65100" stroke-width="1.8" stroke-linejoin="round"/>',
+      '      <polygon points="95,49.5 97.6,55.2 103.8,56 99.2,60.3 100.4,66.4 95,63.4 89.6,66.4 90.8,60.3 86.2,56 92.4,55.2" fill="#FFD54F" stroke="#E65100" stroke-width="1.8" stroke-linejoin="round"/>',
+      '      <circle cx="55" cy="58.2" r="2" fill="#FFFFFF"/>',
+      '      <circle cx="95" cy="58.2" r="2" fill="#FFFFFF"/>',
+      '    </g>',
+      '    <g class="mascot-cheeks">',
+      '      <ellipse cx="42" cy="70" rx="6.5" ry="3.8" fill="#FF80AB" fill-opacity="0.78"/>',
+      '      <ellipse cx="108" cy="70" rx="6.5" ry="3.8" fill="#FF80AB" fill-opacity="0.78"/>',
+      '    </g>',
+      '    <path class="mascot-mouth-normal" d="M58 76 Q75 91 92 76" fill="none" stroke="#01579B" stroke-width="4.5" stroke-linecap="round"/>',
+      '    <g class="mascot-mouth-happy">',
+      '      <path d="M57 74 Q75 96 93 74 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>',
+      '      <path d="M64 82 Q75 88 86 82 Q75 91 64 82 Z" fill="#FF80AB"/>',
+      '    </g>',
+      '    <g class="mascot-mouth-encourage">',
+      '      <path d="M62 76 Q75 73 88 76 Q89 91 75 91 Q61 91 62 76 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>',
+      '      <path d="M67 84 Q75 80 83 84 Q75 89 67 84 Z" fill="#FF80AB"/>',
+      '    </g>',
+      '    <g class="mascot-mouth-curious">',
+      '      <path d="M61 78 Q71 82 81 76" fill="none" stroke="#01579B" stroke-width="3.8" stroke-linecap="round"/>',
+      '      <ellipse cx="83" cy="81" rx="4.2" ry="3.4" fill="#AD1457" fill-opacity="0.82" stroke="#01579B" stroke-width="2.4"/>',
+      '    </g>',
+      '    <g class="mascot-mouth-triumph">',
+      '      <path d="M54 73 Q75 100 96 73 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>',
+      '      <path d="M62 83 Q75 91 88 83 Q75 95 62 83 Z" fill="#FF80AB"/>',
+      '      <path d="M60 75.5 Q75 77.5 90 75.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"/>',
+      '    </g>',
+      '    <g class="mascot-mouth-talking">',
+      '      <g class="mascot-mouth-talk-jaw">',
+      '        <path d="M61 76 Q75 74 89 76 Q89 93 75 93 Q61 93 61 76 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>',
+      '        <path d="M67 86 Q75 81 83 86 Q75 91 67 86 Z" fill="#FF80AB"/>',
+      '        <path d="M66 77.5 Q75 76.5 84 77.5" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>',
+      '      </g>',
+      '      <path class="mascot-mouth-talk-upper" d="M60 76 Q75 73 90 76" fill="none" stroke="#01579B" stroke-width="3.8" stroke-linecap="round"/>',
+      '    </g>',
+      '  </g>',
+      '  <g class="mascot-sparkles">',
+      '    <path d="M122 10 L124.8 17.2 L132 20 L124.8 22.8 L122 30 L119.2 22.8 L112 20 L119.2 17.2 Z" fill="#FFD54F" stroke="#F57F17" stroke-width="1.6" stroke-linejoin="round"/>',
+      '    <circle cx="24" cy="26" r="4" fill="#FFF176" stroke="#F57F17" stroke-width="1.4"/>',
+      '    <circle cx="139" cy="64" r="3" fill="#FFF176"/>',
+      '  </g>',
+      '  <g class="mascot-encourage-badge">',
+      '    <circle cx="126" cy="24" r="14.5" fill="#FFF8E1" stroke="#FB8C00" stroke-width="3"/>',
+      '    <circle cx="126" cy="24" r="11" fill="#FFE082" fill-opacity="0.45"/>',
+      '    <path d="M126 15.5 L128.4 21.4 L134.6 22.1 L129.9 26.2 L131.2 32.3 L126 29.1 L120.8 32.3 L122.1 26.2 L117.4 22.1 L123.6 21.4 Z" fill="#FF9800" stroke="#E65100" stroke-width="1.6" stroke-linejoin="round"/>',
+      '    <circle cx="141" cy="14" r="3" fill="#FFB300"/>',
+      '  </g>',
+      '  <g class="mascot-curious-badge">',
+      '    <circle cx="111" cy="34" r="2.6" fill="#E0F7FA" stroke="#00838F" stroke-width="1.8"/>',
+      '    <circle cx="117" cy="28" r="3.6" fill="#E0F7FA" stroke="#00838F" stroke-width="1.8"/>',
+      '    <ellipse cx="130" cy="19" rx="13" ry="11" fill="#E0F7FA" stroke="#00838F" stroke-width="2.4"/>',
+      '    <path d="M126.8 15.5 C126.8 12.6 133.2 12.6 133.2 15.6 C133.2 17.8 130 18.2 130 20.5" fill="none" stroke="#006064" stroke-width="2.6" stroke-linecap="round"/>',
+      '    <circle cx="130" cy="24" r="1.5" fill="#006064"/>',
+      '  </g>',
+      '  <g class="mascot-triumph-fx">',
+      '    <polygon points="56,22 61,9 69,17 75,7 81,17 89,9 94,22" fill="#FFD54F" stroke="#E65100" stroke-width="2.4" stroke-linejoin="round"/>',
+      '    <circle cx="62" cy="16.5" r="2" fill="#FF4081"/>',
+      '    <circle cx="75" cy="14.5" r="2.2" fill="#29B6F6"/>',
+      '    <circle cx="88" cy="16.5" r="2" fill="#66BB6A"/>',
+      '    <polygon points="22,12 24,17 29,19 24,21 22,26 20,21 15,19 20,17" fill="#FF80AB" stroke="#AD1457" stroke-width="1.2" stroke-linejoin="round"/>',
+      '    <polygon points="128,12 130,17 135,19 130,21 128,26 126,21 121,19 126,17" fill="#4DD0E1" stroke="#00838F" stroke-width="1.2" stroke-linejoin="round"/>',
+      '    <circle cx="16" cy="54" r="3" fill="#FFD54F"/>',
+      '    <circle cx="136" cy="52" r="3" fill="#FF7043"/>',
+      '  </g>',
+      '</svg>'
     ].join('\n'),
 
     KEY_BACKSPACE: [
-      '',
-      '        <span style="display:inline-flex;align-items:center;">',
-      '          <svg viewBox="0 0 40 40" aria-hidden="true">',
-      '            <path d="M13.5 9.5 L4.5 20 L13.5 30.5 L34 30.5 C35.8 30.5 37.5 29 37.5 27 L37.5 13 C37.5 11 35.8 9.5 34 9.5 Z" fill="#FFEBEE" stroke="#FFFFFF" stroke-width="2.6" stroke-linejoin="round"/>',
-      '            <path d="M18.5 15 L29.5 25 M29.5 15 L18.5 25" stroke="#C62828" stroke-width="3.6" stroke-linecap="round"/>',
-      '          </svg>',
-      '        </span>',
-      '        <span>APAGAR</span>',
-      '      '
+      '<svg viewBox="0 0 40 40" aria-hidden="true">',
+      '  <path d="M13.5 9.5 L4.5 20 L13.5 30.5 L34 30.5 C35.8 30.5 37.5 29 37.5 27 L37.5 13 C37.5 11 35.8 9.5 34 9.5 Z" fill="#FFEBEE" stroke="#FFFFFF" stroke-width="2.6" stroke-linejoin="round"/>',
+      '  <path d="M18.5 15 L29.5 25 M29.5 15 L18.5 25" stroke="#C62828" stroke-width="3.6" stroke-linecap="round"/>',
+      '</svg>'
     ].join('\n'),
 
     KEY_VERIFY: [
-      '',
-      '        <span style="display:inline-flex;align-items:center;">',
-      '          <svg viewBox="0 0 40 40" aria-hidden="true">',
-      '            <circle cx="20" cy="20" r="16" fill="#E8F5E9" stroke="#FFFFFF" stroke-width="2.8"/>',
-      '            <path d="M10 13 A11.5 11.5 0 0 1 24 8.8" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>',
-      '            <path d="M12 20.5 L17.8 26.5 L28.5 14" fill="none" stroke="#1B5E20" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>',
-      '          </svg>',
-      '        </span>',
-      '        <span>VERIFICAR</span>',
-      '      '
+      '<svg viewBox="0 0 40 40" aria-hidden="true">',
+      '  <circle cx="20" cy="20" r="16" fill="#E8F5E9" stroke="#FFFFFF" stroke-width="2.8"/>',
+      '  <path d="M10 13 A11.5 11.5 0 0 1 24 8.8" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>',
+      '  <path d="M12 20.5 L17.8 26.5 L28.5 14" fill="none" stroke="#1B5E20" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>',
+      '</svg>'
     ].join('\n'),
 
     MINI_BACKSPACE: [
-      '',
-      '        <svg viewBox="0 0 40 40" aria-hidden="true">',
-      '          <path d="M13.5 9.5 L4.5 20 L13.5 30.5 L34 30.5 C35.8 30.5 37.5 29 37.5 27 L37.5 13 C37.5 11 35.8 9.5 34 9.5 Z" fill="#FFEBEE" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round"/>',
-      '          <path d="M18.5 15 L29.5 25 M29.5 15 L18.5 25" stroke="#C62828" stroke-width="3.5" stroke-linecap="round"/>',
-      '        </svg>',
-      '        <span>APAGAR</span>',
-      '      '
+      '<svg viewBox="0 0 40 40" aria-hidden="true">',
+      '  <path d="M13.5 9.5 L4.5 20 L13.5 30.5 L34 30.5 C35.8 30.5 37.5 29 37.5 27 L37.5 13 C37.5 11 35.8 9.5 34 9.5 Z" fill="#FFEBEE" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round"/>',
+      '  <path d="M18.5 15 L29.5 25 M29.5 15 L18.5 25" stroke="#C62828" stroke-width="3.5" stroke-linecap="round"/>',
+      '</svg>'
     ].join('\n')
   };
+
+  SVGS.REPLAY_ICON = SVGS.NEXT_CYCLE;
 
   /**
    * Retorna o SVG da medalha de podio para o ranking (1o, 2o ou 3o lugar).
    */
   function getMedalSvg(position) {
+    var ui = global.SaudeEscola && global.SaudeEscola.UiIcons;
+    if (ui && typeof ui.getMedalSvg === 'function') {
+      var uiMedal = ui.getMedalSvg(position);
+      if (uiMedal) return uiMedal;
+    }
     if (position === 1) {
       return [
         '',
@@ -888,9 +912,25 @@
   }
 
   /**
+   * Ajusta a tag <svg> raiz para escalar a 100% mantendo a proporcao centralizada.
+   */
+  function normalizarSvgResponsivo(svgMarkup) {
+    if (typeof svgMarkup !== 'string') return '';
+    return svgMarkup.replace(/<svg\b([^>]*)>/i, function (_match, attrs) {
+      var cleaned = String(attrs || '')
+        .replace(/\s*\bwidth\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/\s*\bheight\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .replace(/\s*\bpreserveAspectRatio\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+        .trim();
+      var extra = 'width="100%" height="100%" preserveAspectRatio="xMidYMid meet"';
+      return '<svg ' + (cleaned ? cleaned + ' ' : '') + extra + '>';
+    });
+  }
+
+  /**
    * Normaliza defensivamente uma palavra da semana para uso uniforme nas Fases 1, 2 e 3.
    */
-  function normalizeWeeklyItem(item, index, storage) {
+  function normalizeWeeklyItem(item, index, storage, rawById, rawByPlain) {
     if (!item || typeof item !== 'object') return null;
 
     var rawWord = String(item.word || item.palavra || '').trim().toUpperCase();
@@ -942,9 +982,35 @@
       }
     }
 
-    var dicaOriginal = String(
-      item.dicaOriginal !== undefined ? item.dicaOriginal : (item.dica || '')
-    ).trim().toUpperCase();
+    var itemIdStr = item.id ? String(item.id) : '';
+    var rawMatch = null;
+    if (itemIdStr && rawById && rawById[itemIdStr]) {
+      rawMatch = rawById[itemIdStr];
+    } else if (plain && rawByPlain && rawByPlain[plain]) {
+      rawMatch = rawByPlain[plain];
+    }
+
+    var dicaOriginal;
+    if (rawMatch) {
+      dicaOriginal = String(rawMatch.dica || '').trim().toUpperCase();
+    } else {
+      dicaOriginal = String(
+        item.dicaOriginal !== undefined ? item.dicaOriginal : (item.dica || '')
+      ).trim().toUpperCase();
+    }
+
+    var fraseOriginal;
+    if (rawMatch) {
+      fraseOriginal = String(rawMatch.frase || '').trim().toUpperCase();
+    } else {
+      fraseOriginal = String(
+        item.fraseOriginal !== undefined ? item.fraseOriginal : (item.frase || item.sentence || '')
+      ).trim().toUpperCase();
+      if (/^PALAVRA DA SEMANA! ESCREVA NO TECLADO:/i.test(fraseOriginal) ||
+          /^DICA:\s.*—\s*ESCREVA A PALAVRA:/i.test(fraseOriginal)) {
+        fraseOriginal = '';
+      }
+    }
 
     var clue = String(
       item.clue || dicaOriginal || 'JUNTE OS PEDACINHOS PARA FORMAR A PALAVRA!'
@@ -958,23 +1024,60 @@
       item.silabaInicial || syllables[0] || rawWord.slice(0, 2)
     ).trim().toUpperCase();
 
-    var sentence = String(item.sentence || item.frase || '').trim().toUpperCase();
-    if (!sentence) {
-      sentence = dicaOriginal
-        ? ('DICA: ' + dicaOriginal + ' — ESCREVA A PALAVRA: ___!')
-        : 'PALAVRA DA SEMANA! ESCREVA NO TECLADO: ___!';
-    } else if (sentence.indexOf('___') === -1) {
-      sentence = sentence + ' (___)';
+    var p3Mode;
+    var sentence;
+    if (fraseOriginal) {
+      p3Mode = 'FRASE';
+      sentence = fraseOriginal.indexOf('___') !== -1
+        ? fraseOriginal
+        : (fraseOriginal + ' (___)');
+    } else if (dicaOriginal) {
+      p3Mode = 'DICA';
+      sentence = 'DICA: ' + dicaOriginal;
+    } else {
+      p3Mode = 'DITADO';
+      sentence = 'DITADO DA PROFESSORA! ESCREVA A PALAVRA:';
     }
 
-    var sentences = Array.isArray(item.sentences) && item.sentences.length > 0
-      ? item.sentences.slice()
-      : [sentence];
+    var sentences = [sentence];
+    var stickersApi = getSaudeModule('Stickers');
+    var explicitStickerId = rawMatch && rawMatch.stickerId !== undefined
+      ? rawMatch.stickerId
+      : (item.stickerId !== undefined ? item.stickerId : null);
+    if (typeof explicitStickerId === 'string') {
+      explicitStickerId = explicitStickerId.trim().toLowerCase();
+      if (!explicitStickerId) explicitStickerId = null;
+    } else {
+      explicitStickerId = null;
+    }
 
-    var svg = item.svg || (storage && storage.SVGs && storage.SVGs.ILUSTRACAO_SEMANA) || '';
+    var resolvedSticker = null;
+    if (explicitStickerId === 'none') {
+      resolvedSticker = null;
+    } else if (explicitStickerId && stickersApi && typeof stickersApi.getById === 'function') {
+      resolvedSticker = stickersApi.getById(explicitStickerId);
+    } else if (!explicitStickerId && stickersApi && typeof stickersApi.matchByWord === 'function') {
+      resolvedSticker = stickersApi.matchByWord(plain || rawWord);
+    }
+
+    var hasSticker = Boolean(resolvedSticker && resolvedSticker.svg) ||
+      Boolean(!stickersApi && explicitStickerId !== 'none' && item.hasSticker && item.svg);
+    var finalStickerId = explicitStickerId === 'none'
+      ? 'none'
+      : (resolvedSticker ? resolvedSticker.id : (hasSticker ? explicitStickerId : null));
+    var defaultWeeklySvg = (storage && storage.SVGs && storage.SVGs.ILUSTRACAO_SEMANA) || '';
+    var rawSvg;
+    if (explicitStickerId === 'none') {
+      rawSvg = defaultWeeklySvg || item.svg || '';
+    } else if (resolvedSticker && resolvedSticker.svg) {
+      rawSvg = resolvedSticker.svg;
+    } else {
+      rawSvg = item.svg || defaultWeeklySvg || '';
+    }
+    var svg = normalizarSvgResponsivo(rawSvg);
 
     return {
-      id: item.id ? String(item.id) : ('WEEKLY_' + index + '_' + plain),
+      id: itemIdStr || ('WEEKLY_' + index + '_' + plain),
       word: rawWord,
       plain: plain,
       syllables: syllables,
@@ -983,12 +1086,16 @@
       clue: clue,
       clues: clues,
       dicaOriginal: dicaOriginal,
+      fraseOriginal: fraseOriginal,
+      p3Mode: p3Mode,
       silabaInicial: silabaInicial,
       sentence: sentence,
       sentences: sentences,
       sentenceBefore: '',
       sentenceAfter: '',
       svg: svg,
+      stickerId: finalStickerId,
+      hasSticker: hasSticker,
       isWeeklyWord: true
     };
   }
@@ -1003,9 +1110,21 @@
         ? storage.getBancoPalavrasSemanaParaJogo()
         : null;
       if (Array.isArray(weeklyBank) && weeklyBank.length >= 4) {
+        var rawWeeklyById = Object.create(null);
+        var rawWeeklyByPlain = Object.create(null);
+        if (typeof storage.listarPalavrasSemana === 'function') {
+          var rawLista = storage.listarPalavrasSemana() || [];
+          for (var r = 0; r < rawLista.length; r += 1) {
+            var rItem = rawLista[r];
+            if (!rItem) continue;
+            if (rItem.id) rawWeeklyById[String(rItem.id)] = rItem;
+            if (rItem.plain) rawWeeklyByPlain[String(rItem.plain).toUpperCase()] = rItem;
+          }
+        }
+
         var normalized = [];
         for (var i = 0; i < weeklyBank.length; i += 1) {
-          var normItem = normalizeWeeklyItem(weeklyBank[i], i, storage);
+          var normItem = normalizeWeeklyItem(weeklyBank[i], i, storage, rawWeeklyById, rawWeeklyByPlain);
           if (normItem) {
             normalized.push(normItem);
           }
@@ -1044,7 +1163,7 @@
   /* ----------------------------------------------------------------------
      5. Filas persistentes de dicas (Fase 2) e frases (Fase 3)
      ---------------------------------------------------------------------- */
-  var queueMemoryCache = {};
+  var queueMemoryCache = Object.create(null);
 
   function loadQueueState(storageKey, poolVersion) {
     if (queueMemoryCache[storageKey]) {

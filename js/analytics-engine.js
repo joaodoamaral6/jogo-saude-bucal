@@ -25,11 +25,20 @@
         'C_G': { codigo: 'TROCA_C_G', label: 'Troca C / G' }
     };
 
+    var DIGRAFOS_ALFABETIZACAO = ['RR', 'SS', 'CH', 'LH', 'NH', 'QU', 'GU'];
+
     /**
      * Obtém dinamicamente a referência ao módulo Storage.
      */
     function getStorage() {
         return (global.SaudeEscola && global.SaudeEscola.Storage) ? global.SaudeEscola.Storage : null;
+    }
+
+    /**
+     * Obtém dinamicamente a referência ao módulo Periods.
+     */
+    function getPeriods() {
+        return (global.SaudeEscola && global.SaudeEscola.Periods) ? global.SaudeEscola.Periods : null;
     }
 
     /**
@@ -209,9 +218,247 @@
     }
 
     /**
+     * Verifica se o par de letras confusas pertence ao mapa fonético conhecido.
+     */
+    function ehTrocaFoneticaConhecida(e, u) {
+        if (!e || !u) return false;
+        var parOrdenado = [e, u].sort().join('_');
+        return Boolean(MAPA_TROCAS_ORTOGRAFICAS[parOrdenado]);
+    }
+
+    /**
+     * Verifica se o índice faz parte de um dígrafo comum da alfabetização.
+     */
+    function encontrarDigrafoNaPosicao(palavraPlain, idx) {
+        if (!palavraPlain || idx < 0 || idx >= palavraPlain.length) {
+            return null;
+        }
+        if (idx - 1 >= 0) {
+            var parEsq = palavraPlain.slice(idx - 1, idx + 1);
+            if (DIGRAFOS_ALFABETIZACAO.indexOf(parEsq) !== -1) {
+                return parEsq;
+            }
+        }
+        if (idx + 1 < palavraPlain.length) {
+            var parDir = palavraPlain.slice(idx, idx + 2);
+            if (DIGRAFOS_ALFABETIZACAO.indexOf(parDir) !== -1) {
+                return parDir;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Alinha sequência esperada e digitada por programação dinâmica (LCS ponderada)
+     * com custos inteiros para evitar deslocamento de índices em omissões/inserções.
+     */
+    function alinharSegmentoEscrita(expStr, digStr) {
+        var n = expStr.length;
+        var m = digStr.length;
+        var CUSTO_MATCH = 0;
+        var CUSTO_SUB_FONETICA = 10;
+        var CUSTO_SUB_GERAL = 12;
+        var CUSTO_DEL = 10;
+        var CUSTO_INS = 10;
+
+        var dp = [];
+        for (var i = 0; i <= n; i++) {
+            dp[i] = new Array(m + 1);
+            dp[i][0] = i * CUSTO_DEL;
+        }
+        for (var j = 0; j <= m; j++) {
+            dp[0][j] = j * CUSTO_INS;
+        }
+
+        for (var row = 1; row <= n; row++) {
+            var e = expStr.charAt(row - 1);
+            for (var col = 1; col <= m; col++) {
+                var u = digStr.charAt(col - 1);
+                var custoDia = (e === u)
+                    ? CUSTO_MATCH
+                    : (ehTrocaFoneticaConhecida(e, u) ? CUSTO_SUB_FONETICA : CUSTO_SUB_GERAL);
+
+                var optDia = dp[row - 1][col - 1] + custoDia;
+                var optDel = dp[row - 1][col] + CUSTO_DEL;
+                var optIns = dp[row][col - 1] + CUSTO_INS;
+
+                var melhor = optDia;
+                if (optDel < melhor) melhor = optDel;
+                if (optIns < melhor) melhor = optIns;
+                dp[row][col] = melhor;
+            }
+        }
+
+        var ops = [];
+        var r = n;
+        var c = m;
+        while (r > 0 || c > 0) {
+            if (r > 0 && c > 0) {
+                var ec = expStr.charAt(r - 1);
+                var uc = digStr.charAt(c - 1);
+                var custoStep = (ec === uc)
+                    ? CUSTO_MATCH
+                    : (ehTrocaFoneticaConhecida(ec, uc) ? CUSTO_SUB_FONETICA : CUSTO_SUB_GERAL);
+                if (dp[r][c] === dp[r - 1][c - 1] + custoStep) {
+                    ops.push({
+                        tipo: ec === uc ? 'MATCH' : 'SUB',
+                        expIdx: r - 1,
+                        digIdx: c - 1,
+                        e: ec,
+                        u: uc
+                    });
+                    r -= 1;
+                    c -= 1;
+                    continue;
+                }
+            }
+
+            if (r > 0 && dp[r][c] === dp[r - 1][c] + CUSTO_DEL) {
+                ops.push({
+                    tipo: 'DEL',
+                    expIdx: r - 1,
+                    e: expStr.charAt(r - 1)
+                });
+                r -= 1;
+                continue;
+            }
+
+            ops.push({
+                tipo: 'INS',
+                expIdxRef: r,
+                digIdx: c - 1,
+                u: digStr.charAt(c - 1)
+            });
+            c -= 1;
+        }
+
+        ops.reverse();
+        return ops;
+    }
+
+    /**
+     * Analisa desvios ortográficos na Fase 3 por segmentos abertos respeitando letras travadas,
+     * isolando omissão de dígrafos (RR, SS, CH, LH, NH, QU, GU) e duplicações sem deslocar o resto.
+     */
+    function analisarEscritaFase3(plainStr, digitadoArrOuStr, travadosAntes) {
+        var plain = normalizarTextoPlain(plainStr);
+        if (!plain) return [];
+
+        var travados = Array.isArray(travadosAntes) ? travadosAntes : [];
+        var rawChars = Array.isArray(digitadoArrOuStr)
+            ? digitadoArrOuStr
+            : (typeof digitadoArrOuStr === 'string' ? digitadoArrOuStr.split('') : []);
+
+        var digitadoNorm = [];
+        for (var idx = 0; idx < rawChars.length; idx++) {
+            digitadoNorm.push(normalizarChar(rawChars[idx] || ''));
+        }
+
+        // Particiona os espaços abertos em segmentos contíguos separados por letras já travadas
+        var segmentos = [];
+        var segAtual = null;
+        for (var pos = 0; pos < plain.length; pos++) {
+            if (travados[pos]) {
+                segAtual = null;
+                continue;
+            }
+            if (!segAtual) {
+                segAtual = { start: pos, end: pos, digChars: [] };
+                segmentos.push(segAtual);
+            } else {
+                segAtual.end = pos;
+            }
+            if (digitadoNorm[pos]) {
+                segAtual.digChars.push(digitadoNorm[pos]);
+            }
+        }
+
+        if (segmentos.length === 0) {
+            return [];
+        }
+
+        // Anexa eventuais caracteres extras além de plain.length ao último segmento aberto
+        if (digitadoNorm.length > plain.length) {
+            var ultimoSeg = segmentos[segmentos.length - 1];
+            for (var extra = plain.length; extra < digitadoNorm.length; extra++) {
+                if (digitadoNorm[extra]) {
+                    ultimoSeg.digChars.push(digitadoNorm[extra]);
+                }
+            }
+        }
+
+        var desvios = [];
+        for (var s = 0; s < segmentos.length; s++) {
+            var seg = segmentos[s];
+            var segExp = plain.slice(seg.start, seg.end + 1);
+            var segDig = seg.digChars.join('');
+            var ops = alinharSegmentoEscrita(segExp, segDig);
+
+            for (var o = 0; o < ops.length; o++) {
+                var op = ops[o];
+                if (op.tipo === 'MATCH') continue;
+
+                if (op.tipo === 'SUB') {
+                    var clSub = classificarErroOrtografico(op.e, op.u);
+                    desvios.push({
+                        codigo: clSub.codigo,
+                        label: clSub.label,
+                        esperado: op.e,
+                        digitado: op.u,
+                        exemploCustom: null
+                    });
+                } else if (op.tipo === 'DEL') {
+                    var idxGlobalDel = seg.start + op.expIdx;
+                    var digrafo = encontrarDigrafoNaPosicao(plain, idxGlobalDel);
+                    if (digrafo) {
+                        desvios.push({
+                            codigo: 'OMISSAO_DIGRAFO_' + digrafo,
+                            label: 'Omissão no dígrafo ' + digrafo,
+                            esperado: op.e,
+                            digitado: '',
+                            exemploCustom: 'omitiu ' + op.e + ' em ' + digrafo
+                        });
+                    } else {
+                        desvios.push({
+                            codigo: 'LETRAS_FALTANDO',
+                            label: 'Letras faltando',
+                            esperado: op.e,
+                            digitado: '',
+                            exemploCustom: null
+                        });
+                    }
+                } else if (op.tipo === 'INS') {
+                    var idxGlobalIns = seg.start + op.expIdxRef;
+                    var vizinhoAnt = idxGlobalIns - 1 >= 0 ? plain.charAt(idxGlobalIns - 1) : '';
+                    var vizinhoAtual = idxGlobalIns < plain.length ? plain.charAt(idxGlobalIns) : '';
+                    if (op.u === vizinhoAnt || op.u === vizinhoAtual) {
+                        desvios.push({
+                            codigo: 'DUPLICACAO_LETRA',
+                            label: 'Duplicação de letra',
+                            esperado: op.u,
+                            digitado: op.u + op.u,
+                            exemploCustom: 'duplicou ' + op.u
+                        });
+                    } else {
+                        desvios.push({
+                            codigo: 'LETRAS_EXTRAS',
+                            label: 'Letras a mais',
+                            esperado: '',
+                            digitado: op.u,
+                            exemploCustom: op.u + ' a mais'
+                        });
+                    }
+                }
+            }
+        }
+
+        return desvios;
+    }
+
+    /**
      * Registra uma ocorrência de erro ortográfico na sessão atual com até 5 exemplos únicos.
      */
-    function registrarErroOrtografico(codigo, label, palavraLimpa, esperado, digitado) {
+    function registrarErroOrtografico(codigo, label, palavraLimpa, esperado, digitado, exemploCustom) {
         if (!sessaoAtual.errosOrtograficos[codigo]) {
             sessaoAtual.errosOrtograficos[codigo] = {
                 codigo: codigo,
@@ -223,7 +470,11 @@
         var entry = sessaoAtual.errosOrtograficos[codigo];
         entry.count += 1;
 
-        var exemplo = palavraLimpa + ' (' + (digitado || '_') + ' no lugar de ' + esperado + ')';
+        var exemplo = exemploCustom
+            ? (palavraLimpa + ' (' + exemploCustom + ')')
+            : (digitado
+                ? (palavraLimpa + ' (' + digitado + ' no lugar de ' + esperado + ')')
+                : (palavraLimpa + ' (faltou ' + esperado + ')'));
         if (entry.exemplos.indexOf(exemplo) === -1 && entry.exemplos.length < 5) {
             entry.exemplos.push(exemplo);
         }
@@ -386,17 +637,10 @@
             return;
         }
 
-        for (var i = 0; i < plainStr.length; i++) {
-            if (travadosAntes[i]) continue;
-
-            var e = normalizarChar(plainStr.charAt(i));
-            if (!e) continue;
-
-            var u = normalizarChar(digitado[i] || '');
-            if (u === e) continue;
-
-            var classificacao = classificarErroOrtografico(e, u);
-            registrarErroOrtografico(classificacao.codigo, classificacao.label, palavraLimpa, e, u);
+        var desvios = analisarEscritaFase3(plainStr, digitado, travadosAntes);
+        for (var dIdx = 0; dIdx < desvios.length; dIdx++) {
+            var d = desvios[dIdx];
+            registrarErroOrtografico(d.codigo, d.label, palavraLimpa, d.esperado, d.digitado, d.exemploCustom);
         }
     }
 
@@ -537,7 +781,7 @@
         var filtro = alunoId || 'TODOS';
         var chaveFiltro = obterChaveAlunoCadastrado(filtro);
         var sessoes = obterSessoesArmazenadas();
-        var mapaDatas = {};
+        var mapaDatas = Object.create(null);
 
         for (var i = 0; i < sessoes.length; i++) {
             var s = sessoes[i];
@@ -560,9 +804,9 @@
         var tentativas = 0;
         var acertos = 0;
         var acertosPrimeira = 0;
-        var palavras = {};
-        var errosOrtograficos = {};
-        var errosSilabas = {};
+        var palavras = Object.create(null);
+        var errosOrtograficos = Object.create(null);
+        var errosSilabas = Object.create(null);
         var porFase = {
             fase1: {
                 tentativas: 0,
@@ -744,18 +988,26 @@
     }
 
     /**
-     * Gera comparativo detalhado entre o dia de referência e o dia anterior disponível.
+     * Gera comparativo detalhado entre o dia/período de referência e o anterior disponível.
      */
-    function gerarComparativo(metricasDia, metricasAnterior, dataAnterior) {
+    function gerarComparativo(metricasDia, metricasAnterior, dataAnterior, rotuloUnidade) {
+        var ehPeriodo = rotuloUnidade === 'periodo';
+        var refAnteriorLabel = ehPeriodo ? 'ao período anterior' : 'ao dia anterior';
+        var noAnteriorLabel = ehPeriodo ? 'no período anterior' : 'no dia anterior';
+        var doAnteriorLabel = ehPeriodo ? 'do período anterior' : 'do dia anterior';
+        var nestaUnidadeLabel = ehPeriodo ? 'neste período' : 'nesta data';
+
         if (!dataAnterior || !metricasAnterior) {
             return {
                 temDiaAnterior: false,
-                tipoComparativo: 'primeiro_dia',
+                tipoComparativo: ehPeriodo ? 'primeiro_periodo' : 'primeiro_dia',
                 variacaoTaxaAcerto: null,
                 variacaoTempoFase1: null,
                 tendencia: 'first',
                 mensagensMelhoria: [
-                    'Primeiro dia registrado para esta seleção. Continue praticando para comparar a evolução.'
+                    ehPeriodo
+                        ? 'Primeiro período com registros para esta seleção. Continue praticando para comparar entre períodos.'
+                        : 'Primeiro dia registrado para esta seleção. Continue praticando para comparar a evolução.'
                 ]
             };
         }
@@ -767,7 +1019,7 @@
             f1Ant && f1Ant.modoMetrica === 'tempo'
         );
 
-        // Quando um dos dias possui apenas registros por tempo na Fase 1 (sem tentativas de F2/F3)
+        // Quando uma das unidades possui apenas registros por tempo na Fase 1 (sem tentativas de F2/F3)
         if (metricasDia.tentativas === 0 || metricasAnterior.tentativas === 0) {
             if (f1AmbosTempo) {
                 var diffSeg = f1Dia.tempoMedioSegundos - f1Ant.tempoMedioSegundos;
@@ -788,7 +1040,7 @@
                 } else if (diffSeg < 0) {
                     msgsTempo.push(
                         'Leve melhora de tempo na Fase 1 (Memória): -' + Math.abs(diffSeg) +
-                        's em relação ao dia anterior.'
+                        's em relação ' + refAnteriorLabel + '.'
                     );
                 } else if (diffSeg === 0) {
                     msgsTempo.push(
@@ -825,7 +1077,7 @@
                 variacaoTempoFase1: null,
                 tendencia: 'flat',
                 mensagensMelhoria: [
-                    'As atividades registradas nesta data usaram fases ou métricas diferentes do dia anterior.'
+                    'As atividades registradas ' + nestaUnidadeLabel + ' usaram fases ou métricas diferentes das ' + doAnteriorLabel + '.'
                 ]
             };
         }
@@ -848,21 +1100,21 @@
         } else if (variacao > 0) {
             mensagens.push(
                 'Leve ganho na taxa de acerto (+' + variacao +
-                (variacao === 1 ? ' ponto percentual' : ' pontos percentuais') + ' em relação ao dia anterior).'
+                (variacao === 1 ? ' ponto percentual' : ' pontos percentuais') + ' em relação ' + refAnteriorLabel + ').'
             );
         } else if (variacao === 0) {
             mensagens.push(
-                'Manteve a taxa de acerto em ' + metricasDia.taxaAcerto + '% em relação ao dia anterior.'
+                'Manteve a taxa de acerto em ' + metricasDia.taxaAcerto + '% em relação ' + refAnteriorLabel + '.'
             );
         } else if (variacao > -3) {
             mensagens.push(
-                'Desempenho estável em relação ao dia anterior (' + metricasDia.taxaAcerto + '%).'
+                'Desempenho estável em relação ' + refAnteriorLabel + ' (' + metricasDia.taxaAcerto + '%).'
             );
         } else {
             mensagens.push(
                 'A taxa de acerto ficou ' + Math.abs(variacao) +
                 (Math.abs(variacao) === 1 ? ' ponto percentual' : ' pontos percentuais') +
-                ' abaixo do dia anterior (bom momento para retomar as palavras).'
+                ' abaixo em relação ' + refAnteriorLabel + ' (bom momento para retomar as palavras).'
             );
         }
 
@@ -909,7 +1161,7 @@
             if (red.depois === 0) {
                 mensagens.push(
                     'Nenhuma ocorrência de "' + red.label + '" (' +
-                    (red.antes === 1 ? 'foi 1 no dia anterior' : 'foram ' + red.antes + ' no dia anterior') + ').'
+                    (red.antes === 1 ? 'foi 1 ' + noAnteriorLabel : 'foram ' + red.antes + ' ' + noAnteriorLabel) + ').'
                 );
             } else {
                 mensagens.push(
@@ -958,19 +1210,27 @@
     }
 
     /**
-     * Identifica os pontos fortes observados no dia selecionado.
+     * Identifica os pontos fortes observados no dia ou período selecionado.
      */
-    function gerarPontosFortes(metricasDia) {
+    function gerarPontosFortes(metricasDia, rotuloUnidade) {
+        var ehPeriodo = rotuloUnidade === 'periodo';
+        var noLocalLabel = ehPeriodo ? 'no período' : 'no dia';
+        var nestaDataLabel = ehPeriodo ? 'neste período' : 'nesta data';
         var fortes = [];
         var f1 = (metricasDia.porFase && metricasDia.porFase.fase1) ? metricasDia.porFase.fase1 : null;
+        var f3 = (metricasDia.porFase && metricasDia.porFase.fase3) ? metricasDia.porFase.fase3 : null;
+        var temFase3 = Boolean(f3 && f3.temDados);
 
         if (metricasDia.tentativas > 0) {
             if (metricasDia.taxaAcerto >= 80) {
-                fortes.push('Ótimo aproveitamento geral: ' + metricasDia.taxaAcerto + '% de acertos no dia.');
+                fortes.push('Ótimo aproveitamento geral: ' + metricasDia.taxaAcerto + '% de acertos ' + noLocalLabel + '.');
             }
 
             if (metricasDia.taxaPrimeira >= 70) {
-                fortes.push('Boa segurança na escrita: ' + metricasDia.taxaPrimeira + '% de acertos na 1ª tentativa.');
+                fortes.push(
+                    (temFase3 ? 'Boa segurança na escrita: ' : 'Boa segurança nas atividades: ') +
+                    metricasDia.taxaPrimeira + '% de acertos na 1ª tentativa.'
+                );
             }
         }
 
@@ -1002,7 +1262,7 @@
             for (var k = 0; k < palavrasBoas.length && k < 4; k++) {
                 nomesBoas.push(palavrasBoas[k].nome);
             }
-            fortes.push('Palavras com ótimo domínio (80%+): ' + nomesBoas.join(', ') + '.');
+            fortes.push('Palavras com ótimo domínio (80% ou mais): ' + nomesBoas.join(', ') + '.');
         }
 
         var qtdOrt = Object.keys(metricasDia.errosOrtograficos).length;
@@ -1010,8 +1270,12 @@
 
         if (metricasDia.tentativas > 0) {
             if (qtdOrt === 0 && qtdSil === 0) {
-                fortes.push('Ausência de trocas ortográficas e travas silábicas nesta data.');
-            } else if (qtdOrt === 0) {
+                fortes.push(
+                    temFase3
+                        ? ('Ausência de trocas ortográficas e travas silábicas ' + nestaDataLabel + '.')
+                        : ('Ausência de travas silábicas registradas ' + nestaDataLabel + '.')
+                );
+            } else if (qtdOrt === 0 && temFase3) {
                 fortes.push('Nenhuma troca ortográfica frequente registrada na escrita.');
             }
         }
@@ -1021,10 +1285,10 @@
                 fortes.push(
                     'Participação registrada com ' + metricasDia.tentativas +
                     (metricasDia.tentativas === 1 ? ' tentativa e ' : ' tentativas e ') +
-                    metricasDia.acertos + (metricasDia.acertos === 1 ? ' acerto nesta data.' : ' acertos nesta data.')
+                    metricasDia.acertos + (metricasDia.acertos === 1 ? ' acerto ' : ' acertos ') + nestaDataLabel + '.'
                 );
             } else {
-                fortes.push('Participação registrada na Fase 1 (Jogo da Memória) nesta data.');
+                fortes.push('Participação registrada na Fase 1 (Jogo da Memória) ' + nestaDataLabel + '.');
             }
         }
 
@@ -1032,9 +1296,11 @@
     }
 
     /**
-     * Identifica os pontos de atenção para trabalhar em sala a partir dos dados do dia.
+     * Identifica os pontos de atenção para trabalhar em sala a partir dos dados do dia ou período.
      */
-    function gerarPontosAtencao(metricasDia) {
+    function gerarPontosAtencao(metricasDia, rotuloUnidade) {
+        var ehPeriodo = rotuloUnidade === 'periodo';
+        var nestaDataLabel = ehPeriodo ? 'neste período' : 'nesta data';
         var atencao = [];
 
         // Top trocas ortográficas
@@ -1069,7 +1335,7 @@
             );
         }
 
-        // Palavras com mais erros no dia
+        // Palavras com mais erros
         var palavrasErro = [];
         var pKeys = Object.keys(metricasDia.palavras);
         for (var k = 0; k < pKeys.length; k++) {
@@ -1097,7 +1363,7 @@
         }
 
         if (atencao.length === 0) {
-            atencao.push('Nenhum ponto de atenção crítico identificado nesta data.');
+            atencao.push('Nenhum ponto de atenção crítico identificado ' + nestaDataLabel + '.');
         }
 
         return atencao.slice(0, 5);
@@ -1152,6 +1418,45 @@
     }
 
     /**
+     * Copia de maneira segura os indicadores de uma fase para séries comparativas.
+     */
+    function copiarFaseResumo(porFaseDia, chave) {
+        var f = (porFaseDia && porFaseDia[chave]) ? porFaseDia[chave] : null;
+        if (!f || !f.temDados) {
+            return chave === 'fase1'
+                ? {
+                    tentativas: 0,
+                    acertos: 0,
+                    taxaAcerto: null,
+                    tempoTotalSegundos: 0,
+                    rodadas: 0,
+                    tempoMedioSegundos: null,
+                    modoMetrica: 'vazio',
+                    temDados: false
+                }
+                : { tentativas: 0, acertos: 0, taxaAcerto: null, temDados: false };
+        }
+        if (chave === 'fase1') {
+            return {
+                tentativas: f.tentativas,
+                acertos: f.acertos,
+                taxaAcerto: f.taxaAcerto,
+                tempoTotalSegundos: f.tempoTotalSegundos || 0,
+                rodadas: f.rodadas || 0,
+                tempoMedioSegundos: f.tempoMedioSegundos !== undefined ? f.tempoMedioSegundos : null,
+                modoMetrica: f.modoMetrica || 'vazio',
+                temDados: true
+            };
+        }
+        return {
+            tentativas: f.tentativas,
+            acertos: f.acertos,
+            taxaAcerto: f.taxaAcerto,
+            temDados: true
+        };
+    }
+
+    /**
      * Gera o resumo completo de evolução pedagógica para um aluno (ou turma) e data de referência.
      */
     function gerarResumoEvolucao(filtros) {
@@ -1161,8 +1466,8 @@
         var dataSolicitada = cfg.dataReferencia || null;
 
         var todasSessoes = obterSessoesArmazenadas();
-        var sessoesPorData = {};
-        var mapaDatas = {};
+        var sessoesPorData = Object.create(null);
+        var mapaDatas = Object.create(null);
 
         for (var i = 0; i < todasSessoes.length; i++) {
             var s = todasSessoes[i];
@@ -1193,7 +1498,7 @@
             ? datasDisponiveis[idxRef + 1]
             : null;
 
-        var consolidadoPorData = {};
+        var consolidadoPorData = Object.create(null);
         function obterMetricasData(dataISO) {
             if (!dataISO) return null;
             if (!consolidadoPorData[dataISO]) {
@@ -1205,51 +1510,15 @@
         var metricasDia = obterMetricasData(dataRef);
         var metricasAnterior = obterMetricasData(dataAnterior);
 
-        var comparativo = gerarComparativo(metricasDia, metricasAnterior, dataAnterior);
-        var pontosFortes = gerarPontosFortes(metricasDia);
-        var pontosAtencao = gerarPontosAtencao(metricasDia);
+        var comparativo = gerarComparativo(metricasDia, metricasAnterior, dataAnterior, 'dia');
+        var pontosFortes = gerarPontosFortes(metricasDia, 'dia');
+        var pontosAtencao = gerarPontosAtencao(metricasDia, 'dia');
         var rankingDificuldades = gerarRankingDificuldades(metricasDia);
 
         // Até 7 datas mais recentes (terminando em dataRef), em ordem cronológica crescente
         var datasJanelaDesc = datasDisponiveis.slice(idxRef, idxRef + 7);
         var datasJanelaAsc = datasJanelaDesc.slice().reverse();
         var serieDiaria = [];
-
-        function copiarFaseResumo(porFaseDia, chave) {
-            var f = (porFaseDia && porFaseDia[chave]) ? porFaseDia[chave] : null;
-            if (!f || !f.temDados) {
-                return chave === 'fase1'
-                    ? {
-                        tentativas: 0,
-                        acertos: 0,
-                        taxaAcerto: null,
-                        tempoTotalSegundos: 0,
-                        rodadas: 0,
-                        tempoMedioSegundos: null,
-                        modoMetrica: 'vazio',
-                        temDados: false
-                    }
-                    : { tentativas: 0, acertos: 0, taxaAcerto: null, temDados: false };
-            }
-            if (chave === 'fase1') {
-                return {
-                    tentativas: f.tentativas,
-                    acertos: f.acertos,
-                    taxaAcerto: f.taxaAcerto,
-                    tempoTotalSegundos: f.tempoTotalSegundos || 0,
-                    rodadas: f.rodadas || 0,
-                    tempoMedioSegundos: f.tempoMedioSegundos !== undefined ? f.tempoMedioSegundos : null,
-                    modoMetrica: f.modoMetrica || 'vazio',
-                    temDados: true
-                };
-            }
-            return {
-                tentativas: f.tentativas,
-                acertos: f.acertos,
-                taxaAcerto: f.taxaAcerto,
-                temDados: true
-            };
-        }
 
         for (var d = 0; d < datasJanelaAsc.length; d++) {
             var dataItem = datasJanelaAsc[d];
@@ -1288,15 +1557,167 @@
     }
 
     /**
+     * Gera o resumo consolidado e o comparativo entre períodos letivos (Bimestre/Trimestre)
+     * para a turma completa ou para um aluno individual, sem apagar o histórico acumulado.
+     */
+    function gerarResumoPorPeriodo(filtros) {
+        var cfg = filtros && typeof filtros === 'object' ? filtros : {};
+        var alunoId = cfg.alunoId || 'TODOS';
+        var chaveAlunoFiltro = obterChaveAlunoCadastrado(alunoId);
+        var storage = getStorage();
+        var periods = getPeriods();
+
+        var configPeriodos = null;
+        if (cfg.configuracaoPeriodos && typeof cfg.configuracaoPeriodos === 'object') {
+            configPeriodos = (periods && typeof periods.sanitizarConfiguracao === 'function')
+                ? periods.sanitizarConfiguracao(cfg.configuracaoPeriodos)
+                : cfg.configuracaoPeriodos;
+        } else if (storage && typeof storage.getPeriodosLetivos === 'function') {
+            configPeriodos = storage.getPeriodosLetivos();
+        }
+        if (!configPeriodos && periods && typeof periods.gerarConfiguracaoPadrao === 'function') {
+            configPeriodos = periods.gerarConfiguracaoPadrao('bimestre');
+        }
+
+        var todasSessoes = obterSessoesArmazenadas();
+        var sessoesAluno = [];
+        for (var i = 0; i < todasSessoes.length; i++) {
+            var s = todasSessoes[i];
+            if (!sessaoPertenceAoAluno(s, alunoId, chaveAlunoFiltro)) continue;
+            if (!s.dataISO || typeof s.dataISO !== 'string') continue;
+            sessoesAluno.push(s);
+        }
+
+        var agrupamento;
+        if (periods && typeof periods.agruparSessoesPorCiclo === 'function') {
+            agrupamento = periods.agruparSessoesPorCiclo(sessoesAluno, configPeriodos);
+        } else {
+            var ciclosFallback = (configPeriodos && Array.isArray(configPeriodos.ciclos)) ? configPeriodos.ciclos : [];
+            agrupamento = { grupos: [], foraDosCiclos: sessoesAluno.slice() };
+            for (var cIdx = 0; cIdx < ciclosFallback.length; cIdx++) {
+                agrupamento.grupos.push({ ciclo: ciclosFallback[cIdx], sessoes: [] });
+            }
+        }
+
+        var periodoAtual = null;
+        if (cfg.periodoId && periods && typeof periods.obterCicloPorId === 'function') {
+            periodoAtual = periods.obterCicloPorId(configPeriodos, cfg.periodoId);
+        }
+        if (!periodoAtual && periods && typeof periods.sugerirCicloAtivo === 'function') {
+            periodoAtual = periods.sugerirCicloAtivo(sessoesAluno, configPeriodos, getDataLocalISO());
+        }
+        if (!periodoAtual && agrupamento.grupos.length > 0) {
+            periodoAtual = agrupamento.grupos[0].ciclo;
+        }
+
+        var sessoesPorId = Object.create(null);
+        for (var g = 0; g < agrupamento.grupos.length; g++) {
+            var grp = agrupamento.grupos[g];
+            if (grp && grp.ciclo && grp.ciclo.id) {
+                sessoesPorId[grp.ciclo.id] = grp.sessoes || [];
+            }
+        }
+
+        var sessoesDoPeriodo = (periodoAtual && sessoesPorId[periodoAtual.id]) ? sessoesPorId[periodoAtual.id] : [];
+        var metricasAtual = consolidarDia(sessoesDoPeriodo);
+
+        var cicloAnteriorBruto = (periodoAtual && periods && typeof periods.obterCicloAnterior === 'function')
+            ? periods.obterCicloAnterior(configPeriodos, periodoAtual.id)
+            : null;
+        var sessoesAnterior = (cicloAnteriorBruto && sessoesPorId[cicloAnteriorBruto.id])
+            ? sessoesPorId[cicloAnteriorBruto.id]
+            : [];
+        var periodoAnteriorComDados = sessoesAnterior.length > 0 ? cicloAnteriorBruto : null;
+        var metricasAnterior = periodoAnteriorComDados ? consolidarDia(sessoesAnterior) : null;
+
+        var comparativo = gerarComparativo(
+            metricasAtual,
+            metricasAnterior,
+            periodoAnteriorComDados ? periodoAnteriorComDados.id : null,
+            'periodo'
+        );
+        var pontosFortes = sessoesDoPeriodo.length > 0 ? gerarPontosFortes(metricasAtual, 'periodo') : [];
+        var pontosAtencao = sessoesDoPeriodo.length > 0 ? gerarPontosAtencao(metricasAtual, 'periodo') : [];
+        var rankingDificuldades = sessoesDoPeriodo.length > 0 ? gerarRankingDificuldades(metricasAtual) : [];
+
+        var seriePeriodos = [];
+        for (var p = 0; p < agrupamento.grupos.length; p++) {
+            var gp = agrupamento.grupos[p];
+            var cicloG = gp.ciclo;
+            var metG = consolidarDia(gp.sessoes);
+            var intervaloBR = (periods && typeof periods.formatarIntervaloBR === 'function')
+                ? periods.formatarIntervaloBR(cicloG.inicio, cicloG.fim, true)
+                : (formatarDataCurta(cicloG.inicio) + ' a ' + formatarDataCurta(cicloG.fim));
+
+            seriePeriodos.push({
+                periodoId: cicloG.id,
+                nome: cicloG.nome,
+                sigla: cicloG.sigla,
+                inicio: cicloG.inicio,
+                fim: cicloG.fim,
+                intervaloBR: intervaloBR,
+                sessoesCount: metG.sessoesCount,
+                taxaAcerto: metG.taxaAcerto,
+                tentativas: metG.tentativas,
+                acertos: metG.acertos,
+                porFase: {
+                    fase1: copiarFaseResumo(metG.porFase, 'fase1'),
+                    fase2: copiarFaseResumo(metG.porFase, 'fase2'),
+                    fase3: copiarFaseResumo(metG.porFase, 'fase3')
+                },
+                temDadosLegadosSemFase: Boolean(metG.temDadosLegadosSemFase),
+                isReferencia: Boolean(periodoAtual && cicloG.id === periodoAtual.id),
+                isAnterior: Boolean(periodoAnteriorComDados && cicloG.id === periodoAnteriorComDados.id)
+            });
+        }
+
+        return {
+            vazio: sessoesAluno.length === 0,
+            periodoSemRegistros: sessoesDoPeriodo.length === 0,
+            alunoId: alunoId,
+            configuracaoPeriodos: configPeriodos,
+            periodoAtual: periodoAtual,
+            periodoAnterior: periodoAnteriorComDados,
+            metricasPeriodo: metricasAtual,
+            metricasAnterior: metricasAnterior,
+            comparativo: comparativo,
+            pontosFortes: pontosFortes,
+            pontosAtencao: pontosAtencao,
+            seriePeriodos: seriePeriodos,
+            rankingDificuldades: rankingDificuldades,
+            sessoesForaDosCiclosCount: Array.isArray(agrupamento.foraDosCiclos) ? agrupamento.foraDosCiclos.length : 0
+        };
+    }
+
+    /**
      * Gera resumo individual de desempenho nas 3 fases para todos os alunos cadastrados
      * (e alunos presentes apenas no histórico), ordenado alfabeticamente.
      */
     function gerarResumoPorAluno(opcoes) {
         var cfg = opcoes && typeof opcoes === 'object' ? opcoes : {};
-        var escopo = cfg.escopo === 'DIA' ? 'DIA' : 'GERAL';
+        var escopo = cfg.escopo === 'DIA'
+            ? 'DIA'
+            : (cfg.escopo === 'PERIODO' ? 'PERIODO' : 'GERAL');
         var dataReferencia = cfg.dataReferencia || null;
+        var dataInicio = cfg.dataInicio || null;
+        var dataFim = cfg.dataFim || null;
 
         var storage = getStorage();
+        var periods = getPeriods();
+
+        if (escopo === 'PERIODO' && (!dataInicio || !dataFim) && cfg.periodoId) {
+            var cfgPer = (storage && typeof storage.getPeriodosLetivos === 'function')
+                ? storage.getPeriodosLetivos()
+                : null;
+            if (cfgPer && periods && typeof periods.obterCicloPorId === 'function') {
+                var cicloAlvo = periods.obterCicloPorId(cfgPer, cfg.periodoId);
+                if (cicloAlvo) {
+                    dataInicio = cicloAlvo.inicio;
+                    dataFim = cicloAlvo.fim;
+                }
+            }
+        }
+
         var alunosCadastrados = (storage && typeof storage.listarAlunos === 'function')
             ? storage.listarAlunos()
             : [];
@@ -1304,8 +1725,8 @@
 
         var todasSessoes = obterSessoesArmazenadas();
         var registros = [];
-        var mapaPorId = {};
-        var mapaPorChave = {};
+        var mapaPorId = Object.create(null);
+        var mapaPorChave = Object.create(null);
 
         for (var i = 0; i < alunosCadastrados.length; i++) {
             var a = alunosCadastrados[i];
@@ -1339,6 +1760,10 @@
             if (!s || typeof s !== 'object') continue;
             if (escopo === 'DIA') {
                 if (!dataReferencia || s.dataISO !== dataReferencia) continue;
+            } else if (escopo === 'PERIODO') {
+                if (!dataInicio || !dataFim || !s.dataISO || s.dataISO < dataInicio || s.dataISO > dataFim) {
+                    continue;
+                }
             }
 
             var sId = (s.alunoId !== null && s.alunoId !== undefined && s.alunoId !== '')
@@ -1421,6 +1846,8 @@
         temSessaoPendente: temSessaoPendente,
         listarDatasDisponiveis: listarDatasDisponiveis,
         gerarResumoEvolucao: gerarResumoEvolucao,
-        gerarResumoPorAluno: gerarResumoPorAluno
+        gerarResumoPorPeriodo: gerarResumoPorPeriodo,
+        gerarResumoPorAluno: gerarResumoPorAluno,
+        analisarEscritaFase3: analisarEscritaFase3
     };
 })(window);

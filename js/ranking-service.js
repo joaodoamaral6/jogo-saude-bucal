@@ -42,15 +42,10 @@
     }
 
     /**
-     * Escapa caracteres especiais HTML para evitar XSS ao renderizar nomes.
+     * Retorna o utilitario seguro de DOM para evitar innerHTML.
      */
-    function escapeHtmlSafe(str) {
-        return String(str == null ? '' : str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+    function getDomSafe() {
+        return getModule('DomSafe');
     }
 
     /**
@@ -79,30 +74,34 @@
      */
     function buildMiniKeyboard() {
         var grid = document.getElementById('miniKeyboardGrid');
-        if (!grid || grid.children.length > 0) return;
+        var domSafe = getDomSafe();
+        if (!grid || !domSafe || grid.children.length > 0) return;
 
         var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
         for (var i = 0; i < letters.length; i += 1) {
             (function (ch) {
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'mini-key';
-                btn.textContent = ch;
-                btn.onclick = function () {
+                var btn = domSafe.el('button', {
+                    type: 'button',
+                    className: 'mini-key',
+                    text: ch
+                });
+                domSafe.on(btn, 'click', function () {
                     onPressChar(ch);
-                };
+                });
                 grid.appendChild(btn);
             })(letters[i]);
         }
 
         // Tecla ESPAÇO para permitir nomes compostos (ex.: ANA J) direto na lousa digital
-        var spaceBtn = document.createElement('button');
-        spaceBtn.type = 'button';
-        spaceBtn.className = 'mini-key mini-key-space';
-        spaceBtn.innerHTML = '<span>ESPAÇO</span>';
-        spaceBtn.onclick = function () {
+        var spaceBtn = domSafe.el('button', {
+            type: 'button',
+            className: 'mini-key mini-key-space'
+        }, [
+            domSafe.el('span', { text: 'ESPAÇO' })
+        ]);
+        domSafe.on(spaceBtn, 'click', function () {
             onPressSpace();
-        };
+        });
         grid.appendChild(spaceBtn);
 
         // Usa o ícone SVG do WordBank quando carregado, com fallback textual seguro
@@ -111,19 +110,17 @@
             ? String(wordBank.SVGS.MINI_BACKSPACE)
             : '';
 
-        var backBtn = document.createElement('button');
-        backBtn.type = 'button';
-        backBtn.className = 'mini-key mini-key-back';
+        var backBtn = domSafe.el('button', {
+            type: 'button',
+            className: 'mini-key mini-key-back'
+        });
         if (backSvg) {
-            backBtn.innerHTML = backSvg.indexOf('<span') !== -1
-                ? backSvg
-                : backSvg + '<span>APAGAR</span>';
-        } else {
-            backBtn.innerHTML = '<span>APAGAR</span>';
+            domSafe.appendSvg(backBtn, backSvg);
         }
-        backBtn.onclick = function () {
+        backBtn.appendChild(domSafe.el('span', { text: 'APAGAR' }));
+        domSafe.on(backBtn, 'click', function () {
             onBackspace();
-        };
+        });
         grid.appendChild(backBtn);
     }
 
@@ -134,10 +131,11 @@
         var rowEl = document.getElementById('rankingSuggestionsRow');
         if (!rowEl) return;
 
+        var domSafe = getDomSafe();
         var panel = getModule('TeacherPanel');
         if (!panel || typeof panel.renderizarSugestoesRanking !== 'function') {
-            rowEl.style.display = 'none';
-            rowEl.innerHTML = '';
+            rowEl.classList.add('u-hidden');
+            if (domSafe) domSafe.clear(rowEl);
             return;
         }
 
@@ -241,8 +239,9 @@
             box.classList.remove('active');
             var rowEl = document.getElementById('rankingSuggestionsRow');
             if (rowEl) {
-                rowEl.style.display = 'none';
-                rowEl.innerHTML = '';
+                var domSafe = getDomSafe();
+                rowEl.classList.add('u-hidden');
+                if (domSafe) domSafe.clear(rowEl);
             }
         }
     }
@@ -413,8 +412,9 @@
      */
     function renderList() {
         var container = document.getElementById('rankingListContainer');
-        if (!container) return;
-        container.innerHTML = '';
+        var domSafe = getDomSafe();
+        if (!container || !domSafe) return;
+        domSafe.clear(container);
 
         var list = getList();
         list.sort(function (a, b) {
@@ -423,13 +423,17 @@
         });
 
         if (list.length === 0) {
-            container.innerHTML =
-                '<div class="ranking-empty-msg">' +
-                'AINDA NÃO HÁ NOMES NO RANKING.<br>JOGUE UMA PARTIDA E SALVE SUA PONTUAÇÃO!' +
-                '</div>';
+            container.appendChild(
+                domSafe.el('div', { className: 'ranking-empty-msg' }, [
+                    'AINDA NÃO HÁ NOMES NO RANKING.',
+                    domSafe.el('br'),
+                    'JOGUE UMA PARTIDA E SALVE SUA PONTUAÇÃO!'
+                ])
+            );
             return;
         }
 
+        var uiIcons = getModule('UiIcons');
         var wordBank = getModule('WordBank');
         var smallStarSvg = (wordBank && wordBank.SVGS && wordBank.SVGS.SMALL_STAR)
             ? wordBank.SVGS.SMALL_STAR
@@ -441,27 +445,40 @@
             var starsNum = Number(entry.stars) || 0;
             var visualCount = Math.max(0, Math.min(starsNum, 15));
 
-            var row = document.createElement('div');
             var isHighlighted = lastSavedTimestamp !== null && entry.date === lastSavedTimestamp;
-            row.className = 'ranking-row' + (isHighlighted ? ' highlight-new' : '');
-
-            var medalSvg = (wordBank && typeof wordBank.getMedalSvg === 'function')
-                ? (wordBank.getMedalSvg(pos) || '')
+            var medalSvg = (uiIcons && typeof uiIcons.getMedalSvg === 'function')
+                ? (uiIcons.getMedalSvg(pos) || '')
                 : '';
-
-            var starsHtml = '';
-            for (var s = 0; s < visualCount; s += 1) {
-                starsHtml += smallStarSvg;
+            if (!medalSvg && wordBank && typeof wordBank.getMedalSvg === 'function') {
+                medalSvg = wordBank.getMedalSvg(pos) || '';
             }
 
-            row.innerHTML =
-                '<div class="rank-pos-badge">' +
-                    medalSvg +
-                    '<span>' + pos + 'º</span>' +
-                '</div>' +
-                '<div class="rank-student-name">' + escapeHtmlSafe(entry.name) + '</div>' +
-                '<div class="rank-stars-visual">' + starsHtml + '</div>' +
-                '<div class="rank-numeral-pill">' + starsNum + '</div>';
+            var posBadge = domSafe.el('div', { className: 'rank-pos-badge' });
+            if (medalSvg) {
+                domSafe.appendSvg(posBadge, medalSvg);
+            }
+            posBadge.appendChild(domSafe.el('span', { text: pos + 'º' }));
+
+            var nameEl = domSafe.el('div', {
+                className: 'rank-student-name',
+                text: entry.name != null ? String(entry.name) : ''
+            });
+
+            var starsWrap = domSafe.el('div', { className: 'rank-stars-visual' });
+            if (smallStarSvg) {
+                for (var s = 0; s < visualCount; s += 1) {
+                    domSafe.appendSvg(starsWrap, smallStarSvg);
+                }
+            }
+
+            var numeralEl = domSafe.el('div', {
+                className: 'rank-numeral-pill',
+                text: String(starsNum)
+            });
+
+            var row = domSafe.el('div', {
+                className: 'ranking-row' + (isHighlighted ? ' highlight-new' : '')
+            }, [posBadge, nameEl, starsWrap, numeralEl]);
 
             container.appendChild(row);
         }

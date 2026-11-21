@@ -9,8 +9,14 @@
     var SaudeEscola = global.SaudeEscola = global.SaudeEscola || {};
 
     // Estado local dos filtros preservado entre re-renderizações enquanto válido
+    var modoVisualizacao = 'DIA';
     var filtroAlunoId = 'TODOS';
     var filtroDataRef = null;
+    var filtroPeriodoId = null;
+    var configPeriodosAberta = false;
+    var configPeriodosFeedback = '';
+    var configPeriodosFeedbackTipo = '';
+    var rascunhoConfigPeriodos = null;
     var limparConfirmTimer = null;
     var escopoAlunos = 'GERAL';
     var editandoAnotacaoId = null;
@@ -96,18 +102,6 @@
     }
 
     /**
-     * Escapa caracteres especiais HTML para evitar injeção de marcação.
-     */
-    function escapeHtml(texto) {
-        return String(texto === undefined || texto === null ? '' : texto)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
-    /**
      * Obtém dinamicamente o módulo Storage.
      */
     function getStorage() {
@@ -115,10 +109,34 @@
     }
 
     /**
+     * Obtém dinamicamente o módulo DomSafe para construção segura de nós.
+     */
+    function getDomSafe() {
+        return (global.SaudeEscola && global.SaudeEscola.DomSafe) ? global.SaudeEscola.DomSafe : null;
+    }
+
+    /**
+     * Anexa um ícone SVG sanitizado via DomSafe sem usar innerHTML.
+     */
+    function appendSvgIcon(parent, svgMarkup) {
+        var domSafe = getDomSafe();
+        if (parent && domSafe && typeof domSafe.appendSvg === 'function') {
+            domSafe.appendSvg(parent, svgMarkup);
+        }
+    }
+
+    /**
      * Obtém dinamicamente o módulo Analytics.
      */
     function getAnalytics() {
         return (global.SaudeEscola && global.SaudeEscola.Analytics) ? global.SaudeEscola.Analytics : null;
+    }
+
+    /**
+     * Obtém dinamicamente o módulo Periods.
+     */
+    function getPeriods() {
+        return (global.SaudeEscola && global.SaudeEscola.Periods) ? global.SaudeEscola.Periods : null;
     }
 
     /**
@@ -141,7 +159,8 @@
         return limpo.replace(/<svg\b([^>]*)>/i, function (match, attrs) {
             var semDimensoes = attrs
                 .replace(/\swidth\s*=\s*(['"]).*?\1/gi, '')
-                .replace(/\sheight\s*=\s*(['"]).*?\1/gi, '');
+                .replace(/\sheight\s*=\s*(['"]).*?\1/gi, '')
+                .replace(/\saria-hidden\s*=\s*(['"]).*?\1/gi, '');
             return '<svg' + semDimensoes + ' width="' + tamanhoPx + '" height="' + tamanhoPx + '" aria-hidden="true">';
         });
     }
@@ -294,13 +313,23 @@
         );
     }
 
+    function svgCalendario(tamanho) {
+        var t = tamanho || 17;
+        return '<svg viewBox="0 0 24 24" width="' + t + '" height="' + t + '" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<rect x="3" y="4" width="18" height="18" rx="3"></rect>' +
+            '<line x1="16" y1="2" x2="16" y2="6"></line>' +
+            '<line x1="8" y1="2" x2="8" y2="6"></line>' +
+            '<line x1="3" y1="10" x2="21" y2="10"></line>' +
+        '</svg>';
+    }
+
     /**
      * Monta a lista deduplicada de opções de alunos (cadastrados + histórico).
      */
     function montarOpcoesAlunos(storage) {
         var opcoes = [];
-        var mapaIds = {};
-        var mapaChaves = {};
+        var mapaIds = Object.create(null);
+        var mapaChaves = Object.create(null);
 
         var alunosCadastrados = (storage && typeof storage.listarAlunos === 'function')
             ? storage.listarAlunos()
@@ -374,91 +403,420 @@
     }
 
     /**
-     * Gera o HTML da seção de filtros (sempre visível para permitir troca de aluno).
+     * Constrói o DOM da seção de filtros com alternância Por Dia vs. Por Período Letivo.
      */
-    function renderFiltrosHtml(opcoesAlunos, datasDisponiveis, dataSelecionada) {
-        var optionsAlunoHtml = '';
+    function renderFiltrosDom(opcoesAlunos, contexto) {
+        var domSafe = getDomSafe();
+        var ctx = contexto && typeof contexto === 'object' ? contexto : {};
+        var ehPeriodo = modoVisualizacao === 'PERIODO';
+        var datasDisponiveis = Array.isArray(ctx.datasDisponiveis) ? ctx.datasDisponiveis : [];
+        var dataSelecionada = ctx.dataSelecionada || null;
+        var seriePeriodos = Array.isArray(ctx.seriePeriodos) ? ctx.seriePeriodos : [];
+        var periodoAtualId = ctx.periodoAtual ? ctx.periodoAtual.id : null;
+
+        var modeDiaBtn = domSafe.el('button', {
+            type: 'button',
+            id: 'evModeDiaBtn',
+            className: 'ev-mode-btn' + (!ehPeriodo ? ' active' : ''),
+            text: 'Por Dia'
+        });
+
+        var modePeriodoBtn = domSafe.el('button', {
+            type: 'button',
+            id: 'evModePeriodoBtn',
+            className: 'ev-mode-btn' + (ehPeriodo ? ' active' : '')
+        });
+        appendSvgIcon(modePeriodoBtn, svgCalendario(15));
+        modePeriodoBtn.appendChild(domSafe.el('span', { text: 'Por Período Letivo' }));
+
+        var modeBar = domSafe.el('div', { className: 'ev-mode-bar' }, [
+            domSafe.el('span', { className: 'ev-mode-label', text: 'Agrupamento:' }),
+            domSafe.el('div', {
+                className: 'ev-mode-switch',
+                role: 'group',
+                'aria-label': 'Modo de visualização dos gráficos'
+            }, [modeDiaBtn, modePeriodoBtn])
+        ]);
+
+        var selectAluno = domSafe.el('select', { className: 'ev-select', id: 'evFilterAluno' });
         for (var i = 0; i < opcoesAlunos.length; i++) {
             var opt = opcoesAlunos[i];
-            var selected = opt.value === filtroAlunoId ? ' selected' : '';
-            optionsAlunoHtml += '<option value="' + escapeHtml(opt.value) + '"' + selected + '>' +
-                escapeHtml(opt.label) +
-            '</option>';
+            selectAluno.appendChild(domSafe.el('option', {
+                value: String(opt.value || ''),
+                selected: opt.value === filtroAlunoId,
+                text: String(opt.label || '')
+            }));
         }
+        selectAluno.value = filtroAlunoId;
 
-        var optionsDataHtml = '';
-        var desabilitarData = datasDisponiveis.length === 0;
-        if (desabilitarData) {
-            optionsDataHtml = '<option value="">Nenhum registro</option>';
-        } else {
-            for (var j = 0; j < datasDisponiveis.length; j++) {
-                var d = datasDisponiveis[j];
-                var selData = d === dataSelecionada ? ' selected' : '';
-                optionsDataHtml += '<option value="' + escapeHtml(d) + '"' + selData + '>' +
-                    escapeHtml(formatarDataBR(d)) +
-                '</option>';
+        var segundoFiltroNode;
+        if (ehPeriodo) {
+            var selectPeriodo = domSafe.el('select', {
+                className: 'ev-select',
+                id: 'evFilterPeriodo',
+                disabled: seriePeriodos.length === 0
+            });
+
+            if (seriePeriodos.length === 0) {
+                selectPeriodo.appendChild(domSafe.el('option', { value: '', text: 'Nenhum ciclo configurado' }));
+            } else {
+                for (var p = 0; p < seriePeriodos.length; p++) {
+                    var itemPer = seriePeriodos[p];
+                    var sesTxt = itemPer.sessoesCount + ' ses.';
+                    var nomeCurto = itemPer.sigla || itemPer.nome;
+                    var intervaloCurto = String(itemPer.intervaloBR || '').replace(/\s+a\s+/g, '–');
+                    var labelPer = nomeCurto + ' (' + intervaloCurto + ') • ' + sesTxt;
+                    var sesCompleto = itemPer.sessoesCount === 1 ? '1 sessão' : (itemPer.sessoesCount + ' sessões');
+                    selectPeriodo.appendChild(domSafe.el('option', {
+                        value: String(itemPer.periodoId || ''),
+                        selected: itemPer.periodoId === periodoAtualId,
+                        title: itemPer.nome + ' (' + itemPer.intervaloBR + ') — ' + sesCompleto,
+                        text: labelPer
+                    }));
+                }
+                if (periodoAtualId) {
+                    selectPeriodo.value = periodoAtualId;
+                }
             }
+
+            var btnConfig = domSafe.el('button', {
+                type: 'button',
+                id: 'evBtnConfigPeriodos',
+                className: 'tp-btn tp-btn-outline tp-btn-sm ev-btn-config-periodos',
+                'aria-expanded': configPeriodosAberta ? 'true' : 'false'
+            });
+            appendSvgIcon(btnConfig, svgCalendario(15));
+            btnConfig.appendChild(domSafe.el('span', { text: 'Configurar ciclos' }));
+
+            segundoFiltroNode = domSafe.el('div', { className: 'ev-filter-group ev-filter-period-wrap' }, [
+                domSafe.el('label', { className: 'ev-label', for: 'evFilterPeriodo', text: 'Período letivo' }),
+                domSafe.el('div', { className: 'ev-period-select-row' }, [
+                    selectPeriodo,
+                    btnConfig
+                ])
+            ]);
+        } else {
+            var desabilitarData = datasDisponiveis.length === 0;
+            var selectData = domSafe.el('select', {
+                className: 'ev-select',
+                id: 'evFilterData',
+                disabled: desabilitarData
+            });
+
+            if (desabilitarData) {
+                selectData.appendChild(domSafe.el('option', { value: '', text: 'Nenhum registro' }));
+            } else {
+                for (var j = 0; j < datasDisponiveis.length; j++) {
+                    var d = datasDisponiveis[j];
+                    selectData.appendChild(domSafe.el('option', {
+                        value: String(d || ''),
+                        selected: d === dataSelecionada,
+                        text: formatarDataBR(d)
+                    }));
+                }
+                if (dataSelecionada) {
+                    selectData.value = dataSelecionada;
+                }
+            }
+
+            segundoFiltroNode = domSafe.el('div', { className: 'ev-filter-group' }, [
+                domSafe.el('label', { className: 'ev-label', for: 'evFilterData', text: 'Dia analisado' }),
+                selectData
+            ]);
         }
 
-        return '<div class="ev-filters">' +
-            '<div class="ev-filter-group">' +
-                '<label class="ev-label" for="evFilterAluno">Aluno / Visão</label>' +
-                '<select class="ev-select" id="evFilterAluno">' + optionsAlunoHtml + '</select>' +
-            '</div>' +
-            '<div class="ev-filter-group">' +
-                '<label class="ev-label" for="evFilterData">Dia analisado</label>' +
-                '<select class="ev-select" id="evFilterData"' + (desabilitarData ? ' disabled' : '') + '>' +
-                    optionsDataHtml +
-                '</select>' +
-            '</div>' +
-            '<div class="ev-filter-actions">' +
-                '<button type="button" class="tp-btn tp-btn-primary ev-btn-print" id="evBtnExportarPdf">' +
-                    svgImpressora(17) +
-                    '<span>Exportar Relatório (PDF)</span>' +
-                '</button>' +
-            '</div>' +
-        '</div>';
+        var btnPrint = domSafe.el('button', {
+            type: 'button',
+            className: 'tp-btn tp-btn-primary ev-btn-print',
+            id: 'evBtnExportarPdf'
+        });
+        appendSvgIcon(btnPrint, svgImpressora(17));
+        btnPrint.appendChild(domSafe.el('span', { text: 'Exportar Relatório (PDF)' }));
+
+        return domSafe.el('div', { className: 'ev-filters-shell' }, [
+            modeBar,
+            domSafe.el('div', { className: 'ev-filters' }, [
+                domSafe.el('div', { className: 'ev-filter-group' }, [
+                    domSafe.el('label', { className: 'ev-label', for: 'evFilterAluno', text: 'Aluno / Visão' }),
+                    selectAluno
+                ]),
+                segundoFiltroNode,
+                domSafe.el('div', { className: 'ev-filter-actions' }, [btnPrint])
+            ])
+        ]);
     }
 
     /**
-     * Gera o HTML do estado vazio quando ainda não há sessões no histórico.
+     * Constrói o painel expansível de configuração dos períodos letivos (Bimestres / Trimestres).
      */
-    function renderEstadoVazioHtml() {
-        return '<div class="ev-empty">' +
-            '<div class="ev-empty-icon">' + svgEstadoVazio(52) + '</div>' +
-            '<p class="ev-empty-title">Ainda não há registros de evolução para esta seleção.</p>' +
-            '<p class="ev-empty-desc">' +
-                'Os registros aparecem automaticamente após concluir atividades nas Fases 1, 2 ou 3 com o <strong>Modo Aula</strong> ativado.' +
-            '</p>' +
-        '</div>';
+    function renderConfigPeriodosDom(storage, rootContainer) {
+        var domSafe = getDomSafe();
+        var periods = getPeriods();
+        if (!domSafe || !periods) return null;
+
+        if (!rascunhoConfigPeriodos) {
+            rascunhoConfigPeriodos = (storage && typeof storage.getPeriodosLetivos === 'function')
+                ? storage.getPeriodosLetivos()
+                : periods.gerarConfiguracaoPadrao('bimestre');
+        }
+        var cfg = periods.clonarConfiguracao(rascunhoConfigPeriodos);
+
+        var btnBim = domSafe.el('button', {
+            type: 'button',
+            id: 'evCfgModelBim',
+            className: 'ev-scope-btn' + (cfg.modelo === 'bimestre' ? ' active' : ''),
+            text: 'Bimestres (4 ciclos)'
+        });
+        var btnTri = domSafe.el('button', {
+            type: 'button',
+            id: 'evCfgModelTri',
+            className: 'ev-scope-btn' + (cfg.modelo === 'trimestre' ? ' active' : ''),
+            text: 'Trimestres (3 ciclos)'
+        });
+
+        var inputAno = domSafe.el('input', {
+            type: 'number',
+            id: 'evCfgAnoInput',
+            className: 'ev-period-year-input',
+            min: '2000',
+            max: '2100',
+            value: String(cfg.ano || new Date().getFullYear())
+        });
+
+        var btnRestaurar = domSafe.el('button', {
+            type: 'button',
+            id: 'evCfgRestaurarBtn',
+            className: 'tp-btn tp-btn-outline tp-btn-sm',
+            text: 'Restaurar padrão'
+        });
+
+        var cyclesList = domSafe.el('div', { className: 'ev-period-cycles-list' });
+        for (var i = 0; i < cfg.ciclos.length; i++) {
+            (function (ciclo, idx) {
+                var iniId = 'evPeriodIni_' + String(idx);
+                var fimId = 'evPeriodFim_' + String(idx);
+                var iniInput = domSafe.el('input', {
+                    type: 'date',
+                    id: iniId,
+                    className: 'ev-period-date-input',
+                    value: ciclo.inicio,
+                    'data-cycle-index': String(idx),
+                    'data-field': 'inicio',
+                    'aria-label': 'Início de ' + ciclo.nome
+                });
+                var fimInput = domSafe.el('input', {
+                    type: 'date',
+                    id: fimId,
+                    className: 'ev-period-date-input',
+                    value: ciclo.fim,
+                    'data-cycle-index': String(idx),
+                    'data-field': 'fim',
+                    'aria-label': 'Fim de ' + ciclo.nome
+                });
+
+                cyclesList.appendChild(domSafe.el('div', { className: 'ev-period-cycle-row' }, [
+                    domSafe.el('span', { className: 'ev-period-cycle-name', text: ciclo.nome }),
+                    domSafe.el('div', { className: 'ev-period-date-pair' }, [
+                        domSafe.el('label', { className: 'ev-period-date-label', for: iniId, text: 'Início' }),
+                        iniInput,
+                        domSafe.el('label', { className: 'ev-period-date-label', for: fimId, text: 'Fim' }),
+                        fimInput
+                    ])
+                ]));
+            })(cfg.ciclos[i], i);
+        }
+
+        var feedbackNode = configPeriodosFeedback
+            ? domSafe.el('div', {
+                className: 'ev-period-config-feedback ' + (configPeriodosFeedbackTipo === 'error' ? 'is-error' : 'is-success'),
+                text: configPeriodosFeedback
+            })
+            : null;
+
+        var titleHead = domSafe.el('h4', { className: 'ev-chart-title' });
+        appendSvgIcon(titleHead, svgCalendario(17));
+        titleHead.appendChild(domSafe.text(' '));
+        titleHead.appendChild(domSafe.el('span', { text: 'Configurar Períodos Letivos' }));
+
+        var panel = domSafe.el('div', { className: 'ev-period-config', id: 'evPeriodConfigPanel' }, [
+            domSafe.el('div', { className: 'ev-period-config-head' }, [
+                titleHead,
+                domSafe.el('div', { className: 'ev-period-model-row' }, [
+                    domSafe.el('div', { className: 'ev-scope-toggle', role: 'group', 'aria-label': 'Modelo de divisão letiva' }, [
+                        btnBim,
+                        btnTri
+                    ]),
+                    domSafe.el('div', { className: 'ev-period-year-wrap' }, [
+                        domSafe.el('label', { className: 'ev-label', for: 'evCfgAnoInput', text: 'Ano letivo' }),
+                        inputAno,
+                        btnRestaurar
+                    ])
+                ])
+            ]),
+            cyclesList,
+            feedbackNode,
+            domSafe.el('div', { className: 'ev-period-config-footer' }, [
+                domSafe.el('p', {
+                    className: 'ev-period-config-note',
+                    text: 'Alterar o modelo ou as datas reorganiza apenas o agrupamento dos gráficos — nenhuma sessão salva é apagada.'
+                }),
+                domSafe.el('div', { className: 'ev-period-config-actions' }, [
+                    domSafe.el('button', { type: 'button', id: 'evBtnFecharConfigPeriodos', className: 'tp-btn tp-btn-outline tp-btn-sm', text: 'Fechar' }),
+                    domSafe.el('button', { type: 'button', id: 'evBtnSalvarPeriodos', className: 'tp-btn tp-btn-primary tp-btn-sm', text: 'Salvar períodos' })
+                ])
+            ])
+        ]);
+
+        function atualizarDatasDoFormulario() {
+            var inputs = panel.querySelectorAll('.ev-period-date-input');
+            for (var k = 0; k < inputs.length; k++) {
+                var inp = inputs[k];
+                var idxC = Number(inp.getAttribute('data-cycle-index'));
+                var campo = inp.getAttribute('data-field');
+                if (cfg.ciclos[idxC] && (campo === 'inicio' || campo === 'fim')) {
+                    cfg.ciclos[idxC][campo] = inp.value || '';
+                }
+            }
+            rascunhoConfigPeriodos = cfg;
+        }
+
+        btnBim.addEventListener('click', function () {
+            var anoVal = Number(inputAno.value) || cfg.ano;
+            rascunhoConfigPeriodos = periods.gerarConfiguracaoPadrao('bimestre', anoVal);
+            configPeriodosFeedback = '';
+            render(rootContainer);
+        });
+
+        btnTri.addEventListener('click', function () {
+            var anoVal = Number(inputAno.value) || cfg.ano;
+            rascunhoConfigPeriodos = periods.gerarConfiguracaoPadrao('trimestre', anoVal);
+            configPeriodosFeedback = '';
+            render(rootContainer);
+        });
+
+        btnRestaurar.addEventListener('click', function () {
+            var anoVal = Number(inputAno.value) || cfg.ano;
+            rascunhoConfigPeriodos = periods.gerarConfiguracaoPadrao(cfg.modelo, anoVal);
+            configPeriodosFeedback = 'Datas restauradas para o padrão de ' + anoVal + '. Toque em "Salvar períodos" para aplicar.';
+            configPeriodosFeedbackTipo = 'success';
+            render(rootContainer);
+        });
+
+        var btnFechar = panel.querySelector('#evBtnFecharConfigPeriodos');
+        if (btnFechar) {
+            btnFechar.addEventListener('click', function () {
+                configPeriodosAberta = false;
+                configPeriodosFeedback = '';
+                rascunhoConfigPeriodos = null;
+                render(rootContainer);
+            });
+        }
+
+        var btnSalvar = panel.querySelector('#evBtnSalvarPeriodos');
+        if (btnSalvar) {
+            btnSalvar.addEventListener('click', function () {
+                atualizarDatasDoFormulario();
+                var anoVal = Number(inputAno.value) || cfg.ano;
+                var payload = {
+                    modelo: cfg.modelo,
+                    ano: Math.max(2000, Math.min(2100, Math.floor(anoVal))),
+                    ciclos: cfg.ciclos
+                };
+                if (!storage || typeof storage.salvarPeriodosLetivos !== 'function') {
+                    return;
+                }
+                var res = storage.salvarPeriodosLetivos(payload);
+                if (!res || !res.ok) {
+                    configPeriodosFeedback = (res && res.erro) ? res.erro : 'Não foi possível salvar os períodos letivos.';
+                    configPeriodosFeedbackTipo = 'error';
+                    render(rootContainer);
+                    return;
+                }
+
+                rascunhoConfigPeriodos = res.periodosLetivos;
+                if (filtroPeriodoId && !periods.obterCicloPorId(res.periodosLetivos, filtroPeriodoId)) {
+                    filtroPeriodoId = null;
+                }
+                configPeriodosFeedback = 'Períodos letivos salvos! Os gráficos já refletem o novo agrupamento.';
+                configPeriodosFeedbackTipo = 'success';
+                render(rootContainer);
+            });
+        }
+
+        return panel;
     }
 
     /**
-     * Gera o HTML dos 3 cards de resumo (Pontos fortes, Comparativo, Pontos de atenção).
+     * Constrói o DOM do estado vazio para seleção sem sessões ou período letivo sem registros.
      */
-    function renderCardsResumoHtml(resumo) {
+    function renderEstadoVazioDom(periodoVazio) {
+        var domSafe = getDomSafe();
+        var iconWrap = domSafe.el('div', { className: 'ev-empty-icon' });
+        appendSvgIcon(iconWrap, svgEstadoVazio(52));
+
+        if (periodoVazio) {
+            return domSafe.el('div', { className: 'ev-empty' }, [
+                iconWrap,
+                domSafe.el('p', {
+                    className: 'ev-empty-title',
+                    text: 'Ainda não há sessões registradas no ' + periodoVazio.nome + '.'
+                }),
+                domSafe.el('p', {
+                    className: 'ev-empty-desc',
+                    text: 'Escolha outro ciclo acima ou ajuste as datas em "Configurar ciclos" para agrupar suas sessões.'
+                })
+            ]);
+        }
+
+        return domSafe.el('div', { className: 'ev-empty' }, [
+            iconWrap,
+            domSafe.el('p', { className: 'ev-empty-title', text: 'Ainda não há registros de evolução para esta seleção.' }),
+            domSafe.el('p', { className: 'ev-empty-desc' }, [
+                'Os registros aparecem automaticamente após concluir atividades nas Fases 1, 2 ou 3 com o ',
+                domSafe.el('strong', { text: 'Modo Aula' }),
+                ' ativado.'
+            ])
+        ]);
+    }
+
+    /**
+     * Constrói o DOM dos 3 cards de resumo (Pontos fortes, Comparativo, Pontos de atenção).
+     */
+    function renderCardsResumoDom(resumo, modo) {
+        var domSafe = getDomSafe();
+        var ehPeriodo = modo === 'PERIODO';
         var comp = resumo.comparativo || {};
-        var metDia = resumo.metricasDia || { taxaAcerto: 0, acertos: 0, tentativas: 0 };
+        var metDia = (ehPeriodo ? resumo.metricasPeriodo : resumo.metricasDia) || { taxaAcerto: 0, acertos: 0, tentativas: 0 };
         var metAnt = resumo.metricasAnterior || null;
 
         // Card 1: Pontos fortes
-        var listaFortesHtml = '';
+        var listaFortes = domSafe.el('ul', { className: 'ev-card-list' });
         var fortes = Array.isArray(resumo.pontosFortes) ? resumo.pontosFortes : [];
         for (var i = 0; i < fortes.length; i++) {
-            listaFortesHtml += '<li>' + escapeHtml(fortes[i]) + '</li>';
+            listaFortes.appendChild(domSafe.el('li', { text: fortes[i] }));
         }
 
-        // Card 2: Em relação ao dia anterior
+        // Card 2: Em relação ao dia/período anterior
         var f1Dia = obterMetricasFase(metDia.porFase, 'fase1');
         var f1Ant = metAnt ? obterMetricasFase(metAnt.porFase, 'fase1') : null;
-        var deltaTextoBig = '1º dia';
+        var deltaTextoBig = ehPeriodo ? '1º ciclo' : '1º dia';
         var deltaClasse = 'ev-delta-flat';
         var deltaLabel = 'Início';
+        var labelAtual = ehPeriodo
+            ? (resumo.periodoAtual ? resumo.periodoAtual.sigla : 'Período')
+            : 'Dia analisado';
+        var labelAnterior = ehPeriodo
+            ? (resumo.periodoAnterior ? resumo.periodoAnterior.sigla : 'Anterior')
+            : formatarDataBR(resumo.dataAnterior);
+        var labelAtualCurto = ehPeriodo
+            ? (resumo.periodoAtual ? resumo.periodoAtual.sigla : 'Atual')
+            : formatarDataBR(resumo.dataReferencia);
+
         var deltaSub = metDia.tentativas > 0
-            ? ('Dia analisado: ' + metDia.taxaAcerto + '% (' + metDia.acertos + ' de ' + metDia.tentativas + (metDia.tentativas === 1 ? ' tentativa)' : ' tentativas)'))
+            ? (labelAtual + ': ' + metDia.taxaAcerto + '% (' + metDia.acertos + ' de ' + metDia.tentativas + (metDia.tentativas === 1 ? ' tentativa)' : ' tentativas)'))
             : (f1Dia.modoMetrica === 'tempo'
                 ? ('Fase 1 (Memória): média de ' + formatarTempoSegundos(f1Dia.tempoMedioSegundos) + ' (' + f1Dia.rodadas + (f1Dia.rodadas === 1 ? ' rodada' : ' rodadas') + ')')
-                : 'Dia analisado registrado.');
+                : (labelAtual + ' registrado.'));
 
         if (comp.temDiaAnterior && metAnt) {
             if (comp.tipoComparativo === 'tempo_fase1' && f1Dia.modoMetrica === 'tempo' && f1Ant && f1Ant.modoMetrica === 'tempo') {
@@ -474,14 +832,13 @@
                     deltaClasse = 'ev-delta-flat';
                     deltaLabel = 'Estável';
                 }
-                deltaSub = 'No dia (F1): ' + formatarTempoSegundos(f1Dia.tempoMedioSegundos) +
-                    ' | Anterior (' + formatarDataBR(resumo.dataAnterior) + '): ' + formatarTempoSegundos(f1Ant.tempoMedioSegundos);
+                deltaSub = (ehPeriodo ? 'No período (F1): ' : 'No dia (F1): ') + formatarTempoSegundos(f1Dia.tempoMedioSegundos) +
+                    ' | Anterior (' + labelAnterior + '): ' + formatarTempoSegundos(f1Ant.tempoMedioSegundos);
             } else if (comp.tipoComparativo === 'sem_base_comum') {
                 deltaTextoBig = '—';
                 deltaClasse = 'ev-delta-flat';
                 deltaLabel = 'Fases distintas';
-                deltaSub = 'Fases diferentes entre ' + formatarDataBR(resumo.dataReferencia) +
-                    ' e ' + formatarDataBR(resumo.dataAnterior);
+                deltaSub = 'Fases diferentes entre ' + labelAtualCurto + ' e ' + labelAnterior;
             } else {
                 var diff = comp.variacaoTaxaAcerto || 0;
                 deltaTextoBig = (diff > 0 ? '+' : '') + diff + '%';
@@ -495,63 +852,78 @@
                     deltaClasse = 'ev-delta-flat';
                     deltaLabel = 'Estável';
                 }
-                deltaSub = 'No dia: ' + metDia.taxaAcerto + '% | Anterior (' +
-                    formatarDataBR(resumo.dataAnterior) + '): ' + metAnt.taxaAcerto + '%';
+                deltaSub = (ehPeriodo ? 'No período: ' : 'No dia: ') + metDia.taxaAcerto + '% | Anterior (' +
+                    labelAnterior + '): ' + metAnt.taxaAcerto + '%';
             }
         }
 
-        var msgsMelhoriaHtml = '';
+        var msgsMelhoria = domSafe.el('ul', { className: 'ev-card-list' });
         var msgs = Array.isArray(comp.mensagensMelhoria) ? comp.mensagensMelhoria : [];
         for (var m = 0; m < msgs.length; m++) {
-            msgsMelhoriaHtml += '<li>' + escapeHtml(msgs[m]) + '</li>';
+            msgsMelhoria.appendChild(domSafe.el('li', { text: msgs[m] }));
         }
 
         // Card 3: Pontos de atenção para revisar
-        var listaAtencaoHtml = '';
+        var listaAtencao = domSafe.el('ul', { className: 'ev-card-list' });
         var atencao = Array.isArray(resumo.pontosAtencao) ? resumo.pontosAtencao : [];
         for (var a = 0; a < atencao.length; a++) {
-            listaAtencaoHtml += '<li>' + escapeHtml(atencao[a]) + '</li>';
+            listaAtencao.appendChild(domSafe.el('li', { text: atencao[a] }));
         }
 
-        return '<div class="ev-summary-grid">' +
-            '<div class="ev-card ev-card-strong">' +
-                '<h4 class="ev-card-title">' + svgEstrela(18) + ' <span>Pontos fortes</span></h4>' +
-                '<ul class="ev-card-list">' + listaFortesHtml + '</ul>' +
-            '</div>' +
-            '<div class="ev-card ev-card-delta">' +
-                '<h4 class="ev-card-title">' + svgComparativo(18) + ' <span>Em relação ao dia anterior</span></h4>' +
-                '<div class="ev-delta-row">' +
-                    '<span class="ev-delta-big">' + escapeHtml(deltaTextoBig) + '</span>' +
-                    '<span class="ev-delta-badge ' + deltaClasse + '">' +
-                        svgSetaDelta(comp.tendencia) + ' ' + escapeHtml(deltaLabel) +
-                    '</span>' +
-                '</div>' +
-                '<p class="ev-delta-sub">' + escapeHtml(deltaSub) + '</p>' +
-                '<ul class="ev-card-list">' + msgsMelhoriaHtml + '</ul>' +
-            '</div>' +
-            '<div class="ev-card ev-card-alert">' +
-                '<h4 class="ev-card-title">' + svgAlerta(18) + ' <span>Pontos de atenção para revisar</span></h4>' +
-                '<ul class="ev-card-list">' + listaAtencaoHtml + '</ul>' +
-            '</div>' +
-        '</div>';
+        var titleStrong = domSafe.el('h4', { className: 'ev-card-title' });
+        appendSvgIcon(titleStrong, svgEstrela(18));
+        titleStrong.appendChild(domSafe.text(' '));
+        titleStrong.appendChild(domSafe.el('span', { text: 'Pontos fortes' }));
+
+        var titleDelta = domSafe.el('h4', { className: 'ev-card-title' });
+        appendSvgIcon(titleDelta, svgComparativo(18));
+        titleDelta.appendChild(domSafe.text(' '));
+        titleDelta.appendChild(domSafe.el('span', {
+            text: ehPeriodo ? 'Em relação ao período anterior' : 'Em relação ao dia anterior'
+        }));
+
+        var deltaBadge = domSafe.el('span', { className: 'ev-delta-badge ' + deltaClasse });
+        appendSvgIcon(deltaBadge, svgSetaDelta(comp.tendencia));
+        deltaBadge.appendChild(domSafe.text(' ' + deltaLabel));
+
+        var titleAlert = domSafe.el('h4', { className: 'ev-card-title' });
+        appendSvgIcon(titleAlert, svgAlerta(18));
+        titleAlert.appendChild(domSafe.text(' '));
+        titleAlert.appendChild(domSafe.el('span', { text: 'Pontos de atenção para revisar' }));
+
+        return domSafe.el('div', { className: 'ev-summary-grid' }, [
+            domSafe.el('div', { className: 'ev-card ev-card-strong' }, [titleStrong, listaFortes]),
+            domSafe.el('div', { className: 'ev-card ev-card-delta' }, [
+                titleDelta,
+                domSafe.el('div', { className: 'ev-delta-row' }, [
+                    domSafe.el('span', { className: 'ev-delta-big', text: deltaTextoBig }),
+                    deltaBadge
+                ]),
+                domSafe.el('p', { className: 'ev-delta-sub', text: deltaSub }),
+                msgsMelhoria
+            ]),
+            domSafe.el('div', { className: 'ev-card ev-card-alert' }, [titleAlert, listaAtencao])
+        ]);
     }
 
     /**
-     * Gera o HTML do painel de desempenho quebrado por fase no dia selecionado.
+     * Constrói o DOM do painel de desempenho quebrado por fase no dia ou período selecionado.
      */
-    function renderDesempenhoPorFaseHtml(resumo) {
-        var metDia = resumo.metricasDia || {};
+    function renderDesempenhoPorFaseDom(resumo, modo) {
+        var domSafe = getDomSafe();
+        var ehPeriodo = modo === 'PERIODO';
+        var metDia = (ehPeriodo ? resumo.metricasPeriodo : resumo.metricasDia) || {};
         var metAnt = resumo.metricasAnterior || null;
         var porFaseDia = metDia.porFase || null;
         var porFaseAnt = (metAnt && metAnt.porFase) ? metAnt.porFase : null;
 
-        var cardsHtml = '';
+        var grid = domSafe.el('div', { className: 'ev-phases-grid' });
         for (var i = 0; i < FASES_CONFIG.length; i++) {
             var cfg = FASES_CONFIG[i];
             var met = obterMetricasFase(porFaseDia, cfg.key);
             var ant = porFaseAnt ? obterMetricasFase(porFaseAnt, cfg.key) : null;
 
-            var deltaBadgeHtml = '';
+            var deltaBadgeNode = null;
             var pctTexto = '—';
             var largura = 0;
             var countTexto = 'Sem registros nesta fase';
@@ -561,7 +933,7 @@
                     var diffSegF1 = met.tempoMedioSegundos - ant.tempoMedioSegundos;
                     var deltaClasseF1 = diffSegF1 < 0 ? 'is-up' : (diffSegF1 > 0 ? 'is-down' : 'is-flat');
                     var deltaTextoF1 = diffSegF1 === 0 ? '=' : ((diffSegF1 > 0 ? '+' : '') + diffSegF1 + 's');
-                    deltaBadgeHtml = '<span class="ev-phase-delta ' + deltaClasseF1 + '">' + escapeHtml(deltaTextoF1) + '</span>';
+                    deltaBadgeNode = domSafe.el('span', { className: 'ev-phase-delta ' + deltaClasseF1, text: deltaTextoF1 });
                 }
                 pctTexto = formatarTempoSegundos(met.tempoMedioSegundos);
                 countTexto = 'Média em ' + met.rodadas + (met.rodadas === 1 ? ' rodada concluída' : ' rodadas concluídas');
@@ -571,7 +943,7 @@
                     var diff = met.taxaAcerto - ant.taxaAcerto;
                     var deltaClasse = diff > 0 ? 'is-up' : (diff < 0 ? 'is-down' : 'is-flat');
                     var deltaTexto = diff === 0 ? '=' : ((diff > 0 ? '+' : '') + diff + '%');
-                    deltaBadgeHtml = '<span class="ev-phase-delta ' + deltaClasse + '">' + escapeHtml(deltaTexto) + '</span>';
+                    deltaBadgeNode = domSafe.el('span', { className: 'ev-phase-delta ' + deltaClasse, text: deltaTexto });
                 }
 
                 pctTexto = met.temDados ? (String(met.taxaAcerto) + '%') : '—';
@@ -584,41 +956,62 @@
                 }
             }
 
-            cardsHtml += '<div class="ev-phase-card ' + cfg.classe + (met.temDados ? '' : ' is-empty') + '">' +
-                '<div class="ev-phase-top">' +
-                    '<span class="ev-phase-tag">' + escapeHtml(cfg.titulo) + '</span>' +
-                    deltaBadgeHtml +
-                '</div>' +
-                '<div class="ev-phase-metrics">' +
-                    '<span class="ev-phase-pct">' + escapeHtml(pctTexto) + '</span>' +
-                    '<span class="ev-phase-count">' + escapeHtml(countTexto) + '</span>' +
-                '</div>' +
-                '<div class="ev-phase-progress-track">' +
-                    '<div class="ev-phase-progress-fill ' + cfg.fillClasse + '" style="width: ' + largura + '%;"></div>' +
-                '</div>' +
-            '</div>';
+            var fillEl = domSafe.el('div', { className: 'ev-phase-progress-fill ' + cfg.fillClasse });
+            fillEl.style.width = largura + '%';
+
+            grid.appendChild(domSafe.el('div', {
+                className: 'ev-phase-card ' + cfg.classe + (met.temDados ? '' : ' is-empty')
+            }, [
+                domSafe.el('div', { className: 'ev-phase-top' }, [
+                    domSafe.el('span', { className: 'ev-phase-tag', text: cfg.titulo }),
+                    deltaBadgeNode
+                ]),
+                domSafe.el('div', { className: 'ev-phase-metrics' }, [
+                    domSafe.el('span', { className: 'ev-phase-pct', text: pctTexto }),
+                    domSafe.el('span', { className: 'ev-phase-count', text: countTexto })
+                ]),
+                domSafe.el('div', { className: 'ev-phase-progress-track' }, [fillEl])
+            ]));
         }
 
-        var notaLegadoHtml = metDia.temDadosLegadosSemFase
-            ? '<p class="ev-legacy-note">Registros antigos de Jornada Completa anteriores a esta atualização aparecem no consolidado geral.</p>'
-            : '';
+        var headerTitle = domSafe.el('h4', { className: 'ev-chart-title' });
+        appendSvgIcon(headerTitle, svgGraficoBarras(18));
+        headerTitle.appendChild(domSafe.text(' '));
+        headerTitle.appendChild(domSafe.el('span', {
+            text: ehPeriodo ? 'Desempenho por fase no período' : 'Desempenho por fase no dia'
+        }));
 
-        return '<div class="ev-phases-panel">' +
-            '<div class="ev-phases-header">' +
-                '<h4 class="ev-chart-title">' + svgGraficoBarras(18) + ' <span>Desempenho por fase no dia</span></h4>' +
-                '<span class="ev-phases-date-badge">' + escapeHtml(formatarDataBR(resumo.dataReferencia)) + '</span>' +
-            '</div>' +
-            '<div class="ev-phases-grid">' + cardsHtml + '</div>' +
-            notaLegadoHtml +
-        '</div>';
+        var badgeTexto = ehPeriodo && resumo.periodoAtual
+            ? (resumo.periodoAtual.nome + ' (' + formatarDataBR(resumo.periodoAtual.inicio) + ' a ' + formatarDataBR(resumo.periodoAtual.fim) + ')')
+            : formatarDataBR(resumo.dataReferencia);
+
+        var notaLegadoNode = metDia.temDadosLegadosSemFase
+            ? domSafe.el('p', {
+                className: 'ev-legacy-note',
+                text: 'Registros antigos de Jornada Completa anteriores a esta atualização aparecem no consolidado geral.'
+            })
+            : null;
+
+        return domSafe.el('div', { className: 'ev-phases-panel' }, [
+            domSafe.el('div', { className: 'ev-phases-header' }, [
+                headerTitle,
+                domSafe.el('span', { className: 'ev-phases-date-badge', text: badgeTexto })
+            ]),
+            grid,
+            notaLegadoNode
+        ]);
     }
 
     /**
-     * Gera o HTML dos dois gráficos em HTML/CSS puro (evolução diária por fase e ranking de dificuldades).
+     * Constrói o DOM dos dois gráficos em HTML/CSS puro (evolução diária ou por período + dificuldades).
      */
-    function renderGraficosHtml(resumo) {
-        // Gráfico 1: Barras verticais agrupadas por fase na evolução diária
-        var serie = Array.isArray(resumo.serieDiaria) ? resumo.serieDiaria : [];
+    function renderGraficosDom(resumo, modo) {
+        var domSafe = getDomSafe();
+        var ehPeriodo = modo === 'PERIODO';
+        // Gráfico 1: Barras verticais agrupadas por fase (diária ou por período letivo)
+        var serie = ehPeriodo
+            ? (Array.isArray(resumo.seriePeriodos) ? resumo.seriePeriodos : [])
+            : (Array.isArray(resumo.serieDiaria) ? resumo.serieDiaria : []);
         var usaLegado = false;
         var maxTempoF1 = 30;
 
@@ -635,26 +1028,25 @@
             }
         }
 
-        var legendaHtml = '<div class="ev-phase-legend">';
+        var legendaEl = domSafe.el('div', { className: 'ev-phase-legend' });
         for (var lg = 0; lg < FASES_CONFIG.length; lg++) {
             var lCfg = FASES_CONFIG[lg];
             var legendaTexto = lCfg.key === 'fase1'
                 ? 'Fase 1: Memória (tempo médio)'
                 : (lCfg.titulo + ' (% acertos)');
-            legendaHtml += '<span class="ev-legend-item">' +
-                '<span class="ev-legend-dot ' + lCfg.fillClasse + '"></span>' +
-                '<span>' + escapeHtml(legendaTexto) + '</span>' +
-            '</span>';
+            legendaEl.appendChild(domSafe.el('span', { className: 'ev-legend-item' }, [
+                domSafe.el('span', { className: 'ev-legend-dot ' + lCfg.fillClasse }),
+                domSafe.el('span', { text: legendaTexto })
+            ]));
         }
         if (usaLegado) {
-            legendaHtml += '<span class="ev-legend-item">' +
-                '<span class="ev-legend-dot is-legacy"></span>' +
-                '<span>Geral (registro antigo)</span>' +
-            '</span>';
+            legendaEl.appendChild(domSafe.el('span', { className: 'ev-legend-item' }, [
+                domSafe.el('span', { className: 'ev-legend-dot is-legacy' }),
+                domSafe.el('span', { text: 'Geral (registro antigo)' })
+            ]));
         }
-        legendaHtml += '</div>';
 
-        var colunasHtml = '';
+        var colunasWrap = domSafe.el('div', { className: 'ev-vbars-grouped' });
         for (var i = 0; i < serie.length; i++) {
             var ponto = serie[i] || {};
             var classeCol = '';
@@ -664,12 +1056,19 @@
                 classeCol = ' is-prev';
             }
 
+            var eixoLabel = ehPeriodo
+                ? String(ponto.sigla || ponto.nome || '')
+                : String(ponto.dataCurta || '');
+            var prefixoTooltip = ehPeriodo
+                ? ((ponto.nome || eixoLabel) + (ponto.intervaloBR ? ' (' + ponto.intervaloBR + ')' : ''))
+                : String(ponto.dataCurta || '');
+
             var f1 = obterMetricasFase(ponto.porFase, 'fase1');
             var f2 = obterMetricasFase(ponto.porFase, 'fase2');
             var f3 = obterMetricasFase(ponto.porFase, 'fase3');
             var temAlgumaFase = f1.temDados || f2.temDados || f3.temDados;
 
-            var miniBarsHtml = '';
+            var miniGroup = domSafe.el('div', { className: 'ev-vbar-mini-group' });
             if (temAlgumaFase) {
                 var fasesDoDia = [f1, f2, f3];
                 for (var fi = 0; fi < FASES_CONFIG.length; fi++) {
@@ -677,63 +1076,96 @@
                     var mf = fasesDoDia[fi];
                     var valTexto = '—';
                     var altura = 0;
-                    var tooltip = ponto.dataCurta + ' - ' + cfgF.titulo + ': Sem registros';
+                    var tooltip = prefixoTooltip + ' - ' + cfgF.titulo + ': Sem registros';
 
                     if (cfgF.key === 'fase1' && mf.modoMetrica === 'tempo') {
                         valTexto = formatarTempoCurto(mf.tempoMedioSegundos);
                         altura = Math.max(18, Math.min(100, Math.round((mf.tempoMedioSegundos / maxTempoF1) * 100)));
-                        tooltip = ponto.dataCurta + ' - ' + cfgF.titulo + ': média de ' +
+                        tooltip = prefixoTooltip + ' - ' + cfgF.titulo + ': média de ' +
                             formatarTempoSegundos(mf.tempoMedioSegundos) + ' (' + mf.rodadas +
                             (mf.rodadas === 1 ? ' rodada)' : ' rodadas)');
                     } else if (mf.temDados) {
                         valTexto = String(mf.taxaAcerto) + '%';
                         altura = Math.max(0, Math.min(100, mf.taxaAcerto));
-                        tooltip = ponto.dataCurta + ' - ' + cfgF.titulo + ': ' + mf.taxaAcerto + '% (' +
+                        tooltip = prefixoTooltip + ' - ' + cfgF.titulo + ': ' + mf.taxaAcerto + '% (' +
                             mf.acertos + ' de ' + mf.tentativas + ')' +
                             (cfgF.key === 'fase1' && mf.modoMetrica === 'legado_taxa' ? ' [registro antigo]' : '');
                     }
 
-                    miniBarsHtml += '<div class="ev-mini-bar' + (mf.temDados ? '' : ' is-empty') + '" title="' + escapeHtml(tooltip) + '">' +
-                        '<span class="ev-mini-val">' + escapeHtml(valTexto) + '</span>' +
-                        '<div class="ev-mini-track">' +
-                            '<div class="ev-mini-fill ' + cfgF.fillClasse + '" style="height: ' + altura + '%;"></div>' +
-                        '</div>' +
-                    '</div>';
+                    var miniFill = domSafe.el('div', { className: 'ev-mini-fill ' + cfgF.fillClasse });
+                    miniFill.style.height = altura + '%';
+
+                    miniGroup.appendChild(domSafe.el('div', {
+                        className: 'ev-mini-bar' + (mf.temDados ? '' : ' is-empty'),
+                        title: tooltip
+                    }, [
+                        domSafe.el('span', { className: 'ev-mini-val', text: valTexto }),
+                        domSafe.el('div', { className: 'ev-mini-track' }, [miniFill])
+                    ]));
                 }
             } else if (Number(ponto.tentativas) > 0) {
                 var taxaGeral = Math.max(0, Math.min(100, Number(ponto.taxaAcerto) || 0));
-                var tooltipLegado = ponto.dataCurta + ' - Geral (registro antigo): ' + taxaGeral + '% (' + ponto.acertos + ' de ' + ponto.tentativas + ')';
-                miniBarsHtml = '<div class="ev-mini-bar is-legacy-bar" title="' + escapeHtml(tooltipLegado) + '">' +
-                    '<span class="ev-mini-val">' + escapeHtml(String(taxaGeral)) + '%</span>' +
-                    '<div class="ev-mini-track">' +
-                        '<div class="ev-mini-fill is-legacy" style="height: ' + taxaGeral + '%;"></div>' +
-                    '</div>' +
-                '</div>';
+                var tooltipLegado = prefixoTooltip + ' - Geral (registro antigo): ' + taxaGeral + '% (' + ponto.acertos + ' de ' + ponto.tentativas + ')';
+                var legacyFill = domSafe.el('div', { className: 'ev-mini-fill is-legacy' });
+                legacyFill.style.height = taxaGeral + '%';
+
+                miniGroup.appendChild(domSafe.el('div', {
+                    className: 'ev-mini-bar is-legacy-bar',
+                    title: tooltipLegado
+                }, [
+                    domSafe.el('span', { className: 'ev-mini-val', text: String(taxaGeral) + '%' }),
+                    domSafe.el('div', { className: 'ev-mini-track' }, [legacyFill])
+                ]));
             } else {
-                miniBarsHtml = '<div class="ev-mini-bar is-empty" title="' + escapeHtml(ponto.dataCurta + ': Sem registros') + '">' +
-                    '<span class="ev-mini-val">—</span>' +
-                    '<div class="ev-mini-track"><div class="ev-mini-fill is-legacy" style="height: 0%;"></div></div>' +
-                '</div>';
+                var emptyFill = domSafe.el('div', { className: 'ev-mini-fill is-legacy' });
+                emptyFill.style.height = '0%';
+
+                miniGroup.appendChild(domSafe.el('div', {
+                    className: 'ev-mini-bar is-empty',
+                    title: prefixoTooltip + ': Sem registros'
+                }, [
+                    domSafe.el('span', { className: 'ev-mini-val', text: '—' }),
+                    domSafe.el('div', { className: 'ev-mini-track' }, [emptyFill])
+                ]));
             }
 
-            colunasHtml += '<div class="ev-vbar-group-col' + classeCol + '">' +
-                '<div class="ev-vbar-mini-group">' + miniBarsHtml + '</div>' +
-                '<span class="ev-vbar-label">' + escapeHtml(ponto.dataCurta) + '</span>' +
-            '</div>';
+            colunasWrap.appendChild(domSafe.el('div', { className: 'ev-vbar-group-col' + classeCol }, [
+                miniGroup,
+                domSafe.el('span', { className: 'ev-vbar-label', text: eixoLabel })
+            ]));
         }
 
         // Gráfico 2: Barras horizontais de dificuldades observadas
         var ranking = Array.isArray(resumo.rankingDificuldades) ? resumo.rankingDificuldades : [];
-        var dificuldadesConteudoHtml = '';
+        var dificuldadesNode;
 
-        if (ranking.length === 0) {
-            dificuldadesConteudoHtml = '<div class="ev-positive-msg">' +
-                '<div class="ev-positive-icon">' + svgDenteFeliz(44) + '</div>' +
-                '<p class="ev-positive-title">Nenhuma dificuldade registrada neste dia!</p>' +
-                '<p class="ev-positive-desc">Excelente desempenho: todas as tentativas analisadas foram concluídas sem trocas ou travas.</p>' +
-            '</div>';
+        if (ehPeriodo && resumo.periodoSemRegistros) {
+            dificuldadesNode = domSafe.el('div', { className: 'ev-positive-msg' }, [
+                domSafe.el('p', {
+                    className: 'ev-positive-title',
+                    text: 'Sem registros no período selecionado.'
+                }),
+                domSafe.el('p', {
+                    className: 'ev-positive-desc',
+                    text: 'Compare os demais ciclos no gráfico ao lado ou selecione outro período letivo acima.'
+                })
+            ]);
+        } else if (ranking.length === 0) {
+            var posIcon = domSafe.el('div', { className: 'ev-positive-icon' });
+            appendSvgIcon(posIcon, svgDenteFeliz(44));
+            dificuldadesNode = domSafe.el('div', { className: 'ev-positive-msg' }, [
+                posIcon,
+                domSafe.el('p', {
+                    className: 'ev-positive-title',
+                    text: ehPeriodo ? 'Nenhuma dificuldade registrada neste período!' : 'Nenhuma dificuldade registrada neste dia!'
+                }),
+                domSafe.el('p', {
+                    className: 'ev-positive-desc',
+                    text: 'Excelente desempenho: todas as tentativas analisadas foram concluídas sem trocas ou travas.'
+                })
+            ]);
         } else {
-            var linhasHtml = '';
+            var hbarsWrap = domSafe.el('div', { className: 'ev-hbars' });
             for (var j = 0; j < ranking.length; j++) {
                 var item = ranking[j];
                 var isSilaba = item.tipo === 'silaba';
@@ -742,47 +1174,77 @@
                 var fillClass = isSilaba ? ' is-syl' : '';
                 var largura = Math.max(12, Math.min(100, Number(item.percentualBarra) || 12));
                 var countTexto = item.count + (item.count === 1 ? ' vez' : ' vezes');
-                var exemplosTexto = (Array.isArray(item.exemplos) && item.exemplos.length > 0)
-                    ? '<div class="ev-hbar-examples">Ex.: ' + escapeHtml(item.exemplos.join(', ')) + '</div>'
-                    : '';
+                var exemplosNode = (Array.isArray(item.exemplos) && item.exemplos.length > 0)
+                    ? domSafe.el('div', { className: 'ev-hbar-examples', text: 'Ex.: ' + item.exemplos.join(', ') })
+                    : null;
 
-                linhasHtml += '<div class="ev-hbar-row">' +
-                    '<div class="ev-hbar-meta">' +
-                        '<span class="ev-hbar-name">' + escapeHtml(item.nome) + '</span>' +
-                        '<span class="ev-hbar-tag ' + tagClass + '">' + tagTexto + '</span>' +
-                        '<span class="ev-hbar-count">' + escapeHtml(countTexto) + '</span>' +
-                    '</div>' +
-                    '<div class="ev-hbar-track">' +
-                        '<div class="ev-hbar-fill' + fillClass + '" style="width: ' + largura + '%;"></div>' +
-                    '</div>' +
-                    exemplosTexto +
-                '</div>';
+                var hbarFill = domSafe.el('div', { className: 'ev-hbar-fill' + fillClass });
+                hbarFill.style.width = largura + '%';
+
+                hbarsWrap.appendChild(domSafe.el('div', { className: 'ev-hbar-row' }, [
+                    domSafe.el('div', { className: 'ev-hbar-meta' }, [
+                        domSafe.el('span', { className: 'ev-hbar-name', text: String(item.nome || '') }),
+                        domSafe.el('span', { className: 'ev-hbar-tag ' + tagClass, text: tagTexto }),
+                        domSafe.el('span', { className: 'ev-hbar-count', text: countTexto })
+                    ]),
+                    domSafe.el('div', { className: 'ev-hbar-track' }, [hbarFill]),
+                    exemplosNode
+                ]));
             }
-            dificuldadesConteudoHtml = '<div class="ev-hbars">' + linhasHtml + '</div>';
+            dificuldadesNode = hbarsWrap;
         }
 
-        return '<div class="ev-charts-grid">' +
-            '<div class="ev-chart-box">' +
-                '<h4 class="ev-chart-title">' + svgGraficoBarras(18) + ' <span>Evolução diária por fase (F1 tempo | F2 e F3 % acertos)</span></h4>' +
-                legendaHtml +
-                '<div class="ev-vbars-grouped">' + colunasHtml + '</div>' +
-            '</div>' +
-            '<div class="ev-chart-box">' +
-                '<h4 class="ev-chart-title">' + svgLupa(18) + ' <span>Principais dificuldades observadas</span></h4>' +
-                dificuldadesConteudoHtml +
-            '</div>' +
-        '</div>';
+        var chartTitle1 = domSafe.el('h4', { className: 'ev-chart-title' });
+        appendSvgIcon(chartTitle1, svgGraficoBarras(18));
+        chartTitle1.appendChild(domSafe.text(' '));
+        chartTitle1.appendChild(domSafe.el('span', {
+            text: ehPeriodo
+                ? 'Comparativo por período letivo (F1 tempo | F2 e F3 % acertos)'
+                : 'Evolução diária por fase (F1 tempo | F2 e F3 % acertos)'
+        }));
+
+        var chartTitle2 = domSafe.el('h4', { className: 'ev-chart-title' });
+        appendSvgIcon(chartTitle2, svgLupa(18));
+        chartTitle2.appendChild(domSafe.text(' '));
+        chartTitle2.appendChild(domSafe.el('span', { text: 'Principais dificuldades observadas' }));
+
+        var foraNota = (ehPeriodo && resumo.sessoesForaDosCiclosCount > 0)
+            ? domSafe.el('p', {
+                className: 'ev-period-out-note',
+                text: 'Obs.: ' + resumo.sessoesForaDosCiclosCount +
+                    (resumo.sessoesForaDosCiclosCount === 1
+                        ? ' sessão registrada está fora das datas dos períodos configurados.'
+                        : ' sessões registradas estão fora das datas dos períodos configurados.')
+            })
+            : null;
+
+        return domSafe.el('div', { className: 'ev-charts-grid' }, [
+            domSafe.el('div', { className: 'ev-chart-box' }, [
+                chartTitle1,
+                legendaEl,
+                colunasWrap,
+                foraNota
+            ]),
+            domSafe.el('div', { className: 'ev-chart-box' }, [
+                chartTitle2,
+                dificuldadesNode
+            ])
+        ]);
     }
 
     /**
-     * Gera o HTML do rodapé com botão de limpeza segura em 2 toques.
+     * Constrói o DOM do rodapé com botão de limpeza segura em 2 toques.
      */
-    function renderRodapeHtml() {
-        return '<div class="ev-footer">' +
-            '<button type="button" class="ev-btn-danger" id="evBtnLimparHistorico">' +
-                'Limpar histórico de evolução' +
-            '</button>' +
-        '</div>';
+    function renderRodapeDom() {
+        var domSafe = getDomSafe();
+        return domSafe.el('div', { className: 'ev-footer' }, [
+            domSafe.el('button', {
+                type: 'button',
+                className: 'ev-btn-danger',
+                id: 'evBtnLimparHistorico',
+                text: 'Limpar histórico de evolução'
+            })
+        ]);
     }
 
     /**
@@ -825,12 +1287,22 @@
     /**
      * Renderiza a visao panoramica Aluno por Aluno usando 100% DOM seguro.
      */
-    function renderVisaoAlunosDom(mountEl, storage, analytics, dataRef, rootContainer) {
+    function renderVisaoAlunosDom(mountEl, storage, analytics, contextoAlunos, rootContainer) {
         if (!mountEl) return;
         mountEl.textContent = '';
 
+        var ctxAl = (contextoAlunos && typeof contextoAlunos === 'object')
+            ? contextoAlunos
+            : { dataRef: contextoAlunos || null, periodoAtual: null };
+        var dataRef = ctxAl.dataRef || null;
+        var periodoAtual = ctxAl.periodoAtual || null;
+
         var temDataRef = Boolean(dataRef);
+        var temPeriodo = Boolean(periodoAtual && periodoAtual.id);
         if (escopoAlunos === 'DIA' && !temDataRef) {
+            escopoAlunos = 'GERAL';
+        }
+        if (escopoAlunos === 'PERIODO' && !temPeriodo) {
             escopoAlunos = 'GERAL';
         }
 
@@ -839,7 +1311,7 @@
 
         var titleEl = criarEl('h4', 'ev-chart-title');
         var iconSpan = criarEl('span', 'ev-title-icon');
-        iconSpan.innerHTML = svgUsuarios(18);
+        appendSvgIcon(iconSpan, svgUsuarios(18));
         titleEl.appendChild(iconSpan);
         titleEl.appendChild(criarEl('span', '', 'Desempenho aluno por aluno'));
         header.appendChild(titleEl);
@@ -853,7 +1325,18 @@
         btnGeral.addEventListener('click', function () {
             if (escopoAlunos !== 'GERAL') {
                 escopoAlunos = 'GERAL';
-                renderVisaoAlunosDom(mountEl, storage, analytics, dataRef, rootContainer);
+                renderVisaoAlunosDom(mountEl, storage, analytics, ctxAl, rootContainer);
+            }
+        });
+
+        var btnPeriodoLabel = temPeriodo ? ('Período (' + periodoAtual.sigla + ')') : 'Período letivo';
+        var btnPeriodo = criarEl('button', 'ev-scope-btn' + (escopoAlunos === 'PERIODO' ? ' active' : ''), btnPeriodoLabel);
+        btnPeriodo.type = 'button';
+        btnPeriodo.disabled = !temPeriodo;
+        btnPeriodo.addEventListener('click', function () {
+            if (temPeriodo && escopoAlunos !== 'PERIODO') {
+                escopoAlunos = 'PERIODO';
+                renderVisaoAlunosDom(mountEl, storage, analytics, ctxAl, rootContainer);
             }
         });
 
@@ -864,11 +1347,12 @@
         btnDia.addEventListener('click', function () {
             if (temDataRef && escopoAlunos !== 'DIA') {
                 escopoAlunos = 'DIA';
-                renderVisaoAlunosDom(mountEl, storage, analytics, dataRef, rootContainer);
+                renderVisaoAlunosDom(mountEl, storage, analytics, ctxAl, rootContainer);
             }
         });
 
         scopeWrap.appendChild(btnGeral);
+        scopeWrap.appendChild(btnPeriodo);
         scopeWrap.appendChild(btnDia);
         header.appendChild(scopeWrap);
         panel.appendChild(header);
@@ -876,7 +1360,10 @@
         var lista = (analytics && typeof analytics.gerarResumoPorAluno === 'function')
             ? analytics.gerarResumoPorAluno({
                 escopo: escopoAlunos,
-                dataReferencia: dataRef
+                dataReferencia: dataRef,
+                periodoId: periodoAtual ? periodoAtual.id : null,
+                dataInicio: periodoAtual ? periodoAtual.inicio : null,
+                dataFim: periodoAtual ? periodoAtual.fim : null
             })
             : [];
 
@@ -985,7 +1472,7 @@
 
         var titleEl = criarEl('h4', 'ev-chart-title');
         var iconSpan = criarEl('span', 'ev-title-icon');
-        iconSpan.innerHTML = svgAnotacao(18);
+        appendSvgIcon(iconSpan, svgAnotacao(18));
         titleEl.appendChild(iconSpan);
         titleEl.appendChild(criarEl('span', '', 'Anotações da professora'));
         header.appendChild(titleEl);
@@ -1252,58 +1739,145 @@
             filtroDataRef = null;
         }
 
-        var resumo = (analytics && typeof analytics.gerarResumoEvolucao === 'function')
+        var domSafe = getDomSafe();
+        if (!domSafe) return;
+
+        var resumoDia = (analytics && typeof analytics.gerarResumoEvolucao === 'function')
             ? analytics.gerarResumoEvolucao({
                 alunoId: filtroAlunoId,
                 dataReferencia: filtroDataRef
             })
             : { vazio: true, datasDisponiveis: [] };
 
-        if (!resumo || resumo.vazio) {
+        if (!resumoDia || resumoDia.vazio) {
             filtroDataRef = null;
         } else {
-            filtroDataRef = resumo.dataReferencia;
+            filtroDataRef = resumoDia.dataReferencia;
         }
 
-        var datasDisponiveis = (resumo && Array.isArray(resumo.datasDisponiveis))
-            ? resumo.datasDisponiveis
+        var resumoPeriodo = (modoVisualizacao === 'PERIODO' && analytics && typeof analytics.gerarResumoPorPeriodo === 'function')
+            ? analytics.gerarResumoPorPeriodo({
+                alunoId: filtroAlunoId,
+                periodoId: filtroPeriodoId
+            })
+            : null;
+
+        if (resumoPeriodo && resumoPeriodo.periodoAtual) {
+            filtroPeriodoId = resumoPeriodo.periodoAtual.id;
+        }
+
+        var periodoAtivo = (resumoPeriodo && resumoPeriodo.periodoAtual) ? resumoPeriodo.periodoAtual : null;
+        if (!periodoAtivo) {
+            var periodsMod = getPeriods();
+            var cfgPerFallback = (storage && typeof storage.getPeriodosLetivos === 'function')
+                ? storage.getPeriodosLetivos()
+                : null;
+            if (cfgPerFallback && periodsMod && typeof periodsMod.sugerirCicloAtivo === 'function') {
+                var todasSes = (storage && typeof storage.listarSessoes === 'function') ? storage.listarSessoes() : [];
+                periodoAtivo = periodsMod.sugerirCicloAtivo(todasSes, cfgPerFallback);
+            }
+        }
+
+        var datasDisponiveis = (resumoDia && Array.isArray(resumoDia.datasDisponiveis))
+            ? resumoDia.datasDisponiveis
             : [];
 
-        var html = '<div class="ev-root">' +
-            renderFiltrosHtml(opcoesAlunos, datasDisponiveis, filtroDataRef);
+        domSafe.clear(containerEl);
 
-        if (!resumo || resumo.vazio) {
-            html += renderEstadoVazioHtml() +
-                '<div id="evStudentsSection"></div>' +
-                '<div id="evNotesSection"></div>';
-        } else {
-            html += renderCardsResumoHtml(resumo) +
-                renderDesempenhoPorFaseHtml(resumo) +
-                renderGraficosHtml(resumo) +
-                '<div id="evStudentsSection"></div>' +
-                '<div id="evNotesSection"></div>' +
-                renderRodapeHtml();
+        var studentsSection = domSafe.el('div', { id: 'evStudentsSection' });
+        var notesSection = domSafe.el('div', { id: 'evNotesSection' });
+
+        var rootChildren = [
+            renderFiltrosDom(opcoesAlunos, {
+                datasDisponiveis: datasDisponiveis,
+                dataSelecionada: filtroDataRef,
+                seriePeriodos: resumoPeriodo ? resumoPeriodo.seriePeriodos : [],
+                periodoAtual: periodoAtivo
+            })
+        ];
+
+        if (modoVisualizacao === 'PERIODO' && configPeriodosAberta) {
+            var cfgPanel = renderConfigPeriodosDom(storage, containerEl);
+            if (cfgPanel) rootChildren.push(cfgPanel);
         }
 
-        html += '</div>';
+        if (modoVisualizacao === 'PERIODO' && resumoPeriodo) {
+            if (resumoPeriodo.vazio) {
+                rootChildren.push(renderEstadoVazioDom(null));
+                rootChildren.push(studentsSection);
+                rootChildren.push(notesSection);
+            } else if (resumoPeriodo.periodoSemRegistros) {
+                rootChildren.push(renderEstadoVazioDom(resumoPeriodo.periodoAtual));
+                rootChildren.push(renderGraficosDom(resumoPeriodo, 'PERIODO'));
+                rootChildren.push(studentsSection);
+                rootChildren.push(notesSection);
+                rootChildren.push(renderRodapeDom());
+            } else {
+                rootChildren.push(renderCardsResumoDom(resumoPeriodo, 'PERIODO'));
+                rootChildren.push(renderDesempenhoPorFaseDom(resumoPeriodo, 'PERIODO'));
+                rootChildren.push(renderGraficosDom(resumoPeriodo, 'PERIODO'));
+                rootChildren.push(studentsSection);
+                rootChildren.push(notesSection);
+                rootChildren.push(renderRodapeDom());
+            }
+        } else {
+            if (!resumoDia || resumoDia.vazio) {
+                rootChildren.push(renderEstadoVazioDom(null));
+                rootChildren.push(studentsSection);
+                rootChildren.push(notesSection);
+            } else {
+                rootChildren.push(renderCardsResumoDom(resumoDia, 'DIA'));
+                rootChildren.push(renderDesempenhoPorFaseDom(resumoDia, 'DIA'));
+                rootChildren.push(renderGraficosDom(resumoDia, 'DIA'));
+                rootChildren.push(studentsSection);
+                rootChildren.push(notesSection);
+                rootChildren.push(renderRodapeDom());
+            }
+        }
 
-        containerEl.innerHTML = html;
+        containerEl.appendChild(domSafe.el('div', { className: 'ev-root' }, rootChildren));
 
         // Monta as secoes Aluno por Aluno e Anotacoes 100% via DOM seguro (textContent)
         renderVisaoAlunosDom(
-            containerEl.querySelector('#evStudentsSection'),
+            studentsSection,
             storage,
             analytics,
-            filtroDataRef,
+            { dataRef: filtroDataRef, periodoAtual: periodoAtivo },
             containerEl
         );
         renderAnotacoesDom(
-            containerEl.querySelector('#evNotesSection'),
+            notesSection,
             storage,
             containerEl
         );
 
-        // Vincula eventos dos filtros, exportacao PDF e confirmacao em 2 toques
+        // Vincula eventos de alternância Por Dia vs. Por Período Letivo
+        var btnModeDia = containerEl.querySelector('#evModeDiaBtn');
+        if (btnModeDia) {
+            btnModeDia.addEventListener('click', function () {
+                if (modoVisualizacao !== 'DIA') {
+                    modoVisualizacao = 'DIA';
+                    configPeriodosAberta = false;
+                    if (escopoAlunos === 'PERIODO') {
+                        escopoAlunos = 'GERAL';
+                    }
+                    render(containerEl);
+                }
+            });
+        }
+
+        var btnModePeriodo = containerEl.querySelector('#evModePeriodoBtn');
+        if (btnModePeriodo) {
+            btnModePeriodo.addEventListener('click', function () {
+                if (modoVisualizacao !== 'PERIODO') {
+                    modoVisualizacao = 'PERIODO';
+                    escopoAlunos = 'PERIODO';
+                    render(containerEl);
+                }
+            });
+        }
+
+        // Vincula eventos dos filtros, configuração de ciclos, exportação PDF e confirmação em 2 toques
         var selectAluno = containerEl.querySelector('#evFilterAluno');
         if (selectAluno) {
             selectAluno.addEventListener('change', function () {
@@ -1321,12 +1895,43 @@
             });
         }
 
+        var selectPeriodo = containerEl.querySelector('#evFilterPeriodo');
+        if (selectPeriodo) {
+            selectPeriodo.addEventListener('change', function () {
+                filtroPeriodoId = selectPeriodo.value || null;
+                render(containerEl);
+            });
+        }
+
+        var btnConfigPeriodos = containerEl.querySelector('#evBtnConfigPeriodos');
+        if (btnConfigPeriodos) {
+            btnConfigPeriodos.addEventListener('click', function () {
+                configPeriodosAberta = !configPeriodosAberta;
+                configPeriodosFeedback = '';
+                rascunhoConfigPeriodos = configPeriodosAberta && storage && typeof storage.getPeriodosLetivos === 'function'
+                    ? storage.getPeriodosLetivos()
+                    : null;
+                render(containerEl);
+            });
+        }
+
         var btnExportarPdf = containerEl.querySelector('#evBtnExportarPdf');
         if (btnExportarPdf) {
             btnExportarPdf.addEventListener('click', function () {
                 var rp = SaudeEscola.ReportPrint;
                 if (rp && typeof rp.print === 'function') {
-                    rp.print({ dataReferencia: filtroDataRef });
+                    if (modoVisualizacao === 'PERIODO') {
+                        rp.print({
+                            modo: 'PERIODO',
+                            periodoId: filtroPeriodoId || (periodoAtivo ? periodoAtivo.id : null),
+                            alunoId: filtroAlunoId
+                        });
+                    } else {
+                        rp.print({
+                            dataReferencia: filtroDataRef,
+                            alunoId: filtroAlunoId
+                        });
+                    }
                 }
             });
         }

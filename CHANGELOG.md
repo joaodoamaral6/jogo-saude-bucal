@@ -4,6 +4,53 @@ Todas as alterações notáveis, evoluções pedagógicas e decisões técnicas 
 
 ---
 
+## [v2.2.0 / CSS game v2.9 | teacher-panel v2.11] — CSP Estrito Offline, Períodos Letivos, Silabador Automático + 40 Figurinhas, Novos Ícones/Expressões do Dentinho e Redesign de Tokens IHC
+
+### 1. Resumo Executivo
+A versão **v2.2.0** consolida os três pilares permanentes de engenharia e pedagogia do projeto para **Desktop e Lousas Digitais Touch (`> 1024px`)**:
+1. **Segurança e Blindagem Offline (`file://`):** adoção de `Content-Security-Policy` estrito em `<meta>`, criação do módulo `js/dom-safe.js` (473 chamadas, zero `innerHTML`/`on*=`/`style=` inline), proteção contra colisão de protótipo (`Object.create(null)`), validação prévia de `file.size` no importador de backup e refinamento do comparador ortográfico por **distância de edição / LCS** (`analisarEscritaFase3`) com remoção dos contêineres legados `#p2EmojiCorner` e `#p3EmojiCorner`.
+2. **Evolução Pedagógica e UX Docente:** agrupamento e comparativo gráfico longitudinal por **Período Letivo (Bimestre / Trimestre)** sem apagar histórico (`js/period-service.js`), simplificação completa da aba **Palavras da Semana** com **separador automático de sílabas em Português (`js/syllable-helper.js`)**, cadastro ágil em lote e biblioteca de **40 figurinhas vetoriais infantis em 5 categorias (`js/stickers/`)**.
+3. **Unidade Vetorial, Mascote Dentinho e IHC Infantil:** catálogo `js/ui-icons.js` com **10 ícones vetoriais redesenhados** em 5 conjuntos, evolução expressiva do **Dentinho** (5 estados de humor, piscadas orgânicas e 3 ritmos de fala), sistema de **24 tokens CSS `--ui-*`** calibrados para projetores/lousas e auditoria dupla pré-release com documentação completa e massa de teste (`docs/turma-ficticia-v2.2.json`).
+
+### 2. Registro de Decisões de Arquitetura (Mini-ADRs da v2.2.0)
+
+#### ADR-12: Content-Security-Policy (CSP) Estrito Compatível com `file://`, Módulo `DomSafe` e Alinhamento Ortográfico LCS
+- **Contexto:** Era prioritário eliminar qualquer superfície de XSS na importação de backups ou manipulação de SVGs, remover handlers `onclick=` e estilos inline de `index.html`, remover os elementos ociosos `#p2EmojiCorner`/`#p3EmojiCorner` e resolver o deslocamento de índice quando o aluno omitia uma letra de dígrafo na Fase 3 (ex.: `SORISO` em vez de `SORRISO`).
+- **Decisão:**
+  - Criar `js/dom-safe.js` (`window.SaudeEscola.DomSafe`) centralizando criação segura de elementos (`el`, `text`, `clear`, `setChildren`) e sanitização estrita de SVGs via `DOMParser` (`image/svg+xml`) com allowlist de tags/atributos e bloqueio de `on*`, `style`, `srcdoc` e URLs externas.
+  - Declarar `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">` em `index.html` e migrar todos os 16 botões estáticos para delegação via `data-action`.
+  - Implementar `analisarEscritaFase3()` em `js/analytics-engine.js` particionando segmentos abertos entre letras já travadas e aplicando programação dinâmica (distância de edição / LCS) para isolar `OMISSAO_DIGRAFO_*` (`RR`, `SS`, `CH`, `LH`, `NH`, `QU`, `GU`), `DUPLICACAO_LETRA`, `LETRAS_FALTANDO`, `LETRAS_EXTRAS` e os 9 pares fonéticos/ortográficos.
+- **Consequência:** Zero sinks HTML inseguros em todo o código, CSP estrito funcional tanto online quanto via `file://`, e diagnóstico ortográfico cirúrgico para o 1º e 2º anos.
+
+#### ADR-13: Agrupamento e Comparativo Longitudinal por Período Letivo (`js/period-service.js`)
+- **Contexto:** A professora precisava acompanhar e comparar o avanço da turma e de cada aluno entre bimestres ou trimestres para conselhos de classe sem apagar o histórico acumulado no `localStorage`.
+- **Decisão:** Criar `js/period-service.js` (`window.SaudeEscola.Periods`) com suporte a **Bimestres (4 períodos)** e **Trimestres (3 períodos)**, validação estrita de datas ISO reais, ordenação cronológica sem sobreposição e persistência em `config.periodosLetivos`, integrando `Analytics.gerarResumoPorPeriodo()`, o painel configurável em `js/evolution-view.js` e a tabela comparativa no Relatório PDF (`js/report-print.js`).
+- **Consequência:** Comparação gráfica imediata entre períodos letivos com preservação integral da série histórica e suporte a filtro por aluno individual ou turma no PDF.
+
+#### ADR-14: Simplificação da UX de "Palavras da Semana", Separador Silábico (`js/syllable-helper.js`) e Biblioteca de 40 Figurinhas (`js/stickers/`)
+- **Contexto:** O cadastro manual de sílabas com hífen gerava atrito para docentes no preparo rápido das aulas, e palavras personalizadas não contavam com ilustrações temáticas variadas nas Fases 1, 2 e 3.
+- **Decisão:**
+  - Reformular a Aba 2 em `js/teacher-panel-ui.js` com cartão de progresso visual rumo ao mínimo de 4 palavras (até 12), chave de ativação imediata e pré-visualização em blocos táteis.
+  - Criar `js/syllable-helper.js` (`window.SaudeEscola.SyllableHelper`) para separação automática de sílabas em Português do Brasil (~98%+ de precisão no vocabulário de 1º/2º ano) e detecção de entrada em lote (vírgula, ponto e vírgula ou quebra de linha).
+  - Criar a biblioteca modular `js/stickers/` (`animais.js`, `frutas.js`, `natureza.js`, `escola.js`, `brinquedos.js` e `index.js`) com **40 figurinhas vetoriais infantis** (`viewBox="0 0 120 120"`, zero `<defs>`, zero `id=` interno), matching automático em tempo real (incluindo plural/singular) e galeria manual com fallback para o caderninho vetorial (`ILUSTRACAO_SEMANA`).
+- **Consequência:** Cadastro de uma semana inteira de palavras ilustradas em poucos segundos, mantendo 100% de execução offline.
+
+#### ADR-15: Catálogo `js/ui-icons.js` e Evolução Expressiva do Mascote Dentinho
+- **Contexto:** Os ícones de interface restantes precisavam acompanhar o traço infantil moderno das ilustrações principais, e o mascote Dentinho podia oferecer feedback emocional mais rico durante a jornada.
+- **Decisão:**
+  - Criar `js/ui-icons.js` (`window.SaudeEscola.UiIcons`) com 10 SVGs redesenhados em 5 conjuntos (`SOUND_ON`/`SOUND_OFF`, `MEDAL_1`/`2`/`3`, `TROPHY_HEADER`/`MODAL`/`RANKING`, `HOME` e `NEXT_CYCLE`).
+  - Expandir `js/mascot-controller.js` e `MASCOT_HERO` com piscadas naturais (`BLINK_INTERVALS`), 5 estados expressivos (`is-waving`, `is-celebrating`, `is-triumph`, `is-encouraging`, `is-curious`) e 3 cadências de fala (`.is-talking`, `.is-talking-excited`, `.is-talking-calm`).
+- **Consequência:** Coesão estética em toda a interface e maior engajamento afetivo das crianças, preservando `@media (prefers-reduced-motion: reduce)`.
+
+#### ADR-16: Sistema de Tokens CSS (`--ui-*`) para Lousas Digitais e Auditoria Dupla Pré-Release (Segurança + BNCC/IHC)
+- **Contexto:** Salas de aula iluminadas e projetores exigem contraste controlado (evitando branco estourado) e foco visível para acessibilidade, além de revisão rigorosa de Segurança e Norma Culta/BNCC antes do fechamento da release.
+- **Decisão:**
+  - Organizar 24 tokens `--ui-*` em `:root` de `css/game.css` (`?v=2.9`) e harmonizar `css/teacher-panel.css` (`?v=2.11`) com bloco exclusivo `@media (min-width: 1025px) and (min-height: 600px)` sem afetar o mobile isolado.
+  - Executar auditoria dupla pré-release (`research-seguranca` e `research-ihc-bncc`), documentar o sistema em `docs/FUNCIONALIDADES_V2.2.md` e `docs/RELATORIO_DIAGNOSTICO_V2.2.md`, gerar a massa `docs/turma-ficticia-v2.2.json` e aplicar os ajustes finais de defesa em profundidade (`Object.create(null)`, tetos de palavra/arquivo, eliminação de 4 colas ortográficas em `js/word-bank.js`, ajustes de Norma Culta e atributos ARIA em `index.html`).
+- **Consequência:** Release `v2.2.0` auditada, documentada e testável instantaneamente via `file://`.
+
+---
+
 ## [v2.1.3 / CSS v2.3] — Métrica de Tempo na Fase 1, Visão Aluno por Aluno, Anotações, Relatório PDF Offline, Mascote Falante e Revisão Linguística
 
 ### 1. Resumo Executivo

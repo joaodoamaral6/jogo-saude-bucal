@@ -181,9 +181,17 @@
 
     if (typeof document !== 'undefined') {
       var iconEl = document.getElementById('soundIcon');
-      var svgs = SaudeEscola.WordBank && SaudeEscola.WordBank.SVGS;
-      if (iconEl && svgs) {
-        iconEl.innerHTML = soundEnabled ? svgs.SOUND_ON : svgs.SOUND_OFF;
+      var uiIcons = SaudeEscola.UiIcons;
+      var wbSvgs = SaudeEscola.WordBank && SaudeEscola.WordBank.SVGS;
+      var domSafe = SaudeEscola.DomSafe;
+      var soundSvg = '';
+      if (uiIcons && typeof uiIcons.SOUND_ON === 'string' && typeof uiIcons.SOUND_OFF === 'string') {
+        soundSvg = soundEnabled ? uiIcons.SOUND_ON : uiIcons.SOUND_OFF;
+      } else if (wbSvgs) {
+        soundSvg = soundEnabled ? wbSvgs.SOUND_ON : wbSvgs.SOUND_OFF;
+      }
+      if (iconEl && soundSvg && domSafe && typeof domSafe.setSvg === 'function') {
+        domSafe.setSvg(iconEl, soundSvg);
       }
 
       var labelEl = document.getElementById('soundLabel');

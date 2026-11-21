@@ -2,25 +2,26 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
   <title>Saúde na Escola: Saúde Bucal</title>
-  <link rel="stylesheet" href="css/game.css?v=2.3">
-  <link rel="stylesheet" href="css/teacher-panel.css?v=2.3">
+  <link rel="stylesheet" href="css/game.css?v=2.9">
+  <link rel="stylesheet" href="css/teacher-panel.css?v=2.11">
 </head>
 <body>
 
   <!-- Decorative Floating Bubbles -->
   <div class="bg-decor" aria-hidden="true">
-    <div class="bubble" style="width: 8vw; height: 8vw; left: 4%; top: 14%; animation-delay: 0s;"></div>
-    <div class="bubble" style="width: 5vw; height: 5vw; left: 15%; top: 32%; animation-delay: 1.5s;"></div>
-    <div class="bubble" style="width: 9vw; height: 9vw; right: 5%; top: 16%; animation-delay: 0.8s;"></div>
-    <div class="bubble" style="width: 4.5vw; height: 4.5vw; right: 18%; top: 28%; animation-delay: 2.3s;"></div>
+    <div class="bubble bubble--1"></div>
+    <div class="bubble bubble--2"></div>
+    <div class="bubble bubble--3"></div>
+    <div class="bubble bubble--4"></div>
   </div>
 
   <!-- Top Header -->
   <header class="top-bar">
     <div class="brand-title">
-      <span style="display:inline-flex;align-items:center;">
+      <span class="u-icon-wrap">
         <svg viewBox="0 0 48 48" aria-hidden="true">
           <ellipse cx="24" cy="44" rx="12" ry="2.2" fill="#0288D1" fill-opacity="0.14"/>
           <path d="M12 8 C6 8 5 22 9 31 C11 37 12 44 17 44 C20 44 21 35 24 35 C27 35 28 44 31 44 C36 44 37 37 39 31 C43 22 42 8 36 8 C30 8 28 12 24 12 C20 12 18 8 12 8 Z" fill="#FFFFFF"/>
@@ -39,24 +40,10 @@
       <span>SAÚDE NA ESCOLA: SAÚDE BUCAL</span>
     </div>
     <div class="top-status">
-      <div class="phase-pill" id="headerPhaseLabel" style="display: none;">MENU INICIAL</div>
-      <button class="badge-pill badge-pill-btn" onclick="openRankingModal()" title="VER RANKING DA TURMA">
-        <span style="display:inline-flex;align-items:center;">
-          <svg viewBox="0 0 40 40" aria-hidden="true">
-            <ellipse cx="20" cy="36.5" rx="10" ry="1.8" fill="#E65100" fill-opacity="0.18"/>
-            <path d="M10.5 10.5 C4.5 10.5 4.5 21 11.5 22.5" fill="none" stroke="#FFB300" stroke-width="3.2" stroke-linecap="round"/>
-            <path d="M29.5 10.5 C35.5 10.5 35.5 21 28.5 22.5" fill="none" stroke="#FFB300" stroke-width="3.2" stroke-linecap="round"/>
-            <rect x="16" y="25" width="8" height="5.5" rx="1.6" fill="#FFA726" stroke="#E65100" stroke-width="2"/>
-            <rect x="11" y="30" width="18" height="5.5" rx="2.6" fill="#FFD54F" stroke="#E65100" stroke-width="2"/>
-            <path d="M9 6 L31 6 L28 20 C26.8 26.5 13.2 26.5 12 20 Z" fill="#FFEE58"/>
-            <path d="M25.5 7.5 L29.5 7.5 L27 19.5 C26 23.5 22.5 24.8 19.2 25 C22.8 23.4 24.4 20.5 25.2 15 Z" fill="#FBC02D" fill-opacity="0.58"/>
-            <path d="M13 9.5 L14.8 18.5" fill="none" stroke="#FFFDE7" stroke-width="2.2" stroke-linecap="round"/>
-            <path d="M9 6 L31 6 L28 20 C26.8 26.5 13.2 26.5 12 20 Z" fill="none" stroke="#E65100" stroke-width="2.4" stroke-linejoin="round"/>
-            <polygon points="20,9.8 21.5,13 25,13.5 22.5,15.9 23.1,19.4 20,17.8 16.9,19.4 17.5,15.9 15,13.5 18.5,13" fill="#FFFFFF" stroke="#F57F17" stroke-width="1.2" stroke-linejoin="round"/>
-            <circle cx="33.5" cy="6.5" r="1.6" fill="#FFF176"/>
-          </svg>
-        </span>
-        <span style="display:inline-flex;align-items:center;">
+      <div class="phase-pill u-hidden" id="headerPhaseLabel">MENU INICIAL</div>
+      <button type="button" class="badge-pill badge-pill-btn" data-action="open-ranking" title="VER RANKING DA TURMA">
+        <span class="u-icon-wrap" data-ui-icon="TROPHY_HEADER"></span>
+        <span class="u-icon-wrap">
           <svg viewBox="0 0 40 40" aria-hidden="true">
             <polygon points="20,2.6 25.3,13.4 37.2,15.1 28.6,23.5 30.6,35.4 20,29.8 9.4,35.4 11.4,23.5 2.8,15.1 14.7,13.4" fill="#FFD54F"/>
             <polygon points="20,20.5 37.2,15.1 28.6,23.5 30.6,35.4 20,29.8" fill="#FFB300" fill-opacity="0.65"/>
@@ -66,7 +53,7 @@
           </svg>
         </span>
         <span id="starCount">0</span>
-        <span style="font-size: 0.82em; margin-left: 0.2vw;">RANKING</span>
+        <span class="ranking-pill-label">RANKING</span>
       </button>
     </div>
   </header>
@@ -77,91 +64,12 @@
     <!-- ================= SCREEN 0: MENU INICIAL ================= -->
     <section id="screenMenu" class="screen active">
       <div class="menu-hero">
-        <button type="button" id="btnTeacherPanel" class="tp-gear-btn" title="PAINEL DA PROFESSORA (SEGURE 3 SEGUNDOS)" aria-label="Painel da Professora - Segure por 3 segundos para abrir"></button>
-        <div class="mascot-box" id="mascotHeroSvg" role="button" tabindex="0" title="TOQUE NO DENTINHO PARA DAR OI!" aria-label="Mascote Dentinho — toque para dar oi">
-          <svg class="mascot-svg" viewBox="0 0 150 150" width="100%" height="100%" aria-hidden="true">
-            <ellipse class="mascot-shadow" cx="75" cy="138" rx="35" ry="6.5" fill="#0288D1" fill-opacity="0.16"/>
-            <g class="mascot-cape">
-              <path d="M34 56 Q16 96 14 126 Q46 133 75 127 Q104 133 136 126 Q134 96 116 56 Z" fill="#FF7043"/>
-              <path d="M110 58 Q128 96 131 124 Q112 128 94 126 Q106 94 102 60 Z" fill="#E64A19" fill-opacity="0.45"/>
-              <path d="M34 56 Q16 96 14 126 Q46 133 75 127 Q104 133 136 126 Q134 96 116 56 Z" fill="none" stroke="#BF360C" stroke-width="4" stroke-linejoin="round"/>
-            </g>
-            <g class="mascot-arm-left">
-              <path d="M40 76 Q22 86 24 100 Q26 108 34 106 Q41 102 42 88 Z" fill="#FFFFFF" stroke="#0288D1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="29" cy="100" r="6.5" fill="#FFFFFF" stroke="#0288D1" stroke-width="3.6"/>
-            </g>
-            <g class="mascot-arm-right">
-              <path d="M108 75 Q126 62 128 48 Q129 40 121 41 Q113 44 109 62 Z" fill="#FFFFFF" stroke="#0288D1" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="125" cy="45" r="7" fill="#FFFFFF" stroke="#0288D1" stroke-width="3.6"/>
-              <path d="M132 33 Q138 38 136 45" fill="none" stroke="#FFD54F" stroke-width="2.6" stroke-linecap="round"/>
-            </g>
-            <g class="mascot-body-group">
-              <path d="M42 26 C24 26 21 63 32 90 C38 106 41 128 53 128 C61 128 65 103 75 103 C85 103 89 128 97 128 C109 128 112 106 118 90 C129 63 126 26 108 26 C92 26 86 36 75 36 C64 36 58 26 42 26 Z" fill="#FFFFFF"/>
-              <path d="M106 28 C120 34 123 62 113 88 C107 104 104 124 96 124 C90 124 86 108 81 101 C90 100 98 92 104 78 C113 59 113 39 103 29 Z" fill="#E1F5FE"/>
-              <path d="M39 38 C32 45 32 61 36 73" fill="none" stroke="#E0F7FA" stroke-width="5.5" stroke-linecap="round"/>
-              <path d="M42 26 C24 26 21 63 32 90 C38 106 41 128 53 128 C61 128 65 103 75 103 C85 103 89 128 97 128 C109 128 112 106 118 90 C129 63 126 26 108 26 C92 26 86 36 75 36 C64 36 58 26 42 26 Z" fill="none" stroke="#0288D1" stroke-width="4.6" stroke-linejoin="round"/>
-              <g class="mascot-eyes-normal">
-                <path d="M48 48 Q55 43 62 48" fill="none" stroke="#0288D1" stroke-width="2.6" stroke-linecap="round"/>
-                <path d="M88 48 Q95 43 102 48" fill="none" stroke="#0288D1" stroke-width="2.6" stroke-linecap="round"/>
-                <circle cx="55" cy="59" r="6.5" fill="#01579B"/>
-                <circle cx="95" cy="59" r="6.5" fill="#01579B"/>
-                <circle cx="52.8" cy="56.6" r="2.3" fill="#FFFFFF"/>
-                <circle cx="92.8" cy="56.6" r="2.3" fill="#FFFFFF"/>
-                <circle cx="57.4" cy="61.6" r="1.1" fill="#FFFFFF" fill-opacity="0.85"/>
-                <circle cx="97.4" cy="61.6" r="1.1" fill="#FFFFFF" fill-opacity="0.85"/>
-              </g>
-              <g class="mascot-eyes-happy">
-                <path d="M47 61 Q55 51 63 61" fill="none" stroke="#01579B" stroke-width="4.2" stroke-linecap="round"/>
-                <path d="M87 61 Q95 51 103 61" fill="none" stroke="#01579B" stroke-width="4.2" stroke-linecap="round"/>
-              </g>
-              <g class="mascot-eyes-encourage">
-                <path d="M47 47 Q55 41 63 44" fill="none" stroke="#0288D1" stroke-width="3" stroke-linecap="round"/>
-                <path d="M103 47 Q95 41 87 44" fill="none" stroke="#0288D1" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="57" cy="59" r="6.6" fill="#01579B"/>
-                <circle cx="97" cy="59" r="6.6" fill="#01579B"/>
-                <circle cx="54.8" cy="56.4" r="2.4" fill="#FFFFFF"/>
-                <circle cx="94.8" cy="56.4" r="2.4" fill="#FFFFFF"/>
-                <circle cx="59.4" cy="61.5" r="1.2" fill="#FFFFFF" fill-opacity="0.88"/>
-                <circle cx="99.4" cy="61.5" r="1.2" fill="#FFFFFF" fill-opacity="0.88"/>
-              </g>
-              <g class="mascot-cheeks">
-                <ellipse cx="42" cy="70" rx="6.5" ry="3.8" fill="#FF80AB" fill-opacity="0.78"/>
-                <ellipse cx="108" cy="70" rx="6.5" ry="3.8" fill="#FF80AB" fill-opacity="0.78"/>
-              </g>
-              <path class="mascot-mouth-normal" d="M58 76 Q75 91 92 76" fill="none" stroke="#01579B" stroke-width="4.5" stroke-linecap="round"/>
-              <g class="mascot-mouth-happy">
-                <path d="M57 74 Q75 96 93 74 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>
-                <path d="M64 82 Q75 88 86 82 Q75 91 64 82 Z" fill="#FF80AB"/>
-              </g>
-              <g class="mascot-mouth-encourage">
-                <path d="M62 76 Q75 73 88 76 Q89 91 75 91 Q61 91 62 76 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>
-                <path d="M67 84 Q75 80 83 84 Q75 89 67 84 Z" fill="#FF80AB"/>
-              </g>
-              <g class="mascot-mouth-talking">
-                <g class="mascot-mouth-talk-jaw">
-                  <path d="M61 76 Q75 74 89 76 Q89 93 75 93 Q61 93 61 76 Z" fill="#AD1457" stroke="#01579B" stroke-width="3.6" stroke-linejoin="round"/>
-                  <path d="M67 86 Q75 81 83 86 Q75 91 67 86 Z" fill="#FF80AB"/>
-                  <path d="M66 77.5 Q75 76.5 84 77.5" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
-                </g>
-                <path class="mascot-mouth-talk-upper" d="M60 76 Q75 73 90 76" fill="none" stroke="#01579B" stroke-width="3.8" stroke-linecap="round"/>
-              </g>
-            </g>
-            <g class="mascot-sparkles">
-              <path d="M122 10 L124.8 17.2 L132 20 L124.8 22.8 L122 30 L119.2 22.8 L112 20 L119.2 17.2 Z" fill="#FFD54F" stroke="#F57F17" stroke-width="1.6" stroke-linejoin="round"/>
-              <circle cx="24" cy="26" r="4" fill="#FFF176" stroke="#F57F17" stroke-width="1.4"/>
-              <circle cx="139" cy="64" r="3" fill="#FFF176"/>
-            </g>
-            <g class="mascot-encourage-badge">
-              <circle cx="126" cy="24" r="14" fill="#FFF8E1" stroke="#FB8C00" stroke-width="3"/>
-              <path d="M126 15.5 L128.4 21.4 L134.6 22.1 L129.9 26.2 L131.2 32.3 L126 29.1 L120.8 32.3 L122.1 26.2 L117.4 22.1 L123.6 21.4 Z" fill="#FF9800" stroke="#E65100" stroke-width="1.6" stroke-linejoin="round"/>
-              <circle cx="141" cy="14" r="3" fill="#FFB300"/>
-            </g>
-          </svg>
-        </div>
+        <button type="button" id="btnTeacherPanel" class="tp-gear-btn" title="PAINEL DA PROFESSORA (SEGURE 3 SEGUNDOS)" aria-label="Painel da Professora — Segure por 3 segundos para abrir"></button>
+        <div class="mascot-box" id="mascotHeroSvg" role="button" tabindex="0" title="TOQUE NO DENTINHO PARA DAR OI!" aria-label="Mascote Dentinho — toque para dar oi"></div>
         <div class="hero-text">
           <h1 class="hero-title">SORRISO BRILHANTE!</h1>
-          <p class="hero-subtitle mascot-speech-bubble" id="mascotSpeechText">OI! EU SOU O DENTINHO! ESCOLHA UMA ATIVIDADE PARA COMEÇAR!</p>
-          <div id="weeklyModeBadge" class="tp-weekly-badge" style="display: none;"></div>
+          <p class="hero-subtitle mascot-speech-bubble" id="mascotSpeechText" role="status" aria-live="polite">OI! EU SOU O DENTINHO! ESCOLHA UMA ATIVIDADE PARA COMEÇAR!</p>
+          <div id="weeklyModeBadge" class="tp-weekly-badge u-hidden"></div>
         </div>
       </div>
 
@@ -180,14 +88,14 @@
             <span>QUANTIDADE DE QUESTÕES:</span>
           </div>
           <div class="question-count-options">
-            <button type="button" class="q-count-btn" id="qCountBtn3" onclick="setQuestionCount(3)">3 QUESTÕES</button>
-            <button type="button" class="q-count-btn" id="qCountBtn5" onclick="setQuestionCount(5)">5 QUESTÕES</button>
-            <button type="button" class="q-count-btn active" id="qCountBtn10" onclick="setQuestionCount(10)">10 QUESTÕES</button>
+            <button type="button" class="q-count-btn" id="qCountBtn3" data-action="set-question-count" data-count="3">3 QUESTÕES</button>
+            <button type="button" class="q-count-btn" id="qCountBtn5" data-action="set-question-count" data-count="5">5 QUESTÕES</button>
+            <button type="button" class="q-count-btn active" id="qCountBtn10" data-action="set-question-count" data-count="10">10 QUESTÕES</button>
           </div>
         </div>
 
         <div class="menu-grid">
-          <button class="menu-card journey" onclick="startGameMode('JOURNEY')">
+          <button type="button" class="menu-card journey" data-action="start-mode" data-mode="JOURNEY">
             <span class="menu-card-badge">
               <svg viewBox="0 0 36 36" aria-hidden="true">
                 <polygon points="18,2.5 22.8,12.2 33.5,13.8 25.8,21.3 27.6,32 18,26.9 8.4,32 10.2,21.3 2.5,13.8 13.2,12.2" fill="#FFF176" stroke="#F57F17" stroke-width="2.4" stroke-linejoin="round"/>
@@ -219,7 +127,7 @@
             <span class="menu-card-desc">JOGUE AS 3 FASES SEGUIDAS!</span>
           </button>
 
-          <button class="menu-card phase1" onclick="startGameMode('PHASE1')">
+          <button type="button" class="menu-card phase1" data-action="start-mode" data-mode="PHASE1">
             <span class="menu-card-badge">FASE 1</span>
             <span class="menu-card-icon">
               <svg viewBox="0 0 120 120" aria-hidden="true">
@@ -248,7 +156,7 @@
             <span class="menu-card-desc">FIGURA + PALAVRA</span>
           </button>
 
-          <button class="menu-card phase2" onclick="startGameMode('PHASE2')">
+          <button type="button" class="menu-card phase2" data-action="start-mode" data-mode="PHASE2">
             <span class="menu-card-badge">FASE 2</span>
             <span class="menu-card-icon">
               <svg viewBox="0 0 120 120" aria-hidden="true">
@@ -274,7 +182,7 @@
             <span class="menu-card-desc">JUNTE OS PEDACINHOS</span>
           </button>
 
-          <button class="menu-card phase3" onclick="startGameMode('PHASE3')">
+          <button type="button" class="menu-card phase3" data-action="start-mode" data-mode="PHASE3">
             <span class="menu-card-badge">FASE 3</span>
             <span class="menu-card-icon">
               <svg viewBox="0 0 120 120" aria-hidden="true">
@@ -306,7 +214,7 @@
     <section id="screenPhase1" class="screen">
       <div class="p1-header-banner">
         <div class="p1-instruction">
-          <span style="display:inline-flex;align-items:center;">
+          <span class="u-icon-wrap">
             <svg viewBox="0 0 48 48" aria-hidden="true">
               <ellipse cx="22" cy="43" rx="12" ry="2.2" fill="#0288D1" fill-opacity="0.14"/>
               <line x1="29" y1="29" x2="42" y2="42" stroke="#D84315" stroke-width="8" stroke-linecap="round"/>
@@ -319,7 +227,7 @@
           <span id="p1InstructionText">ENCONTRE OS PARES: 1 FIGURA + 1 PALAVRA ESCRITA!</span>
         </div>
         <div class="p1-round-info">
-          <div class="phase-weekly-badge" id="p1WeeklyBadge" style="display: none;"></div>
+          <div class="phase-weekly-badge u-hidden" id="p1WeeklyBadge"></div>
           <div class="phase-pill" id="p1PairsCounter">PARES: 0 / 4</div>
         </div>
       </div>
@@ -334,12 +242,11 @@
         <div class="word-showcase-card">
           <div class="illust-frame">
             <div class="illust-svg-wrap" id="p2SvgContainer"></div>
-            <div class="illust-emoji-corner" id="p2EmojiCorner"></div>
           </div>
           <div class="p2-clue-box">
             <div class="phase-tags-row">
               <span class="p2-clue-tag" id="p2ProgressTag">PALAVRA 1 DE 10</span>
-              <span class="phase-weekly-badge" id="p2WeeklyBadge" style="display: none;"></span>
+              <span class="phase-weekly-badge u-hidden" id="p2WeeklyBadge"></span>
             </div>
             <p class="p2-clue-text" id="p2ClueText">TOQUE NAS SÍLABAS ABAIXO PARA FORMAR O NOME DA FIGURA!</p>
           </div>
@@ -359,12 +266,11 @@
       <div class="p3-upper-card">
         <div class="p3-illust-frame">
           <div class="illust-svg-wrap" id="p3SvgContainer"></div>
-          <div class="illust-emoji-corner" id="p3EmojiCorner"></div>
         </div>
         <div class="p3-context-wrap">
           <div class="phase-tags-row">
-            <span class="p2-clue-tag" style="background:#F3E5F5; color:#6A1B9A; border-color:#CE93D8;" id="p3ProgressTag">DESAFIO 1 DE 10</span>
-            <span class="phase-weekly-badge" id="p3WeeklyBadge" style="display: none;"></span>
+            <span class="p2-clue-tag p3-progress-tag" id="p3ProgressTag">DESAFIO 1 DE 10</span>
+            <span class="phase-weekly-badge u-hidden" id="p3WeeklyBadge"></span>
           </div>
           <p class="p3-sentence" id="p3SentenceText">EU USO A <span class="p3-blank-highlight">______</span> PARA LIMPAR OS DENTES.</p>
         </div>
@@ -382,66 +288,24 @@
     <!-- ================= BOTTOM DOCK BAR (ALL SCREENS) ================= -->
     <footer class="bottom-dock is-menu">
       <div class="dock-group">
-        <button class="btn-3d btn-dock btn-home" id="btnBackMenu" onclick="goHome()" style="display: none;">
-          <span style="display:inline-flex;align-items:center;">
-            <svg viewBox="0 0 44 44" aria-hidden="true">
-              <ellipse cx="22" cy="40" rx="15" ry="2.2" fill="#3E2723" fill-opacity="0.18"/>
-              <rect x="28" y="8" width="5.5" height="9.5" rx="2" fill="#FFCC80" stroke="#BF360C" stroke-width="2.2"/>
-              <path d="M9.5 21 L9.5 35 C9.5 37.2 11.2 39 13.5 39 L30.5 39 C32.8 39 34.5 37.2 34.5 35 L34.5 21 Z" fill="#FFF8E1"/>
-              <path d="M29 21 H34.5 V35 C34.5 37.2 32.8 39 30.5 39 H27 C28.5 37.5 29 35.2 29 32.5 Z" fill="#FFE082" fill-opacity="0.58"/>
-              <path d="M9.5 21 L9.5 35 C9.5 37.2 11.2 39 13.5 39 L30.5 39 C32.8 39 34.5 37.2 34.5 35 L34.5 21 Z" fill="none" stroke="#5D4037" stroke-width="2.6" stroke-linejoin="round"/>
-              <path d="M4.5 21.5 L22 6.5 L39.5 21.5 L36.5 24 L22 11.8 L7.5 24 Z" fill="#C62828"/>
-              <path d="M3.5 21.5 L22 5 L40.5 21.5 Z" fill="#EF5350" stroke="#B71C1C" stroke-width="2.6" stroke-linejoin="round"/>
-              <path d="M8.5 19 L22 7.4" fill="none" stroke="#FFCDD2" stroke-width="2.2" stroke-linecap="round"/>
-              <path d="M17.5 39 L17.5 27 C17.5 24 26.5 24 26.5 27 L26.5 39 Z" fill="#29B6F6" stroke="#01579B" stroke-width="2.3" stroke-linejoin="round"/>
-              <path d="M19.8 27.5 V35" fill="none" stroke="#81D4FA" stroke-width="1.8" stroke-linecap="round"/>
-              <circle cx="24" cy="32.5" r="1.4" fill="#FFD54F"/>
-              <circle cx="22" cy="14.5" r="3" fill="#FFF176" stroke="#B71C1C" stroke-width="1.8"/>
-              <circle cx="21" cy="13.5" r="1" fill="#FFFFFF"/>
-              <circle cx="9.5" cy="37" r="3.2" fill="#66BB6A" stroke="#1B5E20" stroke-width="1.6"/>
-              <circle cx="34.5" cy="37" r="3.2" fill="#66BB6A" stroke="#1B5E20" stroke-width="1.6"/>
-            </svg>
-          </span>
+        <button type="button" class="btn-3d btn-dock btn-home u-hidden" id="btnBackMenu" data-action="go-home">
+          <span class="u-icon-wrap" data-ui-icon="HOME"></span>
           <span>MENU INICIAL</span>
         </button>
-        <button class="btn-3d btn-dock btn-sound" id="btnToggleSound" onclick="toggleSound()">
-          <span id="soundIcon" style="display:inline-flex;align-items:center;">
-            <svg viewBox="0 0 44 44" aria-hidden="true">
-              <ellipse cx="19" cy="39" rx="12" ry="2.2" fill="#004D40" fill-opacity="0.18"/>
-              <rect x="4" y="15" width="9.5" height="14" rx="4.2" fill="#FF9800"/>
-              <path d="M4.5 23 H13.5 V25.5 C13.5 27.5 11.8 29 9.5 29 H8 C5.8 29 4.5 27.5 4.5 25.5 Z" fill="#F57C00"/>
-              <path d="M6.5 17.5 H11.5" fill="none" stroke="#FFE082" stroke-width="2" stroke-linecap="round"/>
-              <rect x="4" y="15" width="9.5" height="14" rx="4.2" fill="none" stroke="#E65100" stroke-width="2.6"/>
-              <path d="M13.5 15.2 L24.5 7.4 C26 6.4 27.5 7.4 27.5 9.2 L27.5 34.8 C27.5 36.6 26 37.6 24.5 36.6 L13.5 28.8 Z" fill="#FFD54F"/>
-              <path d="M14 25 L27 29.5 L27 34.5 C27 36.2 25.7 36.8 24.5 36 L14 28.6 Z" fill="#FFB300" fill-opacity="0.6"/>
-              <path d="M16.5 15.8 L24 10.6 L24 15.8 L16.5 19 Z" fill="#FFFDE7" fill-opacity="0.88"/>
-              <path d="M13.5 15.2 L24.5 7.4 C26 6.4 27.5 7.4 27.5 9.2 L27.5 34.8 C27.5 36.6 26 37.6 24.5 36.6 L13.5 28.8 Z" fill="none" stroke="#E65100" stroke-width="2.6" stroke-linejoin="round"/>
-              <path d="M27.5 17 C30 18.2 30 25.8 27.5 27" fill="#FFCA28" stroke="#E65100" stroke-width="2" stroke-linecap="round"/>
-              <path d="M32 14.5 Q37 22 32 29.5" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"/>
-              <path d="M36 9.5 Q42.5 22 36 34.5" fill="none" stroke="#FFF59D" stroke-width="3.2" stroke-linecap="round"/>
-              <circle cx="38.5" cy="9" r="1.5" fill="#FFFFFF"/>
-            </svg>
-          </span>
+        <button type="button" class="btn-3d btn-dock btn-sound" id="btnToggleSound" data-action="toggle-sound">
+          <span id="soundIcon" class="u-icon-wrap" data-ui-icon="SOUND_ON"></span>
           <span id="soundLabel">SOM LIGADO</span>
         </button>
       </div>
 
       <div class="feedback-wrap" id="feedbackWrap">
         <div class="dock-mascot-companion" id="dockMascotCompanion" aria-hidden="true"></div>
-        <div class="feedback-banner" id="feedbackBanner"></div>
+        <div class="feedback-banner" id="feedbackBanner" role="status" aria-live="polite"></div>
       </div>
 
       <div class="dock-group">
-        <button class="btn-3d btn-dock btn-skip" id="btnNextWord" onclick="skipOrNextItem()" style="display: none;">
-          <span style="display:inline-flex;align-items:center;">
-            <svg viewBox="0 0 40 40" aria-hidden="true">
-              <circle cx="20" cy="20" r="16" fill="#FFFFFF" fill-opacity="0.18"/>
-              <path d="M9.5 17 A11.5 11.5 0 0 1 29.5 12" fill="none" stroke="#FFF176" stroke-width="4.2" stroke-linecap="round"/>
-              <polygon points="31.5,5.5 34.5,15.5 24,14.5" fill="#FFF176" stroke="#F57F17" stroke-width="1.6" stroke-linejoin="round"/>
-              <path d="M30.5 23 A11.5 11.5 0 0 1 10.5 28" fill="none" stroke="#80DEEA" stroke-width="4.2" stroke-linecap="round"/>
-              <polygon points="8.5,34.5 5.5,24.5 16,25.5" fill="#80DEEA" stroke="#00838F" stroke-width="1.6" stroke-linejoin="round"/>
-            </svg>
-          </span>
+        <button type="button" class="btn-3d btn-dock btn-skip u-hidden" id="btnNextWord" data-action="skip-next">
+          <span class="u-icon-wrap" data-ui-icon="NEXT_CYCLE"></span>
           <span id="btnNextWordLabel">OUTRA PALAVRA</span>
         </button>
       </div>
@@ -450,31 +314,9 @@
   </main>
 
   <!-- Celebration / Transition Modal -->
-  <div class="modal-overlay" id="celebrationModal">
+  <div class="modal-overlay" id="celebrationModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-card">
-      <div class="modal-trophy" id="modalIcon">
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <ellipse cx="60" cy="110" rx="30" ry="4.5" fill="#F57F17" fill-opacity="0.22"/>
-          <path d="M28 32 C10 32 10 62 30 66" fill="none" stroke="#FFD54F" stroke-width="7.5" stroke-linecap="round"/>
-          <path d="M92 32 C110 32 110 62 90 66" fill="none" stroke="#FFD54F" stroke-width="7.5" stroke-linecap="round"/>
-          <rect x="48" y="75" width="24" height="17" rx="4" fill="#FFA726" stroke="#E65100" stroke-width="3.8"/>
-          <rect x="32" y="90" width="56" height="14" rx="7" fill="#FFD54F" stroke="#E65100" stroke-width="3.8"/>
-          <rect x="45" y="94" width="30" height="6" rx="3" fill="#FFF9C4" stroke="#E65100" stroke-width="1.6"/>
-          <path d="M26 20 L94 20 L86 60 C82 78 38 78 34 60 Z" fill="#FFEE58"/>
-          <path d="M78 22 L90 22 L83 58 C80 70 69 73 59 74 C70 69 75 59 78 44 Z" fill="#FBC02D" fill-opacity="0.45"/>
-          <path d="M35 27 L39 51" fill="none" stroke="#FFFDE7" stroke-width="4" stroke-linecap="round"/>
-          <path d="M24 20 L96 20" stroke="#FFF9C4" stroke-width="3.2" stroke-linecap="round"/>
-          <path d="M26 20 L94 20 L86 60 C82 78 38 78 34 60 Z" fill="none" stroke="#E65100" stroke-width="4.2" stroke-linejoin="round"/>
-          <path d="M50 30 C44 30 43 44 47 52 C49 57 50 63 54 63 C57 63 58 56 60 56 C62 56 63 63 66 63 C70 63 71 57 73 52 C77 44 76 30 70 30 C64 30 62 34 60 34 C58 34 56 30 50 30 Z" fill="#FFFFFF" stroke="#0288D1" stroke-width="2.8" stroke-linejoin="round"/>
-          <circle cx="55" cy="42" r="2.2" fill="#01579B"/>
-          <circle cx="65" cy="42" r="2.2" fill="#01579B"/>
-          <ellipse cx="52" cy="45.5" rx="2.1" ry="1.2" fill="#FF80AB" fill-opacity="0.8"/>
-          <ellipse cx="68" cy="45.5" rx="2.1" ry="1.2" fill="#FF80AB" fill-opacity="0.8"/>
-          <path d="M56 47 Q60 51 64 47" fill="none" stroke="#01579B" stroke-width="2.2" stroke-linecap="round"/>
-          <path d="M16 14 L18 19 L23 21 L18 23 L16 28 L14 23 L9 21 L14 19 Z" fill="#FFB300"/>
-          <path d="M104 14 L106 19 L111 21 L106 23 L104 28 L102 23 L97 21 L102 19 Z" fill="#FFB300"/>
-        </svg>
-      </div>
+      <div class="modal-trophy" id="modalIcon" data-ui-icon="TROPHY_MODAL"></div>
       <h2 class="modal-title" id="modalTitle">MUITO BEM!</h2>
       <p class="modal-msg" id="modalMessage">VOCÊ COMPLETOU ESTA FASE COM UM SORRISO BRILHANTE!</p>
 
@@ -483,8 +325,8 @@
         <div class="ranking-reg-label">DIGITE SEU NOME PARA O RANKING:</div>
         <div class="ranking-input-row">
           <div class="ranking-name-display" id="rankingNameDisplay">_</div>
-          <button class="btn-3d btn-save-ranking" onclick="saveStudentToRanking()">
-            <span style="display:inline-flex;align-items:center;">
+          <button type="button" class="btn-3d btn-save-ranking" data-action="save-ranking">
+            <span class="u-icon-wrap">
               <svg viewBox="0 0 40 40" aria-hidden="true">
                 <circle cx="20" cy="20" r="16" fill="#E8F5E9" stroke="#FFFFFF" stroke-width="2.8"/>
                 <path d="M10 13 A11.5 11.5 0 0 1 24 8.8" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
@@ -494,35 +336,17 @@
             <span>SALVAR NO RANKING</span>
           </button>
         </div>
-        <div class="ranking-suggestions-row" id="rankingSuggestionsRow" style="display: none;"></div>
+        <div class="ranking-suggestions-row u-hidden" id="rankingSuggestionsRow"></div>
         <div class="mini-kb-grid" id="miniKeyboardGrid"></div>
       </div>
 
       <div class="modal-actions">
-        <button class="btn-3d btn-modal-secondary" onclick="goHome()">
-          <span style="display:inline-flex;align-items:center;">
-            <svg viewBox="0 0 44 44" aria-hidden="true">
-              <ellipse cx="22" cy="40" rx="15" ry="2.2" fill="#3E2723" fill-opacity="0.18"/>
-              <rect x="28" y="8" width="5.5" height="9.5" rx="2" fill="#FFCC80" stroke="#BF360C" stroke-width="2.2"/>
-              <path d="M9.5 21 L9.5 35 C9.5 37.2 11.2 39 13.5 39 L30.5 39 C32.8 39 34.5 37.2 34.5 35 L34.5 21 Z" fill="#FFF8E1"/>
-              <path d="M29 21 H34.5 V35 C34.5 37.2 32.8 39 30.5 39 H27 C28.5 37.5 29 35.2 29 32.5 Z" fill="#FFE082" fill-opacity="0.58"/>
-              <path d="M9.5 21 L9.5 35 C9.5 37.2 11.2 39 13.5 39 L30.5 39 C32.8 39 34.5 37.2 34.5 35 L34.5 21 Z" fill="none" stroke="#5D4037" stroke-width="2.6" stroke-linejoin="round"/>
-              <path d="M4.5 21.5 L22 6.5 L39.5 21.5 L36.5 24 L22 11.8 L7.5 24 Z" fill="#C62828"/>
-              <path d="M3.5 21.5 L22 5 L40.5 21.5 Z" fill="#EF5350" stroke="#B71C1C" stroke-width="2.6" stroke-linejoin="round"/>
-              <path d="M8.5 19 L22 7.4" fill="none" stroke="#FFCDD2" stroke-width="2.2" stroke-linecap="round"/>
-              <path d="M17.5 39 L17.5 27 C17.5 24 26.5 24 26.5 27 L26.5 39 Z" fill="#29B6F6" stroke="#01579B" stroke-width="2.3" stroke-linejoin="round"/>
-              <path d="M19.8 27.5 V35" fill="none" stroke="#81D4FA" stroke-width="1.8" stroke-linecap="round"/>
-              <circle cx="24" cy="32.5" r="1.4" fill="#FFD54F"/>
-              <circle cx="22" cy="14.5" r="3" fill="#FFF176" stroke="#B71C1C" stroke-width="1.8"/>
-              <circle cx="21" cy="13.5" r="1" fill="#FFFFFF"/>
-              <circle cx="9.5" cy="37" r="3.2" fill="#66BB6A" stroke="#1B5E20" stroke-width="1.6"/>
-              <circle cx="34.5" cy="37" r="3.2" fill="#66BB6A" stroke="#1B5E20" stroke-width="1.6"/>
-            </svg>
-          </span>
+        <button type="button" class="btn-3d btn-modal-secondary" data-action="go-home">
+          <span class="u-icon-wrap" data-ui-icon="HOME"></span>
           <span>MENU INICIAL</span>
         </button>
-        <button class="btn-3d btn-modal-primary" id="modalPrimaryBtn" onclick="handleModalContinue()">
-          <span style="display:inline-flex;align-items:center;">
+        <button type="button" class="btn-3d btn-modal-primary" id="modalPrimaryBtn" data-action="modal-continue">
+          <span class="u-icon-wrap">
             <svg viewBox="0 0 40 40" aria-hidden="true">
               <circle cx="20" cy="20" r="16" fill="#FFEE58" stroke="#F57F17" stroke-width="2.8"/>
               <path d="M10 12 A12 12 0 0 1 25 8.5" fill="none" stroke="#FFFDE7" stroke-width="2.6" stroke-linecap="round"/>
@@ -536,54 +360,22 @@
   </div>
 
   <!-- Ranking da Turma Modal -->
-  <div class="modal-overlay" id="rankingModal">
+  <div class="modal-overlay" id="rankingModal" role="dialog" aria-modal="true" aria-labelledby="rankingModalTitle">
     <div class="ranking-modal-card">
       <div class="ranking-header-row">
-        <svg viewBox="0 0 80 80" aria-hidden="true">
-          <ellipse cx="40" cy="74" rx="22" ry="3.2" fill="#F57F17" fill-opacity="0.22"/>
-          <path d="M18 22 C6 22 6 44 20 46" fill="none" stroke="#FFB300" stroke-width="5.5" stroke-linecap="round"/>
-          <path d="M62 22 C74 22 74 44 60 46" fill="none" stroke="#FFB300" stroke-width="5.5" stroke-linecap="round"/>
-          <rect x="32" y="51" width="16" height="11" rx="3" fill="#FFA726" stroke="#E65100" stroke-width="2.8"/>
-          <rect x="22" y="61" width="36" height="10" rx="5" fill="#FFD54F" stroke="#E65100" stroke-width="2.8"/>
-          <rect x="30" y="63.5" width="20" height="4.5" rx="2.2" fill="#FFF9C4" stroke="#E65100" stroke-width="1.3"/>
-          <path d="M16 14 L64 14 L58 42 C55 54 25 54 22 42 Z" fill="#FFEE58"/>
-          <path d="M52 16 L61 16 L56 41 C54 48 46 51 39 51 C47 47 50 40 52 29 Z" fill="#FBC02D" fill-opacity="0.5"/>
-          <path d="M23 19 L25.5 36" fill="none" stroke="#FFFDE7" stroke-width="3" stroke-linecap="round"/>
-          <path d="M16 14 L64 14 L58 42 C55 54 25 54 22 42 Z" fill="none" stroke="#E65100" stroke-width="3.2" stroke-linejoin="round"/>
-          <polygon points="40,20 43.5,27 51,28 45.5,33 47,40.5 40,37 33,40.5 34.5,33 29,28 36.5,27" fill="#FFFFFF" stroke="#F57F17" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M10 10 L11.5 13.5 L15 15 L11.5 16.5 L10 20 L8.5 16.5 L5 15 L8.5 13.5 Z" fill="#FFB300"/>
-          <path d="M70 10 L71.5 13.5 L75 15 L71.5 16.5 L70 20 L68.5 16.5 L65 15 L68.5 13.5 Z" fill="#FFB300"/>
-        </svg>
-        <h2 class="modal-title" style="font-size: clamp(1.3rem, 2.5vw, 2.3rem);">RANKING DA TURMA (DO MAIOR PARA O MENOR)</h2>
+        <span class="u-icon-wrap" data-ui-icon="TROPHY_RANKING"></span>
+        <h2 class="modal-title ranking-modal-title" id="rankingModalTitle">RANKING DA TURMA (DO MAIOR PARA O MENOR)</h2>
       </div>
 
       <div class="ranking-list-container" id="rankingListContainer"></div>
 
       <div class="modal-actions">
-        <button class="btn-3d btn-modal-secondary" onclick="closeRankingModal()">
-          <span style="display:inline-flex;align-items:center;">
-            <svg viewBox="0 0 44 44" aria-hidden="true">
-              <ellipse cx="22" cy="40" rx="15" ry="2.2" fill="#3E2723" fill-opacity="0.18"/>
-              <rect x="28" y="8" width="5.5" height="9.5" rx="2" fill="#FFCC80" stroke="#BF360C" stroke-width="2.2"/>
-              <path d="M9.5 21 L9.5 35 C9.5 37.2 11.2 39 13.5 39 L30.5 39 C32.8 39 34.5 37.2 34.5 35 L34.5 21 Z" fill="#FFF8E1"/>
-              <path d="M29 21 H34.5 V35 C34.5 37.2 32.8 39 30.5 39 H27 C28.5 37.5 29 35.2 29 32.5 Z" fill="#FFE082" fill-opacity="0.58"/>
-              <path d="M9.5 21 L9.5 35 C9.5 37.2 11.2 39 13.5 39 L30.5 39 C32.8 39 34.5 37.2 34.5 35 L34.5 21 Z" fill="none" stroke="#5D4037" stroke-width="2.6" stroke-linejoin="round"/>
-              <path d="M4.5 21.5 L22 6.5 L39.5 21.5 L36.5 24 L22 11.8 L7.5 24 Z" fill="#C62828"/>
-              <path d="M3.5 21.5 L22 5 L40.5 21.5 Z" fill="#EF5350" stroke="#B71C1C" stroke-width="2.6" stroke-linejoin="round"/>
-              <path d="M8.5 19 L22 7.4" fill="none" stroke="#FFCDD2" stroke-width="2.2" stroke-linecap="round"/>
-              <path d="M17.5 39 L17.5 27 C17.5 24 26.5 24 26.5 27 L26.5 39 Z" fill="#29B6F6" stroke="#01579B" stroke-width="2.3" stroke-linejoin="round"/>
-              <path d="M19.8 27.5 V35" fill="none" stroke="#81D4FA" stroke-width="1.8" stroke-linecap="round"/>
-              <circle cx="24" cy="32.5" r="1.4" fill="#FFD54F"/>
-              <circle cx="22" cy="14.5" r="3" fill="#FFF176" stroke="#B71C1C" stroke-width="1.8"/>
-              <circle cx="21" cy="13.5" r="1" fill="#FFFFFF"/>
-              <circle cx="9.5" cy="37" r="3.2" fill="#66BB6A" stroke="#1B5E20" stroke-width="1.6"/>
-              <circle cx="34.5" cy="37" r="3.2" fill="#66BB6A" stroke="#1B5E20" stroke-width="1.6"/>
-            </svg>
-          </span>
+        <button type="button" class="btn-3d btn-modal-secondary" data-action="close-ranking">
+          <span class="u-icon-wrap" data-ui-icon="HOME"></span>
           <span>MENU INICIAL</span>
         </button>
-        <button class="btn-3d btn-clear-ranking" onclick="clearRankingData()">
-          <span style="display:inline-flex;align-items:center;">
+        <button type="button" class="btn-3d btn-clear-ranking" data-action="clear-ranking">
+          <span class="u-icon-wrap">
             <svg viewBox="0 0 40 40" aria-hidden="true">
               <rect x="10" y="13" width="20" height="22" rx="4.5" fill="#FFEBEE" stroke="#FFFFFF" stroke-width="2.5"/>
               <path d="M7 10 L33 10 M15 10 L15 6 L25 6 L25 10" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -597,11 +389,21 @@
     </div>
   </div>
 
+  <script src="js/dom-safe.js"></script>
+  <script src="js/period-service.js"></script>
+  <script src="js/stickers/animais.js"></script>
+  <script src="js/stickers/frutas.js"></script>
+  <script src="js/stickers/natureza.js"></script>
+  <script src="js/stickers/escola.js"></script>
+  <script src="js/stickers/brinquedos.js"></script>
+  <script src="js/stickers/index.js"></script>
   <script src="js/storage-service.js"></script>
   <script src="js/analytics-engine.js"></script>
   <script src="js/evolution-view.js"></script>
   <script src="js/report-print.js"></script>
+  <script src="js/syllable-helper.js"></script>
   <script src="js/teacher-panel-ui.js"></script>
+  <script src="js/ui-icons.js"></script>
   <script src="js/word-bank.js"></script>
   <script src="js/mascot-controller.js"></script>
   <script src="js/audio-engine.js"></script>

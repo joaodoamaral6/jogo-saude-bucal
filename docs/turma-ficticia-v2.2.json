@@ -1,0 +1,2316 @@
+{
+  "tipo": "saude_escola_backup",
+  "versaoBackup": 1,
+  "exportadoEm": "2026-06-25T15:30:00.000Z",
+  "dataISO": "2026-06-25",
+  "saudeEscola_v2_dados": {
+    "versao": 2,
+    "config": {
+      "modo": "aula",
+      "palavrasSemanaAtivo": false,
+      "fase1ModoSemana": "dica",
+      "periodosLetivos": {
+        "modelo": "bimestre",
+        "ano": 2026,
+        "ciclos": [
+          {
+            "id": "bim_1",
+            "nome": "1º Bimestre",
+            "sigla": "1º Bim",
+            "inicio": "2026-02-01",
+            "fim": "2026-04-30"
+          },
+          {
+            "id": "bim_2",
+            "nome": "2º Bimestre",
+            "sigla": "2º Bim",
+            "inicio": "2026-05-01",
+            "fim": "2026-07-15"
+          },
+          {
+            "id": "bim_3",
+            "nome": "3º Bimestre",
+            "sigla": "3º Bim",
+            "inicio": "2026-08-01",
+            "fim": "2026-10-15"
+          },
+          {
+            "id": "bim_4",
+            "nome": "4º Bimestre",
+            "sigla": "4º Bim",
+            "inicio": "2026-10-16",
+            "fim": "2026-12-31"
+          }
+        ]
+      }
+    },
+    "turma": [
+      {
+        "id": "alu_ana_c",
+        "nome": "Ana C.",
+        "chave": "ana c."
+      },
+      {
+        "id": "alu_davi_f",
+        "nome": "Davi F.",
+        "chave": "davi f."
+      },
+      {
+        "id": "alu_heitor_m",
+        "nome": "Heitor M.",
+        "chave": "heitor m."
+      },
+      {
+        "id": "alu_laura_b",
+        "nome": "Laura B.",
+        "chave": "laura b."
+      },
+      {
+        "id": "alu_miguel_s",
+        "nome": "Miguel S.",
+        "chave": "miguel s."
+      },
+      {
+        "id": "alu_pedro_l",
+        "nome": "Pedro L.",
+        "chave": "pedro l."
+      },
+      {
+        "id": "alu_sofia_r",
+        "nome": "Sofia R.",
+        "chave": "sofia r."
+      }
+    ],
+    "palavrasSemana": [
+      {
+        "id": "pal_sem_cavalo",
+        "palavra": "CAVALO",
+        "plain": "CAVALO",
+        "silabasRaw": "CA-VA-LO",
+        "silabas": [
+          "CA",
+          "VA",
+          "LO"
+        ],
+        "dica": "ANIMAL QUE CORRE NO CAMPO E FAZ POCOTÓ.",
+        "frase": "O ___ GALOPA ALEGRE PELO CAMPO VERDE.",
+        "stickerId": "cavalo"
+      },
+      {
+        "id": "pal_sem_maca",
+        "palavra": "MAÇÃ",
+        "plain": "MACA",
+        "silabasRaw": "MA-ÇÃ",
+        "silabas": [
+          "MA",
+          "ÇÃ"
+        ],
+        "dica": "FRUTA VERMELHA E CROCANTE QUE FAZ BEM AO SORRISO.",
+        "frase": "COMI UMA ___ DOCINHA NA HORA DO LANCHE.",
+        "stickerId": "maca"
+      },
+      {
+        "id": "pal_sem_arvore",
+        "palavra": "ÁRVORE",
+        "plain": "ARVORE",
+        "silabasRaw": "ÁR-VO-RE",
+        "silabas": [
+          "ÁR",
+          "VO",
+          "RE"
+        ],
+        "dica": "TEM TRONCO, FOLHAS VERDINHAS E DÁ SOMBRA NO PARQUE.",
+        "frase": "OS PASSARINHOS FIZERAM NINHO NO ALTO DA ___.",
+        "stickerId": "arvore"
+      },
+      {
+        "id": "pal_sem_escola",
+        "palavra": "ESCOLA",
+        "plain": "ESCOLA",
+        "silabasRaw": "ES-CO-LA",
+        "silabas": [
+          "ES",
+          "CO",
+          "LA"
+        ],
+        "dica": "LUGAR ONDE APRENDEMOS A LER, ESCREVER E BRINCAR COM OS AMIGOS.",
+        "frase": "VOU PARA A ___ COM MINHA MOCHILA COLORIDA.",
+        "stickerId": "escola"
+      },
+      {
+        "id": "pal_sem_boneca",
+        "palavra": "BONECA",
+        "plain": "BONECA",
+        "silabasRaw": "BO-NE-CA",
+        "silabas": [
+          "BO",
+          "NE",
+          "CA"
+        ],
+        "dica": "BRINQUEDO DE PANO OU PLÁSTICO PARA CUIDAR E INVENTAR HISTÓRIAS.",
+        "frase": "GUARDEI A ___ NA CAIXA DEPOIS DA BRINCADEIRA.",
+        "stickerId": "boneca"
+      },
+      {
+        "id": "pal_sem_palhaco",
+        "palavra": "PALHAÇO",
+        "plain": "PALHACO",
+        "silabasRaw": "PA-LHA-ÇO",
+        "silabas": [
+          "PA",
+          "LHA",
+          "ÇO"
+        ],
+        "dica": "ARTISTA ALEGRE DO CIRCO QUE USA NARIZ VERMELHO E FAZ RIR.",
+        "frase": "O ___ TROUXE BALÕES COLORIDOS PARA A FESTA.",
+        "stickerId": "palhaco"
+      }
+    ],
+    "sessoes": [
+      {
+        "id": "ses_b1_01",
+        "dataISO": "2026-03-10",
+        "timestamp": 1773154800000,
+        "finalizadaEm": 1773155160000,
+        "alunoId": "alu_ana_c",
+        "alunoNome": "Ana C.",
+        "alunoChave": "ana c.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 9,
+        "acertosPrimeira": 8,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "GUA": {
+            "count": 1,
+            "palavras": [
+              "ÁGUA"
+            ],
+            "confusoes": {
+              "GUE": 1
+            }
+          }
+        },
+        "errosOrtograficos": {},
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ÁGUA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 44,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 4
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 4
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "DENTE",
+          "PASTA",
+          "ESCOVA",
+          "ÁGUA"
+        ]
+      },
+      {
+        "id": "ses_b1_02",
+        "dataISO": "2026-03-10",
+        "timestamp": 1773155400000,
+        "finalizadaEm": 1773155820000,
+        "alunoId": "alu_heitor_m",
+        "alunoNome": "Heitor M.",
+        "alunoChave": "heitor m.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 5,
+        "acertosPrimeira": 3,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "PA": {
+            "count": 2,
+            "palavras": [
+              "PASTA"
+            ],
+            "confusoes": {
+              "BA": 2
+            }
+          },
+          "GEN": {
+            "count": 2,
+            "palavras": [
+              "GENGIVA"
+            ],
+            "confusoes": {
+              "GAN": 2
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_P_B": {
+            "codigo": "TROCA_P_B",
+            "label": "Troca P / B",
+            "count": 2,
+            "exemplos": [
+              "PASTA (B no lugar de P)"
+            ]
+          },
+          "TROCA_M_N": {
+            "codigo": "TROCA_M_N",
+            "label": "Troca M / N (e M antes de P/B)",
+            "count": 1,
+            "exemplos": [
+              "DENTE (M no lugar de N)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 0,
+            "erros": 2
+          },
+          "GENGIVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 82,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 2,
+            "acertosPrimeira": 1
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "DENTE",
+          "PASTA",
+          "GENGIVA",
+          "ESCOVA"
+        ]
+      },
+      {
+        "id": "ses_b1_03",
+        "dataISO": "2026-03-10",
+        "timestamp": 1773156000000,
+        "finalizadaEm": 1773156420000,
+        "alunoId": "alu_miguel_s",
+        "alunoNome": "Miguel S.",
+        "alunoChave": "miguel s.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 4,
+        "acertosPrimeira": 2,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "GI": {
+            "count": 2,
+            "palavras": [
+              "GENGIVA"
+            ],
+            "confusoes": {
+              "GE": 2
+            }
+          },
+          "RI": {
+            "count": 2,
+            "palavras": [
+              "SORRISO"
+            ],
+            "confusoes": {
+              "SI": 2
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_G_J": {
+            "codigo": "TROCA_G_J",
+            "label": "Troca G / J",
+            "count": 2,
+            "exemplos": [
+              "GENGIVA (J no lugar de G)"
+            ]
+          },
+          "OMISSAO_DIGRAFO_RR": {
+            "codigo": "OMISSAO_DIGRAFO_RR",
+            "label": "Omissão no dígrafo RR",
+            "count": 2,
+            "exemplos": [
+              "SORRISO (omitiu R em RR)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "GENGIVA": {
+            "tentativas": 2,
+            "acertos": 0,
+            "erros": 2
+          },
+          "SORRISO": {
+            "tentativas": 2,
+            "acertos": 0,
+            "erros": 2
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "FIO": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 94,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 2,
+            "acertosPrimeira": 1
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 2,
+            "acertosPrimeira": 1
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "GENGIVA",
+          "SORRISO",
+          "ESCOVA",
+          "FIO"
+        ]
+      },
+      {
+        "id": "ses_b1_04",
+        "dataISO": "2026-03-10",
+        "timestamp": 1773156600000,
+        "finalizadaEm": 1773156960000,
+        "alunoId": "alu_sofia_r",
+        "alunoNome": "Sofia R.",
+        "alunoChave": "sofia r.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 8,
+        "acertosPrimeira": 7,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "LÍN": {
+            "count": 1,
+            "palavras": [
+              "LÍNGUA"
+            ],
+            "confusoes": {
+              "LIM": 1
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "OMISSAO_DIGRAFO_RR": {
+            "codigo": "OMISSAO_DIGRAFO_RR",
+            "label": "Omissão no dígrafo RR",
+            "count": 1,
+            "exemplos": [
+              "SORRISO (omitiu R em RR)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "LÍNGUA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "SORRISO": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ÁGUA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 48,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 4
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          }
+        },
+        "palavrasTrabalhadas": [
+          "DENTE",
+          "PASTA",
+          "LÍNGUA",
+          "SORRISO",
+          "ÁGUA"
+        ]
+      },
+      {
+        "id": "ses_b1_05",
+        "dataISO": "2026-03-24",
+        "timestamp": 1774364400000,
+        "finalizadaEm": 1774364800000,
+        "alunoId": "alu_laura_b",
+        "alunoNome": "Laura B.",
+        "alunoChave": "laura b.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 6,
+        "acertosPrimeira": 5,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "CO": {
+            "count": 2,
+            "palavras": [
+              "ESCOVA"
+            ],
+            "confusoes": {
+              "GO": 2
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_C_G": {
+            "codigo": "TROCA_C_G",
+            "label": "Troca C / G",
+            "count": 1,
+            "exemplos": [
+              "ESCOVA (G no lugar de C)"
+            ]
+          },
+          "TROCA_T_D": {
+            "codigo": "TROCA_T_D",
+            "label": "Troca T / D",
+            "count": 1,
+            "exemplos": [
+              "DENTE (T no lugar de D)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "CÁRIE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 68,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 3
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "ESCOVA",
+          "DENTE",
+          "PASTA",
+          "CÁRIE"
+        ]
+      },
+      {
+        "id": "ses_b1_06",
+        "dataISO": "2026-03-24",
+        "timestamp": 1774365000000,
+        "finalizadaEm": 1774365400000,
+        "alunoId": "alu_pedro_l",
+        "alunoNome": "Pedro L.",
+        "alunoChave": "pedro l.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 6,
+        "acertosPrimeira": 4,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "ES": {
+            "count": 2,
+            "palavras": [
+              "ESCOVA"
+            ],
+            "confusoes": {
+              "IS": 2
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_T_D": {
+            "codigo": "TROCA_T_D",
+            "label": "Troca T / D",
+            "count": 2,
+            "exemplos": [
+              "DENTE (T no lugar de D)",
+              "PASTA (D no lugar de T)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "FIO": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 72,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "DENTE",
+          "PASTA",
+          "ESCOVA",
+          "FIO"
+        ]
+      },
+      {
+        "id": "ses_b1_07",
+        "dataISO": "2026-03-24",
+        "timestamp": 1774365600000,
+        "finalizadaEm": 1774366020000,
+        "alunoId": "alu_heitor_m",
+        "alunoNome": "Heitor M.",
+        "alunoChave": "heitor m.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 6,
+        "acertosPrimeira": 4,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "PA": {
+            "count": 1,
+            "palavras": [
+              "PASTA"
+            ],
+            "confusoes": {
+              "BA": 1
+            }
+          },
+          "GUA": {
+            "count": 1,
+            "palavras": [
+              "LÍNGUA"
+            ],
+            "confusoes": {
+              "GUE": 1
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_P_B": {
+            "codigo": "TROCA_P_B",
+            "label": "Troca P / B",
+            "count": 1,
+            "exemplos": [
+              "PASTA (B no lugar de P)"
+            ]
+          },
+          "TROCA_M_N": {
+            "codigo": "TROCA_M_N",
+            "label": "Troca M / N (e M antes de P/B)",
+            "count": 1,
+            "exemplos": [
+              "LÍNGUA (M no lugar de N)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "LÍNGUA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ÁGUA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 74,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "PASTA",
+          "LÍNGUA",
+          "ESCOVA",
+          "ÁGUA"
+        ]
+      },
+      {
+        "id": "ses_b1_08",
+        "dataISO": "2026-03-24",
+        "timestamp": 1774366200000,
+        "finalizadaEm": 1774366580000,
+        "alunoId": "alu_ana_c",
+        "alunoNome": "Ana C.",
+        "alunoChave": "ana c.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 9,
+        "acertosPrimeira": 8,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {},
+        "errosOrtograficos": {
+          "TROCA_G_J": {
+            "codigo": "TROCA_G_J",
+            "label": "Troca G / J",
+            "count": 1,
+            "exemplos": [
+              "GENGIVA (J no lugar de G)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "SORRISO": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "GENGIVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "CÁRIE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "FIO": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 42,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 4
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 4
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "SORRISO",
+          "GENGIVA",
+          "CÁRIE",
+          "FIO"
+        ]
+      },
+      {
+        "id": "ses_b1_09",
+        "dataISO": "2026-04-14",
+        "timestamp": 1776178800000,
+        "finalizadaEm": 1776179220000,
+        "alunoId": "alu_miguel_s",
+        "alunoNome": "Miguel S.",
+        "alunoChave": "miguel s.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 5,
+        "acertosPrimeira": 3,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "GEN": {
+            "count": 2,
+            "palavras": [
+              "GENGIVA"
+            ],
+            "confusoes": {
+              "JAN": 2
+            }
+          },
+          "SOR": {
+            "count": 1,
+            "palavras": [
+              "SORRISO"
+            ],
+            "confusoes": {
+              "SAR": 1
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_G_J": {
+            "codigo": "TROCA_G_J",
+            "label": "Troca G / J",
+            "count": 2,
+            "exemplos": [
+              "GENGIVA (J no lugar de G)"
+            ]
+          },
+          "TROCA_S_Z": {
+            "codigo": "TROCA_S_Z",
+            "label": "Troca S / Z",
+            "count": 1,
+            "exemplos": [
+              "SORRISO (Z no lugar de S)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "GENGIVA": {
+            "tentativas": 2,
+            "acertos": 0,
+            "erros": 2
+          },
+          "SORRISO": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ÁGUA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 86,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 2,
+            "acertosPrimeira": 1
+          }
+        },
+        "palavrasTrabalhadas": [
+          "DENTE",
+          "PASTA",
+          "GENGIVA",
+          "SORRISO",
+          "ÁGUA"
+        ]
+      },
+      {
+        "id": "ses_b1_10",
+        "dataISO": "2026-04-14",
+        "timestamp": 1776179400000,
+        "finalizadaEm": 1776179760000,
+        "alunoId": "alu_sofia_r",
+        "alunoNome": "Sofia R.",
+        "alunoChave": "sofia r.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 9,
+        "acertosPrimeira": 8,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {},
+        "errosOrtograficos": {
+          "OMISSAO_DIGRAFO_GU": {
+            "codigo": "OMISSAO_DIGRAFO_GU",
+            "label": "Omissão no dígrafo GU",
+            "count": 1,
+            "exemplos": [
+              "LÍNGUA (omitiu U em GU)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "LÍNGUA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "CÁRIE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "FIO": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 45,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 4
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 4
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "ESCOVA",
+          "LÍNGUA",
+          "CÁRIE",
+          "FIO"
+        ]
+      },
+      {
+        "id": "ses_b1_11",
+        "dataISO": "2026-04-14",
+        "timestamp": 1776180000000,
+        "finalizadaEm": 1776180400000,
+        "alunoId": "alu_laura_b",
+        "alunoNome": "Laura B.",
+        "alunoChave": "laura b.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 7,
+        "acertosPrimeira": 6,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "RI": {
+            "count": 1,
+            "palavras": [
+              "CÁRIE"
+            ],
+            "confusoes": {
+              "RE": 1
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_C_G": {
+            "codigo": "TROCA_C_G",
+            "label": "Troca C / G",
+            "count": 1,
+            "exemplos": [
+              "BOCA (G no lugar de C)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "CÁRIE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ÁGUA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 62,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 3
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "DENTE",
+          "PASTA",
+          "CÁRIE",
+          "ÁGUA"
+        ]
+      },
+      {
+        "id": "ses_b1_12",
+        "dataISO": "2026-04-14",
+        "timestamp": 1776180600000,
+        "finalizadaEm": 1776181000000,
+        "alunoId": "alu_pedro_l",
+        "alunoNome": "Pedro L.",
+        "alunoChave": "pedro l.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 7,
+        "acertosPrimeira": 5,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "ES": {
+            "count": 1,
+            "palavras": [
+              "ESCOVA"
+            ],
+            "confusoes": {
+              "IS": 1
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_T_D": {
+            "codigo": "TROCA_T_D",
+            "label": "Troca T / D",
+            "count": 1,
+            "exemplos": [
+              "DENTE (T no lugar de D)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "SORRISO": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ÁGUA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 66,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          }
+        },
+        "palavrasTrabalhadas": [
+          "DENTE",
+          "PASTA",
+          "ESCOVA",
+          "SORRISO",
+          "ÁGUA"
+        ]
+      },
+      {
+        "id": "ses_b2_01",
+        "dataISO": "2026-05-12",
+        "timestamp": 1778598000000,
+        "finalizadaEm": 1778598350000,
+        "alunoId": "alu_ana_c",
+        "alunoNome": "Ana C.",
+        "alunoChave": "ana c.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 10,
+        "acertosPrimeira": 9,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {},
+        "errosOrtograficos": {},
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "LÍNGUA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "GENGIVA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 34,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 5
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 4
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "DENTE",
+          "ESCOVA",
+          "LÍNGUA",
+          "GENGIVA"
+        ]
+      },
+      {
+        "id": "ses_b2_02",
+        "dataISO": "2026-05-12",
+        "timestamp": 1778598600000,
+        "finalizadaEm": 1778598980000,
+        "alunoId": "alu_heitor_m",
+        "alunoNome": "Heitor M.",
+        "alunoChave": "heitor m.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 8,
+        "acertosPrimeira": 7,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "GUA": {
+            "count": 1,
+            "palavras": [
+              "LÍNGUA"
+            ],
+            "confusoes": {
+              "GUE": 1
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "OMISSAO_DIGRAFO_GU": {
+            "codigo": "OMISSAO_DIGRAFO_GU",
+            "label": "Omissão no dígrafo GU",
+            "count": 1,
+            "exemplos": [
+              "LÍNGUA (omitiu U em GU)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "LÍNGUA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 49,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 4
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "PASTA",
+          "DENTE",
+          "LÍNGUA",
+          "ESCOVA"
+        ]
+      },
+      {
+        "id": "ses_b2_03",
+        "dataISO": "2026-05-12",
+        "timestamp": 1778599200000,
+        "finalizadaEm": 1778599600000,
+        "alunoId": "alu_miguel_s",
+        "alunoNome": "Miguel S.",
+        "alunoChave": "miguel s.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 6,
+        "acertosPrimeira": 4,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "GI": {
+            "count": 1,
+            "palavras": [
+              "GENGIVA"
+            ],
+            "confusoes": {
+              "GE": 1
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_G_J": {
+            "codigo": "TROCA_G_J",
+            "label": "Troca G / J",
+            "count": 1,
+            "exemplos": [
+              "GENGIVA (J no lugar de G)"
+            ]
+          },
+          "OMISSAO_DIGRAFO_RR": {
+            "codigo": "OMISSAO_DIGRAFO_RR",
+            "label": "Omissão no dígrafo RR",
+            "count": 1,
+            "exemplos": [
+              "SORRISO (omitiu R em RR)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "GENGIVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "SORRISO": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 69,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "DENTE",
+          "GENGIVA",
+          "SORRISO",
+          "PASTA"
+        ]
+      },
+      {
+        "id": "ses_b2_04",
+        "dataISO": "2026-05-12",
+        "timestamp": 1778599800000,
+        "finalizadaEm": 1778600150000,
+        "alunoId": "alu_davi_f",
+        "alunoNome": "Davi F.",
+        "alunoChave": "davi f.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 7,
+        "acertosPrimeira": 5,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "CÁ": {
+            "count": 1,
+            "palavras": [
+              "CÁRIE"
+            ],
+            "confusoes": {
+              "GA": 1
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_F_V": {
+            "codigo": "TROCA_F_V",
+            "label": "Troca F / V",
+            "count": 1,
+            "exemplos": [
+              "ESCOVA (F no lugar de V)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "CÁRIE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ÁGUA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 58,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "PASTA",
+          "ESCOVA",
+          "CÁRIE",
+          "ÁGUA"
+        ]
+      },
+      {
+        "id": "ses_b2_05",
+        "dataISO": "2026-06-02",
+        "timestamp": 1780412400000,
+        "finalizadaEm": 1780412760000,
+        "alunoId": "alu_sofia_r",
+        "alunoNome": "Sofia R.",
+        "alunoChave": "sofia r.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 10,
+        "acertosPrimeira": 9,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {},
+        "errosOrtograficos": {},
+        "palavrasStats": {
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "SORRISO": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "LÍNGUA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "GENGIVA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "FIO": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 36,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 5
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 4
+          }
+        },
+        "palavrasTrabalhadas": [
+          "DENTE",
+          "SORRISO",
+          "LÍNGUA",
+          "GENGIVA",
+          "FIO"
+        ]
+      },
+      {
+        "id": "ses_b2_06",
+        "dataISO": "2026-06-02",
+        "timestamp": 1780413000000,
+        "finalizadaEm": 1780413380000,
+        "alunoId": "alu_laura_b",
+        "alunoNome": "Laura B.",
+        "alunoChave": "laura b.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 8,
+        "acertosPrimeira": 7,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "CO": {
+            "count": 1,
+            "palavras": [
+              "ESCOVA"
+            ],
+            "confusoes": {
+              "GO": 1
+            }
+          }
+        },
+        "errosOrtograficos": {},
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ÁGUA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 51,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 4
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "DENTE",
+          "ESCOVA",
+          "PASTA",
+          "ÁGUA"
+        ]
+      },
+      {
+        "id": "ses_b2_07",
+        "dataISO": "2026-06-02",
+        "timestamp": 1780413600000,
+        "finalizadaEm": 1780413980000,
+        "alunoId": "alu_pedro_l",
+        "alunoNome": "Pedro L.",
+        "alunoChave": "pedro l.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 8,
+        "acertosPrimeira": 6,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {},
+        "errosOrtograficos": {
+          "TROCA_T_D": {
+            "codigo": "TROCA_T_D",
+            "label": "Troca T / D",
+            "count": 1,
+            "exemplos": [
+              "DENTE (T no lugar de D)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOVA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "CÁRIE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 54,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "DENTE",
+          "PASTA",
+          "ESCOVA",
+          "CÁRIE"
+        ]
+      },
+      {
+        "id": "ses_b2_08",
+        "dataISO": "2026-06-02",
+        "timestamp": 1780414200000,
+        "finalizadaEm": 1780414560000,
+        "alunoId": "alu_heitor_m",
+        "alunoNome": "Heitor M.",
+        "alunoChave": "heitor m.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PADRAO",
+        "tentativas": 10,
+        "acertos": 9,
+        "acertosPrimeira": 8,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {},
+        "errosOrtograficos": {},
+        "palavrasStats": {
+          "BOCA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "PASTA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "DENTE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "SORRISO": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ÁGUA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 43,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 4
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 4
+          }
+        },
+        "palavrasTrabalhadas": [
+          "BOCA",
+          "PASTA",
+          "DENTE",
+          "SORRISO",
+          "ÁGUA"
+        ]
+      },
+      {
+        "id": "ses_b2_09",
+        "dataISO": "2026-06-23",
+        "timestamp": 1782226800000,
+        "finalizadaEm": 1782227150000,
+        "alunoId": "alu_ana_c",
+        "alunoNome": "Ana C.",
+        "alunoChave": "ana c.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PALAVRAS_SEMANA",
+        "tentativas": 10,
+        "acertos": 10,
+        "acertosPrimeira": 10,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {},
+        "errosOrtograficos": {},
+        "palavrasStats": {
+          "CAVALO": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "MAÇÃ": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ÁRVORE": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOLA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "BONECA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 32,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 5
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 5
+          }
+        },
+        "palavrasTrabalhadas": [
+          "CAVALO",
+          "MAÇÃ",
+          "ÁRVORE",
+          "ESCOLA",
+          "BONECA"
+        ]
+      },
+      {
+        "id": "ses_b2_10",
+        "dataISO": "2026-06-23",
+        "timestamp": 1782227400000,
+        "finalizadaEm": 1782227780000,
+        "alunoId": "alu_miguel_s",
+        "alunoNome": "Miguel S.",
+        "alunoChave": "miguel s.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PALAVRAS_SEMANA",
+        "tentativas": 10,
+        "acertos": 7,
+        "acertosPrimeira": 5,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "LHA": {
+            "count": 2,
+            "palavras": [
+              "PALHAÇO"
+            ],
+            "confusoes": {
+              "LA": 2
+            }
+          }
+        },
+        "errosOrtograficos": {
+          "TROCA_S_Z": {
+            "codigo": "TROCA_S_Z",
+            "label": "Troca S / Z",
+            "count": 1,
+            "exemplos": [
+              "ESCOLA (Z no lugar de S)"
+            ]
+          }
+        },
+        "palavrasStats": {
+          "CAVALO": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "MAÇÃ": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOLA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "BONECA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "PALHAÇO": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 61,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 3,
+            "acertosPrimeira": 2
+          }
+        },
+        "palavrasTrabalhadas": [
+          "CAVALO",
+          "MAÇÃ",
+          "ESCOLA",
+          "BONECA",
+          "PALHAÇO"
+        ]
+      },
+      {
+        "id": "ses_b2_11",
+        "dataISO": "2026-06-23",
+        "timestamp": 1782228000000,
+        "finalizadaEm": 1782228360000,
+        "alunoId": "alu_laura_b",
+        "alunoNome": "Laura B.",
+        "alunoChave": "laura b.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PALAVRAS_SEMANA",
+        "tentativas": 10,
+        "acertos": 9,
+        "acertosPrimeira": 8,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {},
+        "errosOrtograficos": {},
+        "palavrasStats": {
+          "CAVALO": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "MAÇÃ": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ÁRVORE": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "ESCOLA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "BONECA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 46,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 5,
+            "acertosPrimeira": 4
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 4
+          }
+        },
+        "palavrasTrabalhadas": [
+          "CAVALO",
+          "MAÇÃ",
+          "ÁRVORE",
+          "ESCOLA",
+          "BONECA"
+        ]
+      },
+      {
+        "id": "ses_b2_12",
+        "dataISO": "2026-06-23",
+        "timestamp": 1782228600000,
+        "finalizadaEm": 1782228970000,
+        "alunoId": "alu_davi_f",
+        "alunoNome": "Davi F.",
+        "alunoChave": "davi f.",
+        "modoJogo": "JORNADA",
+        "fontePalavras": "PALAVRAS_SEMANA",
+        "tentativas": 10,
+        "acertos": 8,
+        "acertosPrimeira": 7,
+        "atividadesRegistradas": 11,
+        "errosSilabas": {
+          "LHA": {
+            "count": 1,
+            "palavras": [
+              "PALHAÇO"
+            ],
+            "confusoes": {
+              "LA": 1
+            }
+          }
+        },
+        "errosOrtograficos": {},
+        "palavrasStats": {
+          "CAVALO": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "MAÇÃ": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "ESCOLA": {
+            "tentativas": 2,
+            "acertos": 2,
+            "erros": 0
+          },
+          "BONECA": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          },
+          "PALHAÇO": {
+            "tentativas": 2,
+            "acertos": 1,
+            "erros": 1
+          }
+        },
+        "fasesStats": {
+          "fase1": {
+            "tentativas": 0,
+            "acertos": 0,
+            "acertosPrimeira": 0,
+            "tempoSegundos": 47,
+            "rodadas": 1
+          },
+          "fase2": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 4
+          },
+          "fase3": {
+            "tentativas": 5,
+            "acertos": 4,
+            "acertosPrimeira": 3
+          }
+        },
+        "palavrasTrabalhadas": [
+          "CAVALO",
+          "MAÇÃ",
+          "ESCOLA",
+          "BONECA",
+          "PALHAÇO"
+        ]
+      }
+    ],
+    "anotacoes": [
+      {
+        "id": "ano_turma_b2",
+        "dataISO": "2026-06-23",
+        "alunoId": null,
+        "alunoNome": "",
+        "texto": "Semana com Palavras da Semana ativadas usando figurinhas das cinco categorias. Toda a turma apresentou redução no tempo da memória e maior autonomia na escrita alfabética em relação ao 1º Bimestre.",
+        "criadaEm": 1782229500000,
+        "atualizadaEm": 1782229500000
+      },
+      {
+        "id": "ano_pedro_b2",
+        "dataISO": "2026-06-23",
+        "alunoId": "alu_pedro_l",
+        "alunoNome": "Pedro L.",
+        "texto": "Avançou bem no reconhecimento de sílabas iniciais e fechou quase todas as atividades da Fase 2. Seguir reforçando a diferenciação sonora entre T e D em ditados curtos.",
+        "criadaEm": 1782229200000,
+        "atualizadaEm": 1782229200000
+      },
+      {
+        "id": "ano_heitor_b2",
+        "dataISO": "2026-06-02",
+        "alunoId": "alu_heitor_m",
+        "alunoNome": "Heitor M.",
+        "texto": "Evolução expressiva no 2º Bimestre: superou a troca entre P e B após atividades com pares mínimos no quadro e reduziu pela metade o tempo na Fase 1.",
+        "criadaEm": 1780415000000,
+        "atualizadaEm": 1780415000000
+      },
+      {
+        "id": "ano_turma_b1",
+        "dataISO": "2026-04-14",
+        "alunoId": null,
+        "alunoNome": "",
+        "texto": "Fechamento do 1º Bimestre: turma engajada na lousa digital. Retomar no quadro as letras G e J em GENGIVA e o dígrafo RR em SORRISO.",
+        "criadaEm": 1776182000000,
+        "atualizadaEm": 1776182000000
+      }
+    ]
+  },
+  "saudeBucalRanking": [
+    {
+      "name": "ANA C.",
+      "stars": 14,
+      "date": 1782227150000
+    },
+    {
+      "name": "SOFIA R.",
+      "stars": 13,
+      "date": 1780412760000
+    },
+    {
+      "name": "HEITOR M.",
+      "stars": 12,
+      "date": 1780414560000
+    },
+    {
+      "name": "LAURA B.",
+      "stars": 11,
+      "date": 1782228360000
+    },
+    {
+      "name": "DAVI F.",
+      "stars": 10,
+      "date": 1782228970000
+    },
+    {
+      "name": "PEDRO L.",
+      "stars": 10,
+      "date": 1780413980000
+    },
+    {
+      "name": "MIGUEL S.",
+      "stars": 8,
+      "date": 1782227780000
+    }
+  ]
+}

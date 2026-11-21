@@ -1,84 +1,63 @@
-# Roadmap e Backlog de Evolução (v2.1.3 -> v2.2 / v3.0)
+# Roadmap e Backlog de Evolução (v2.2.0 -> v2.3 / v3.0)
 
-Este documento organiza o backlog de evolução pedagógica e técnica do projeto **Saúde na Escola: Saúde Bucal**, mantendo como diretriz de plataforma o **foco principal em Desktop e Lousas Digitais** (Windows, macOS e Linux).
+Este documento organiza o histórico de prioridades recém-concluídas na **v2.2.0** e o backlog de evolução pedagógica, visual e técnica do projeto **Saúde na Escola: Saúde Bucal**, mantendo como diretriz de plataforma o **foco principal em Desktop e Lousas Digitais** (`> 1024px`, Windows, macOS e Linux).
 
-Para consultar todas as funcionalidades, o Relatório Pedagógico PDF Offline (`v2.1.3`), as auditorias de segurança e decisões arquiteturais (Mini-ADRs) que **já foram implementadas e entregues até a versão v2.1.3**, acesse o arquivo [../CHANGELOG.md](../CHANGELOG.md).
-
----
-
-## 1. Prioridades Mapeadas para a v2.2
-
-Itens definidos a partir do uso prático e dos testes de sala de aula para compor o próximo ciclo evolutivo (**v2.2**):
-
-### 1.1. Agrupamento e Comparativo Gráfico por Período Letivo (Bimestre / Trimestre)
-- **Objetivo:** Permitir que a professora visualize o resumo individual (por aluno) e consolidado da turma agrupado por **Período Letivo (Bimestre ou Trimestre)**, gerando comparativos gráficos entre ciclos sem precisar apagar o histórico acumulado no `localStorage`.
-- **Benefício Pedagógico:** Acompanhamento longitudinal ao longo do ano letivo com preservação integral da série histórica para conselhos de classe e reuniões com famílias.
-
-### 1.2. Simplificação da UX do Gerenciamento de "Palavras da Semana"
-- **Objetivo:** Tornar o formulário e o fluxo de cadastro, edição, ativação e visualização das **Palavras da Semana** mais simples, guiados e diretos para professoras sem perfil técnico.
-- **Pontos de Evolução Previstos:**
-  - Reduzir atrito na separação silábica por hífens (pré-visualização mais clara e ajuda contextual rápida);
-  - Tornar mais evidente quando o modo personalizado está ativo ou pronto para ativar (`>= 4 palavras`), sem termos técnicos.
-
-### 1.3. Evolução Futura do Mascote (Dentinho)
-- **Objetivo:** Aprimorar em um próximo ciclo as animações avançadas, variedade de expressões faciais/corporais e sincronização visual da fala do mascote Dentinho nas interações do Menu Inicial e das Fases.
-
-### 1.4. Redesenho Completo dos SVGs de Interface Restantes
-- **Objetivo:** Atualizar visualmente os ícones de interface que ainda mantêm o traço mais simples das versões iniciais para um redesenho completo alinhado ao padrão ilustrativo infantil moderno:
-  - Ícones de **som** (`SOUND_ON` / `SOUND_OFF`);
-  - **Medalhas** de pódio (`1º`, `2º` e `3º` lugares);
-  - **Troféus** do cabeçalho e dos modais;
-  - **Casinha do Menu Inicial**;
-  - Ícone do botão roxo **"OUTRA PALAVRA"** / **"NOVOS PARES"**.
+Para consultar os detalhes arquiteturais e decisões técnicas (Mini-ADRs) entregues até a **v2.2.0**, acesse [../CHANGELOG.md](../CHANGELOG.md), [FUNCIONALIDADES_V2.2.md](FUNCIONALIDADES_V2.2.md) e [RELATORIO_DIAGNOSTICO_V2.2.md](RELATORIO_DIAGNOSTICO_V2.2.md).
 
 ---
 
-## 2. Pendente de Validação e Definição com a Professora Carla Machado
+## 1. Entregas Concluídas na v2.2.0
 
-Os itens desta seção dependem de alinhamento pedagógico e validação de uso em sala de aula com a professora regente antes de entrarem em desenvolvimento:
-
-### 2.1. Implementação de Calendário Escolar (Estrutura e Uso Pedagógico)
-- **Objetivo:** Definir com a professora como um calendário integrado ao jogo ou ao Painel da Professora pode apoiar a rotina diária da turma (ex.: vinculação de atividades por data letiva, planejamento semanal de palavras ou ativação automática de temas em datas comemorativas).
-- **Pontos em Aberto para Validação:**
-  - O calendário será exibido apenas para a professora no painel de gestão ou também terá uma visualização didática para as crianças no início da aula?
-  - Quais marcos do calendário escolar anual devem vir pré-configurados?
-
-### 2.2. Expansão de Temas Além de Saúde Bucal
-- **Objetivo:** Expandir o banco nativo do sistema (`js/word-bank.js`) com novos pacotes temáticos completos contendo ilustrações em SVG infantil, dicas descritivas (Fase 2) e frases contextualizadas (Fase 3), mantendo o tema original de Saúde Bucal e o seletor manual para a docente.
-- **Temas Candidatos em Estudo:**
-  - Meio Ambiente e Natureza;
-  - Alimentação Saudável;
-  - Cultura Indígena, Consciência Negra e Festas Tradicionais do Calendário Escolar.
-
-### 2.3. Inclusão da Tecla `Ç` no Teclado Virtual da Fase 3
-- **Objetivo:** Avaliar a inclusão explícita da tecla `Ç` no teclado virtual da Fase 3 (Escrita Espontânea) e no mini-teclado quando novos temas ou "Palavras da Semana" incluírem vocábulos com cedilha (ex.: `MAÇÃ`, `CABEÇA`, `CORAÇÃO`, `ESCOVAÇÃO`).
-- **Critério Pedagógico a Validar:** Definir se, para o 1º e 2º anos, a tecla `Ç` deve ser exigida distintamente da letra `C` na Fase 3 ou se o comportamento deve variar conforme o nível da turma.
-
-### 2.4. Chaveamento "Modo 1º Ano" vs. "Modo 2º Ano"
-- **Objetivo:** Acompanhar a progressão da turma para o 2º Ano do Ensino Fundamental adicionando um seletor de nível no Painel da Professora.
-- **Escopo Pedagógico Previsto para o Modo 2º Ano:**
-  - Desafios focados em dígrafos (`CH`, `LH`, `NH`, `RR`, `SS`) e na regra contextual do uso de `M` antes de `P` e `B`;
-  - Evolução da Fase 3 para trabalhar frases com **dupla lacuna** ou validação ortográfica estrita de acentuação e cedilha.
+Todos os blocos técnicos e de UX planejados para o ciclo **v2.2.0** foram implementados, auditados e validados via `file://`:
+- **Pilar 1 (Segurança e CSP Estrito Offline):** `<meta http-equiv="Content-Security-Policy">` estrito compatível com `file://`, módulo `js/dom-safe.js` (zero `innerHTML`/`on*=`/`style=` inline), proteção contra *prototype pollution*, remoção dos legados `#p2EmojiCorner`/`#p3EmojiCorner` e alinhador ortográfico por **distância de edição / LCS** (`analisarEscritaFase3` em `js/analytics-engine.js`) para omissão de dígrafos.
+- **Agrupamento e Comparativo por Período Letivo (`js/period-service.js`):** suporte a **Bimestres (4 períodos)** e **Trimestres (3 períodos)** com datas configuráveis, comparativos gráficos e integração ao Relatório PDF sem apagar o histórico acumulado.
+- **Simplificação da UX de "Palavras da Semana", Silabador Automático e 40 Figurinhas:** cartão de progresso rumo a 4 palavras, separação silábica automática em Português (`js/syllable-helper.js`), cadastro em lote e biblioteca `js/stickers/` com **40 figurinhas vetoriais infantis em 5 categorias** (*Animais*, *Frutas e Alimentos*, *Natureza*, *Escola e Objetos* e *Casa e Brinquedos*).
+- **Redesenho dos SVGs de Interface (`js/ui-icons.js`) e Evolução do Dentinho:** 10 ícones redesenhados em 5 conjuntos (Som, Medalhas 1º–3º, Troféus, Casinha e Botão Roxo) e 5 expressões + piscadas orgânicas + 3 ritmos de fala no mascote Dentinho.
+- **Sistema de Tokens `--ui-*` (Pilar 2 — IHC Infantil > 1024px) e Massa Fictícia:** 24 tokens calibrados para projetores e lousas digitais em `css/game.css` (`?v=2.9`) e `css/teacher-panel.css` (`?v=2.11`), além da massa de teste `docs/turma-ficticia-v2.2.json`.
 
 ---
 
-## 3. Melhorias Técnicas Previstas (Internas)
+## 2. Prioridades Mapeadas para a Próxima Versão (v2.3)
 
-Melhorias de engenharia mapeadas durante a evolução da linha **v2.1** que podem ser executadas de forma cirúrgica sem alterar a experiência visual atual:
+### 2.1. Reforma Visual Mais Profunda (Evolução Estrutural de Cenário e Superfícies)
+- **Contexto:** Na `v2.2.0`, o layout recebeu um sistema coordenado de tokens `--ui-*`, sombras táteis e contraste calibrado para projetores, mantendo a estrutura de cartões claros para estabilidade da release.
+- **Objetivo para a v2.3:** Realizar uma **reforma visual mais profunda — saindo do fundo branco/simples herdado da v1** — com cenários ilustrados em SVG leves por fase/tema, molduras lúdicas imersivas, maior profundidade cromática e identidade visual escolar contemporânea, preservando a legibilidade a distância na lousa digital (`> 1024px`) e a execução 100% offline.
 
-### 3.1. Refinamento do Comparador Ortográfico para Omissão de Dígrafos (`js/analytics-engine.js`)
-- **Contexto Técnico:** Atualmente, `registrarTentativaFase3()` compara a palavra esperada e a tentativa do aluno posição por posição (`índice i`). Quando uma criança omite uma letra de um dígrafo no meio da palavra (por exemplo, digita `SORISO` em vez de `SORRISO`, ou `PASSARO` sem um `S`), o deslocamento de índice faz com que todas as letras subsequentes pareçam trocadas.
-- **Solução Prevista:** Implementar alinhamento de sequência leve (distância de edição / *Longest Common Subsequence* por caractere) no `AnalyticsEngine` para isolar exatamente a omissão ou duplicação de letra em dígrafos (`RR`, `SS`, `CH`, `LH`, `NH`, `QU`, `GU`) sem contaminar a análise das letras seguintes da palavra.
-
-### 3.2. Limpeza de Elementos HTML Legados Ocultos (`#p2EmojiCorner` e `#p3EmojiCorner`)
-- **Contexto Técnico:** Em `index.html` e `css/game.css`, ainda existem os contêineres vazios `#p2EmojiCorner` (na Fase 2) e `#p3EmojiCorner` (na Fase 3), mantidos com `display: none` por herança da estrutura inicial da v1.0.
-- **Solução Prevista:** Remover os dois elementos ociosos do `index.html` e suas regras correspondentes em `css/game.css` após confirmar que nenhum script externo referencia esses IDs.
+### 2.2. Banco de Frases e Dicas Prontas Associadas às 40 Figurinhas (`js/stickers/`)
+- **Objetivo:** Associar a cada uma das **40 figurinhas vetoriais** já disponíveis em `js/stickers/` (*Animais*, *Frutas e Alimentos*, *Natureza*, *Escola e Objetos* e *Casa e Brinquedos*) sugestões prontas de **dica descritiva (Fase 2)** e **frase contextualizada com lacuna `___` (Fase 3)**, validadas pedagogicamente com a Profª Carla Machado.
+- **Benefício Pedagógico:** Quando a professora digitar ou escolher uma palavra que case com qualquer uma das 40 figurinhas (ex.: `CAVALO`, `MAÇÃ`, `ÁRVORE`, `ESCOLA`, `BONECA`), o painel poderá preencher automaticamente sugestão de dica e frase editáveis com 1 toque, reduzindo a zero o tempo de digitação no preparo semanal da aula.
 
 ---
 
-## 4. Visão de Longo Prazo (v3.0)
+## 3. Pendente de Validação e Definição com a Professora Carla Machado
 
-Visão estratégica para consolidação da plataforma em toda a rede de Ensino Fundamental I:
+Os itens abaixo dependem de alinhamento pedagógico e validação em sala de aula com a professora regente antes da implementação:
 
-### 4.1. Arquitetura Multi-Turma para Fundamental I (1º ao 5º Ano)
-- **Descrição:** Evoluir a camada de armazenamento local para suportar múltiplos perfis hierárquicos (`Escola -> Professora -> Turma -> Temas/Relatórios`), permitindo que o mesmo equipamento ou lousa digital atenda diferentes professoras e turmas ao longo dos turnos matutino e vespertino com isolamento completo de dados.
+### 3.1. Implementação de Calendário Escolar (Estrutura e Uso Pedagógico)
+- **Objetivo:** Definir como um calendário integrado ao jogo ou ao Painel da Professora apoiará a rotina diária da turma (vinculação de listas semanais a datas letivas ou ativação temática em datas comemorativas).
+- **Pontos em Aberto:** Definir se a visualização será exclusiva do painel docente ou se haverá quadro didático do dia para as crianças no início da aula.
+
+### 3.2. Expansão de Bancos Nativos Temáticos Além de Saúde Bucal
+- **Objetivo:** Expandir `js/word-bank.js` com pacotes temáticos nativos completos (ilustrações SVG, dicas da Fase 2 e frases da Fase 3) selecionáveis pela docente, tais como *Meio Ambiente e Natureza*, *Alimentação Saudável* e *Cultura e Datas Comemorativas*.
+
+### 3.3. Inclusão da Tecla `Ç` no Teclado Virtual da Fase 3
+- **Objetivo:** Avaliar a inclusão explícita da tecla `Ç` no teclado virtual da Fase 3 para vocábulos com cedilha (`MAÇÃ`, `PALHAÇO`, `CABEÇA`, `CORAÇÃO`, `ESCOVAÇÃO`), definindo o critério pedagógico entre 1º Ano e 2º Ano.
+
+### 3.4. Chaveamento "Modo 1º Ano" vs. "Modo 2º Ano"
+- **Objetivo:** Adicionar seletor de nível no Painel da Professora para acompanhar a progressão da turma ao 2º Ano do Ensino Fundamental (foco em dígrafos `CH`, `LH`, `NH`, `RR`, `SS`, regra contextual de `M` antes de `P` e `B`, frases com dupla lacuna ou exigência estrita de acentuação/cedilha).
+
+---
+
+## 4. Refinamentos Técnicos Complementares (Backlog Interno)
+
+Itens de baixa prioridade mapeados no [RELATORIO_DIAGNOSTICO_V2.2.md](RELATORIO_DIAGNOSTICO_V2.2.md) (Categoria 2 — *Pode ser melhorado*):
+- Suporte a palavras compostas hifenizadas (`ARCO-ÍRIS`, `BEIJA-FLOR`, `GUARDA-CHUVA`) no `js/syllable-helper.js` para subdividir automaticamente cada elemento composto;
+- Validação com a Profª Carla sobre a divisão silábica padrão de `CÁRIE` (`CÁ-RI-E` vs. `CÁ-RIE`);
+- Suavização adicional de rótulos técnicos no painel (`JSON` -> `Cópia de segurança`, uniformização de `"períodos"` no lugar de `"ciclos"`) e inclusão de `@media (prefers-reduced-motion: reduce)` em `css/teacher-panel.css`.
+
+---
+
+## 5. Visão de Longo Prazo (v3.0)
+
+### 5.1. Arquitetura Multi-Turma para Fundamental I (`Escola -> Professora -> Turma`)
+- **Descrição:** Evoluir a camada de persistência local para suportar múltiplos perfis hierárquicos (`Escola -> Professora -> Turma -> Temas/Relatórios`), permitindo que o mesmo computador ou lousa digital atenda diferentes professoras e turmas nos turnos matutino e vespertino com isolamento completo de dados.

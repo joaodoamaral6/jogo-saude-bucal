@@ -169,16 +169,98 @@
             ? (storage.listarAnotacoes() || [])
             : [];
 
-        var resumo = (analytics && typeof analytics.gerarResumoEvolucao === 'function')
-            ? analytics.gerarResumoEvolucao({
-                alunoId: 'TODOS',
-                dataReferencia: cfg.dataReferencia || null
-            })
-            : { vazio: true };
+        var modoPeriodo = Boolean(cfg.modo === 'PERIODO' || cfg.periodoId);
+        var alunoFiltro = (cfg.alunoId && String(cfg.alunoId).trim() && String(cfg.alunoId) !== 'TODOS')
+            ? String(cfg.alunoId).trim()
+            : 'TODOS';
+        var nomeAlunoFiltro = '';
+        if (alunoFiltro !== 'TODOS') {
+            for (var ai = 0; ai < alunosLista.length; ai++) {
+                var alItem = alunosLista[ai];
+                if (alItem && (String(alItem.id) === alunoFiltro || String(alItem.chave) === alunoFiltro)) {
+                    nomeAlunoFiltro = String(alItem.nome || '');
+                    break;
+                }
+            }
+            if (!nomeAlunoFiltro) {
+                for (var si = 0; si < sessoesLista.length; si++) {
+                    var sesItem = sessoesLista[si];
+                    if (sesItem && (String(sesItem.alunoId) === alunoFiltro || ('chave:' + String(sesItem.alunoChave)) === alunoFiltro)) {
+                        nomeAlunoFiltro = String(sesItem.alunoNome || '');
+                        break;
+                    }
+                }
+            }
+        }
 
-        var resumoAlunos = (analytics && typeof analytics.gerarResumoPorAluno === 'function')
-            ? analytics.gerarResumoPorAluno({ escopo: 'GERAL' })
-            : [];
+        var resumo = null;
+        var resumoAlunos = [];
+        var periodoAtual = null;
+        var periodoInicio = '';
+        var periodoFim = '';
+        var anotacoesFiltradas = [];
+
+        for (var an0 = 0; an0 < anotacoes.length; an0++) {
+            var notaBase = anotacoes[an0];
+            if (!notaBase) continue;
+            if (alunoFiltro !== 'TODOS') {
+                var pertenceAlunoNota = (notaBase.alunoId && String(notaBase.alunoId) === alunoFiltro) ||
+                    (nomeAlunoFiltro && notaBase.alunoNome && String(notaBase.alunoNome).toLowerCase() === nomeAlunoFiltro.toLowerCase());
+                if (!pertenceAlunoNota) continue;
+            }
+            anotacoesFiltradas.push(notaBase);
+        }
+
+        if (modoPeriodo && analytics && typeof analytics.gerarResumoPorPeriodo === 'function') {
+            resumo = analytics.gerarResumoPorPeriodo({
+                alunoId: alunoFiltro,
+                periodoId: cfg.periodoId || null
+            });
+            periodoAtual = (resumo && resumo.periodoAtual) ? resumo.periodoAtual : null;
+            periodoInicio = periodoAtual && periodoAtual.inicio ? String(periodoAtual.inicio) : '';
+            periodoFim = periodoAtual && periodoAtual.fim ? String(periodoAtual.fim) : '';
+
+            resumoAlunos = (analytics && typeof analytics.gerarResumoPorAluno === 'function')
+                ? analytics.gerarResumoPorAluno({
+                    escopo: 'PERIODO',
+                    periodoId: periodoAtual ? periodoAtual.id : (cfg.periodoId || null),
+                    dataInicio: periodoInicio || null,
+                    dataFim: periodoFim || null
+                })
+                : [];
+
+            if (periodoInicio && periodoFim) {
+                var notasPeriodo = [];
+                for (var an = 0; an < anotacoesFiltradas.length; an++) {
+                    var itemNota = anotacoesFiltradas[an];
+                    if (!itemNota || !itemNota.dataISO) continue;
+                    if (itemNota.dataISO >= periodoInicio && itemNota.dataISO <= periodoFim) {
+                        notasPeriodo.push(itemNota);
+                    }
+                }
+                anotacoesFiltradas = notasPeriodo;
+            }
+        } else {
+            resumo = (analytics && typeof analytics.gerarResumoEvolucao === 'function')
+                ? analytics.gerarResumoEvolucao({
+                    alunoId: alunoFiltro,
+                    dataReferencia: cfg.dataReferencia || null
+                })
+                : { vazio: true };
+
+            resumoAlunos = (analytics && typeof analytics.gerarResumoPorAluno === 'function')
+                ? analytics.gerarResumoPorAluno({ escopo: 'GERAL' })
+                : [];
+        }
+
+        if (alunoFiltro !== 'TODOS' && Array.isArray(resumoAlunos)) {
+            resumoAlunos = resumoAlunos.filter(function (al) {
+                if (!al) return false;
+                if (String(al.id) === alunoFiltro) return true;
+                if (nomeAlunoFiltro && String(al.nome).toLowerCase() === nomeAlunoFiltro.toLowerCase()) return true;
+                return false;
+            });
+        }
 
         // 1. Cabecalho Institucional
         var header = el('header', 'tp-print-header');
@@ -197,14 +279,33 @@
         header.appendChild(headerTop);
 
         var metaGrid = el('div', 'tp-print-meta-grid');
+        var sessoesPeriodoCount = (modoPeriodo && resumo && resumo.metricasPeriodo)
+            ? (Number(resumo.metricasPeriodo.sessoesCount) || 0)
+            : 0;
+        var valorSessoes = modoPeriodo
+            ? (sessoesPeriodoCount + ' no período (' + sessoesLista.length + ' no total)')
+            : String(sessoesLista.length);
+
         var metaItens = [
             { label: 'Modo ativo', val: modoAula ? 'Modo Aula (com registro)' : 'Modo Livre' },
             { label: 'Banco de palavras', val: semanaAtiva ? ('Palavras da Semana (' + palavrasSemana.length + ')') : 'Saúde Bucal (Padrão)' },
             { label: 'Alunos cadastrados', val: String(alunosLista.length) },
-            { label: 'Sessões registradas', val: String(sessoesLista.length) }
+            { label: 'Sessões registradas', val: valorSessoes }
         ];
+        if (modoPeriodo) {
+            metaItens.push({
+                label: 'Recorte analisado',
+                val: (periodoAtual && periodoInicio && periodoFim)
+                    ? (periodoAtual.nome + ' (' + formatarDataBR(periodoInicio) + ' a ' + formatarDataBR(periodoFim) + ')')
+                    : 'Período letivo',
+                wide: true
+            });
+        }
         for (var m = 0; m < metaItens.length; m++) {
-            var metaItem = el('div', 'tp-print-meta-item');
+            var metaClass = metaItens[m].wide
+                ? 'tp-print-meta-item tp-print-meta-item-wide'
+                : 'tp-print-meta-item';
+            var metaItem = el('div', metaClass);
             metaItem.appendChild(el('span', 'tp-print-meta-label', metaItens[m].label));
             metaItem.appendChild(el('strong', 'tp-print-meta-val', metaItens[m].val));
             metaGrid.appendChild(metaItem);
@@ -212,10 +313,17 @@
         header.appendChild(metaGrid);
         container.appendChild(header);
 
-        // 2. Resumo Geral da Turma
+        // 2. Resumo Geral da Turma (ou Individual quando filtrado)
         var secResumo = el('section', 'tp-print-section');
-        var tituloResumo = 'Resumo Geral da Turma';
-        if (resumo && !resumo.vazio && resumo.dataReferencia) {
+        var tituloResumo = (alunoFiltro !== 'TODOS' && nomeAlunoFiltro)
+            ? ('Resumo Individual — ' + nomeAlunoFiltro)
+            : 'Resumo Geral da Turma';
+        if (modoPeriodo && periodoAtual && periodoAtual.nome) {
+            tituloResumo += ' — ' + periodoAtual.nome;
+            if (periodoInicio && periodoFim) {
+                tituloResumo += ' (' + formatarDataBR(periodoInicio) + ' a ' + formatarDataBR(periodoFim) + ')';
+            }
+        } else if (resumo && !resumo.vazio && resumo.dataReferencia) {
             tituloResumo += ' — Dia analisado: ' + formatarDataBR(resumo.dataReferencia);
         }
         secResumo.appendChild(el('h2', 'tp-print-section-title', tituloResumo));
@@ -224,8 +332,16 @@
             secResumo.appendChild(
                 el('p', 'tp-print-empty', 'Ainda não há sessões registradas no Modo Aula para compor indicadores da turma.')
             );
+        } else if (modoPeriodo && resumo.periodoSemRegistros) {
+            secResumo.appendChild(
+                el(
+                    'p',
+                    'tp-print-empty',
+                    'Ainda não há sessões registradas ' + (periodoAtual ? ('no ' + periodoAtual.nome) : 'neste período') + '.'
+                )
+            );
         } else {
-            var metDia = resumo.metricasDia || {};
+            var metDia = (modoPeriodo ? resumo.metricasPeriodo : resumo.metricasDia) || {};
             var pf = metDia.porFase || {};
             var f1 = pf.fase1 || {};
             var f2 = pf.fase2 || {};
@@ -308,11 +424,58 @@
                 secResumo.appendChild(boxDif);
             }
         }
+
+        if (modoPeriodo && resumo && !resumo.vazio && Array.isArray(resumo.seriePeriodos)) {
+            var periodosComSessoes = 0;
+            for (var sp = 0; sp < resumo.seriePeriodos.length; sp++) {
+                if ((resumo.seriePeriodos[sp].sessoesCount || 0) > 0) {
+                    periodosComSessoes++;
+                }
+            }
+            if (periodosComSessoes >= 2) {
+                secResumo.appendChild(el('h3', 'tp-print-sub-title', 'Comparativo entre Períodos Letivos'));
+                var periodTable = el('table', 'tp-print-table tp-print-period-table');
+                var pThead = document.createElement('thead');
+                var pTrHead = document.createElement('tr');
+                var pCols = ['Período', 'Intervalo', 'Sessões', 'Fase 1 (Memória)', 'Fase 2 (Sílabas)', 'Fase 3 (Escrita)'];
+                for (var pc = 0; pc < pCols.length; pc++) {
+                    pTrHead.appendChild(el('th', '', pCols[pc]));
+                }
+                pThead.appendChild(pTrHead);
+                periodTable.appendChild(pThead);
+
+                var pTbody = document.createElement('tbody');
+                for (var pi = 0; pi < resumo.seriePeriodos.length; pi++) {
+                    var itemPer = resumo.seriePeriodos[pi];
+                    var trPer = document.createElement('tr');
+                    var nomePer = itemPer.nome || itemPer.sigla || ('Período ' + (pi + 1));
+                    if (itemPer.isReferencia) {
+                        nomePer += ' (selecionado)';
+                    }
+                    var intervaloPer = (itemPer.inicio && itemPer.fim)
+                        ? (formatarDataBR(itemPer.inicio) + ' a ' + formatarDataBR(itemPer.fim))
+                        : (itemPer.intervaloBR || '—');
+                    var pfPer = itemPer.porFase || {};
+                    trPer.appendChild(el('td', 'tp-print-td-name', nomePer));
+                    trPer.appendChild(el('td', '', intervaloPer));
+                    trPer.appendChild(el('td', 'tp-print-td-center', String(itemPer.sessoesCount || 0)));
+                    trPer.appendChild(el('td', '', formatarCelulaFase1(pfPer.fase1)));
+                    trPer.appendChild(el('td', '', formatarCelulaFasePorcentagem(pfPer.fase2)));
+                    trPer.appendChild(el('td', '', formatarCelulaFasePorcentagem(pfPer.fase3)));
+                    pTbody.appendChild(trPer);
+                }
+                periodTable.appendChild(pTbody);
+                secResumo.appendChild(periodTable);
+            }
+        }
         container.appendChild(secResumo);
 
         // 3. Desempenho Aluno por Aluno
         var secAlunos = el('section', 'tp-print-section');
-        secAlunos.appendChild(el('h2', 'tp-print-section-title', 'Desempenho Aluno por Aluno (Acumulado Geral)'));
+        var tituloAlunos = (modoPeriodo && periodoAtual && periodoAtual.nome)
+            ? ('Desempenho Aluno por Aluno — ' + periodoAtual.nome)
+            : 'Desempenho Aluno por Aluno (Acumulado Geral)';
+        secAlunos.appendChild(el('h2', 'tp-print-section-title', tituloAlunos));
 
         if (!Array.isArray(resumoAlunos) || resumoAlunos.length === 0) {
             secAlunos.appendChild(
@@ -348,11 +511,17 @@
 
         // 4. Anotacoes Pedagogicas da Professora
         var secNotas = el('section', 'tp-print-section');
-        secNotas.appendChild(el('h2', 'tp-print-section-title', 'Anotações Pedagógicas da Professora'));
+        var tituloNotas = (modoPeriodo && periodoAtual && periodoAtual.nome)
+            ? ('Anotações Pedagógicas da Professora — ' + periodoAtual.nome)
+            : 'Anotações Pedagógicas da Professora';
+        secNotas.appendChild(el('h2', 'tp-print-section-title', tituloNotas));
 
-        if (!Array.isArray(anotacoes) || anotacoes.length === 0) {
+        if (!Array.isArray(anotacoesFiltradas) || anotacoesFiltradas.length === 0) {
+            var msgSemNotas = modoPeriodo
+                ? 'Sem anotações digitais registradas neste período. Espaço livre para observações após a impressão:'
+                : 'Sem anotações digitais registradas. Espaço livre para observações após a impressão:';
             secNotas.appendChild(
-                el('p', 'tp-print-empty', 'Sem anotações digitais registradas. Espaço livre para observações após a impressão:')
+                el('p', 'tp-print-empty', msgSemNotas)
             );
             var linhasWrap = el('div', 'tp-print-ruled-wrap');
             for (var l = 0; l < 4; l++) {
@@ -361,8 +530,8 @@
             secNotas.appendChild(linhasWrap);
         } else {
             var notasList = el('div', 'tp-print-notes-list');
-            for (var n = 0; n < anotacoes.length; n++) {
-                var nota = anotacoes[n];
+            for (var n = 0; n < anotacoesFiltradas.length; n++) {
+                var nota = anotacoesFiltradas[n];
                 var notaCard = el('div', 'tp-print-note-card');
                 var notaMeta = el('div', 'tp-print-note-meta');
                 var vinculoLabel = nota.alunoNome ? nota.alunoNome : 'Turma geral';

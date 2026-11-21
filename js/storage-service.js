@@ -6,11 +6,22 @@
    * Isolado na chave 'saudeEscola_v2_dados' para nao interferir nas chaves da v1.x.
    */
   var STORAGE_KEY = 'saudeEscola_v2_dados';
+  var MAX_ALUNOS = 100;
+  var MAX_ALUNO_NOME = 60;
   var MAX_PALAVRAS_SEMANA = 12;
   var MAX_SESSOES = 500;
   var MAX_ANOTACOES = 200;
   var MAX_ANOTACAO_TEXTO = 1000;
   var MAX_ANOTACAO_ALUNO_NOME = 60;
+  var MAX_BACKUP_BYTES = 2 * 1024 * 1024;
+  var MAX_ID_LENGTH = 64;
+  var MAX_MAP_KEYS = 80;
+  var MAX_PALAVRAS_TRABALHADAS_SESSAO = 50;
+
+  var CHAVES_PROIBIDAS = Object.create(null);
+  CHAVES_PROIBIDAS['__proto__'] = true;
+  CHAVES_PROIBIDAS['constructor'] = true;
+  CHAVES_PROIBIDAS['prototype'] = true;
 
   var POOL_SILABAS_AUXILIAR = [
     'PA', 'TO', 'LA', 'MI', 'BO', 'CA', 'RE', 'SU',
@@ -111,6 +122,164 @@
   }
 
   /**
+   * Obtem dinamicamente o modulo de periodos letivos quando disponivel.
+   */
+  function getPeriodsModule() {
+    return (global.SaudeEscola && global.SaudeEscola.Periods) ? global.SaudeEscola.Periods : null;
+  }
+
+  /**
+   * Gera a configuracao padrao de periodos letivos com fallback autonomo.
+   */
+  function criarPeriodosPadrao(modelo, ano) {
+    var periods = getPeriodsModule();
+    var modeloNorm = modelo === 'trimestre' ? 'trimestre' : 'bimestre';
+    if (periods && typeof periods.gerarConfiguracaoPadrao === 'function') {
+      return periods.gerarConfiguracaoPadrao(modeloNorm, ano);
+    }
+
+    var anoNum = Number(ano);
+    if (!isFinite(anoNum) || Math.floor(anoNum) !== anoNum || anoNum < 2000 || anoNum > 2100) {
+      anoNum = new Date().getFullYear();
+      if (!isFinite(anoNum) || anoNum < 2000 || anoNum > 2100) anoNum = 2026;
+    }
+    var pAno = String(anoNum);
+    if (modeloNorm === 'trimestre') {
+      return {
+        modelo: 'trimestre',
+        ano: anoNum,
+        ciclos: [
+          { id: 'tri_1', nome: '1º Trimestre', sigla: '1º Tri', inicio: pAno + '-02-01', fim: pAno + '-05-15' },
+          { id: 'tri_2', nome: '2º Trimestre', sigla: '2º Tri', inicio: pAno + '-05-16', fim: pAno + '-08-31' },
+          { id: 'tri_3', nome: '3º Trimestre', sigla: '3º Tri', inicio: pAno + '-09-01', fim: pAno + '-12-31' }
+        ]
+      };
+    }
+    return {
+      modelo: 'bimestre',
+      ano: anoNum,
+      ciclos: [
+        { id: 'bim_1', nome: '1º Bimestre', sigla: '1º Bim', inicio: pAno + '-02-01', fim: pAno + '-04-30' },
+        { id: 'bim_2', nome: '2º Bimestre', sigla: '2º Bim', inicio: pAno + '-05-01', fim: pAno + '-07-15' },
+        { id: 'bim_3', nome: '3º Bimestre', sigla: '3º Bim', inicio: pAno + '-08-01', fim: pAno + '-10-15' },
+        { id: 'bim_4', nome: '4º Bimestre', sigla: '4º Bim', inicio: pAno + '-10-16', fim: pAno + '-12-31' }
+      ]
+    };
+  }
+
+  /**
+   * Sanitiza configuracao de periodos letivos com blindagem anti-XSS e fallback seguro.
+   */
+  function sanitizarPeriodosLetivos(bruto) {
+    if (!ehObjetoPlano(bruto)) {
+      return criarPeriodosPadrao('bimestre');
+    }
+
+    var periods = getPeriodsModule();
+    var baseCfg;
+    if (periods && typeof periods.sanitizarConfiguracao === 'function') {
+      baseCfg = periods.sanitizarConfiguracao(bruto);
+    } else {
+      var modeloFallback = bruto.modelo === 'trimestre' ? 'trimestre' : 'bimestre';
+      var anoFallback = bruto.ano;
+      if (Array.isArray(bruto.ciclos) && bruto.ciclos.length >= 1 && bruto.ciclos.length <= 6) {
+        var ciclosFallback = [];
+        var idsVistosFb = Object.create(null);
+        var valido = true;
+        for (var i = 0; i < bruto.ciclos.length; i += 1) {
+          var cFb = bruto.ciclos[i];
+          if (!ehObjetoPlano(cFb) || !ehDataISOValida(cFb.inicio) || !ehDataISOValida(cFb.fim) || cFb.inicio > cFb.fim) {
+            valido = false;
+            break;
+          }
+          var idFb = sanitizarIdSeguro(cFb.id, null);
+          var nomeFb = sanitizarTextoSeguro(cFb.nome, 40, false);
+          if (!idFb || idsVistosFb[idFb] || !nomeFb) {
+            valido = false;
+            break;
+          }
+          idsVistosFb[idFb] = true;
+          ciclosFallback.push({
+            id: idFb,
+            nome: nomeFb,
+            sigla: sanitizarTextoSeguro(cFb.sigla, 16, false) || nomeFb.slice(0, 10),
+            inicio: cFb.inicio.trim(),
+            fim: cFb.fim.trim()
+          });
+        }
+        if (valido) {
+          ciclosFallback.sort(function (a, b) { return a.inicio.localeCompare(b.inicio); });
+          for (var j = 1; j < ciclosFallback.length; j += 1) {
+            if (ciclosFallback[j - 1].fim >= ciclosFallback[j].inicio) {
+              valido = false;
+              break;
+            }
+          }
+        }
+        if (valido) {
+          var padraoFb = criarPeriodosPadrao(modeloFallback, anoFallback);
+          baseCfg = { modelo: modeloFallback, ano: padraoFb.ano, ciclos: ciclosFallback };
+        } else {
+          baseCfg = criarPeriodosPadrao(modeloFallback, anoFallback);
+        }
+      } else {
+        baseCfg = criarPeriodosPadrao(modeloFallback, anoFallback);
+      }
+    }
+
+    var ciclosSeguros = [];
+    var idsVistos = Object.create(null);
+    var listaOrigem = Array.isArray(baseCfg && baseCfg.ciclos) ? baseCfg.ciclos : [];
+    for (var k = 0; k < listaOrigem.length; k += 1) {
+      var c = listaOrigem[k];
+      if (!ehObjetoPlano(c)) continue;
+      var idLimpo = sanitizarIdSeguro(c.id, 'cic');
+      if (idsVistos[idLimpo]) idLimpo = gerarId('cic');
+      idsVistos[idLimpo] = true;
+      var nomeLimpo = sanitizarTextoSeguro(c.nome, 40, false);
+      var siglaLimpa = sanitizarTextoSeguro(c.sigla, 16, false) || nomeLimpo.slice(0, 10);
+      if (!nomeLimpo || !ehDataISOValida(c.inicio) || !ehDataISOValida(c.fim)) continue;
+      ciclosSeguros.push({
+        id: idLimpo,
+        nome: nomeLimpo,
+        sigla: siglaLimpa,
+        inicio: String(c.inicio).trim(),
+        fim: String(c.fim).trim()
+      });
+    }
+
+    if (ciclosSeguros.length === 0) {
+      return criarPeriodosPadrao(baseCfg && baseCfg.modelo, baseCfg && baseCfg.ano);
+    }
+
+    return {
+      modelo: baseCfg.modelo === 'trimestre' ? 'trimestre' : 'bimestre',
+      ano: baseCfg.ano,
+      ciclos: ciclosSeguros
+    };
+  }
+
+  /**
+   * Clona a configuracao de periodos letivos sem expor referencias mutaveis.
+   */
+  function clonarPeriodosLetivos(cfg) {
+    var limpo = sanitizarPeriodosLetivos(cfg);
+    return {
+      modelo: limpo.modelo,
+      ano: limpo.ano,
+      ciclos: limpo.ciclos.map(function (c) {
+        return {
+          id: c.id,
+          nome: c.nome,
+          sigla: c.sigla,
+          inicio: c.inicio,
+          fim: c.fim
+        };
+      })
+    };
+  }
+
+  /**
    * Cria uma nova copia da estrutura padrao do banco local.
    */
   function criarEstruturaPadrao() {
@@ -119,7 +288,8 @@
       config: {
         modo: 'aula',
         palavrasSemanaAtivo: false,
-        fase1ModoSemana: 'dica'
+        fase1ModoSemana: 'dica',
+        periodosLetivos: criarPeriodosPadrao('bimestre')
       },
       turma: [],
       palavrasSemana: [],
@@ -189,12 +359,150 @@
     return ano + '-' + mes + '-' + dia;
   }
 
+  /**
+   * Identifica chaves reservadas que nao devem ser copiadas em objetos/mapas.
+   */
+  function ehChaveProibida(chave) {
+    return Boolean(CHAVES_PROIBIDAS[String(chave)]);
+  }
+
+  /**
+   * Verifica se um valor e um objeto plano (exclui null e arrays).
+   */
+  function ehObjetoPlano(valor) {
+    return Boolean(valor && typeof valor === 'object' && !Array.isArray(valor));
+  }
+
+  /**
+   * Calcula o tamanho aproximado/exato em bytes UTF-8 sem depender de TextEncoder.
+   */
+  function calcularBytesUTF8(texto) {
+    var bytes = 0;
+    for (var i = 0; i < texto.length; i += 1) {
+      var code = texto.charCodeAt(i);
+      if (code <= 0x7F) {
+        bytes += 1;
+      } else if (code <= 0x7FF) {
+        bytes += 2;
+      } else if (code >= 0xD800 && code <= 0xDBFF && i + 1 < texto.length) {
+        var nextCode = texto.charCodeAt(i + 1);
+        if (nextCode >= 0xDC00 && nextCode <= 0xDFFF) {
+          bytes += 4;
+          i += 1;
+        } else {
+          bytes += 3;
+        }
+      } else {
+        bytes += 3;
+      }
+    }
+    return bytes;
+  }
+
+  /**
+   * Faz parse seguro de JSON com limite de payload e filtro anti-prototype pollution.
+   */
+  function parseJsonSeguro(textoJson, maxBytes) {
+    if (typeof textoJson !== 'string') {
+      return { ok: false, motivo: 'tipo' };
+    }
+
+    if (typeof maxBytes === 'number' && maxBytes > 0) {
+      if (textoJson.length > maxBytes || calcularBytesUTF8(textoJson) > maxBytes) {
+        return { ok: false, motivo: 'tamanho' };
+      }
+    }
+
+    try {
+      var parsed = JSON.parse(textoJson, function (chave, valor) {
+        if (ehChaveProibida(chave)) {
+          return undefined;
+        }
+        return valor;
+      });
+      return { ok: true, valor: parsed };
+    } catch (erroParse) {
+      return { ok: false, motivo: 'sintaxe' };
+    }
+  }
+
+  /**
+   * Valida identificadores alfanumericos (letras, numeros, '_' e '-') ate MAX_ID_LENGTH.
+   */
+  function sanitizarIdSeguro(valor, prefixoFallback) {
+    if (valor == null) {
+      return prefixoFallback ? gerarId(prefixoFallback) : null;
+    }
+
+    var str = String(valor).trim();
+    if (
+      str &&
+      str.length <= MAX_ID_LENGTH &&
+      !ehChaveProibida(str) &&
+      /^[A-Za-z0-9_-]+$/.test(str)
+    ) {
+      return str;
+    }
+
+    return prefixoFallback ? gerarId(prefixoFallback) : null;
+  }
+
+  /**
+   * Valida data no formato estrito 'YYYY-MM-DD' conferindo calendario real.
+   */
+  function ehDataISOValida(valor) {
+    if (typeof valor !== 'string') {
+      return false;
+    }
+
+    var trimmed = valor.trim();
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(trimmed);
+    if (!match) {
+      return false;
+    }
+
+    var ano = parseInt(match[1], 10);
+    var mes = parseInt(match[2], 10);
+    var dia = parseInt(match[3], 10);
+
+    if (ano < 2000 || ano > 2100 || mes < 1 || mes > 12 || dia < 1 || dia > 31) {
+      return false;
+    }
+
+    var dt = new Date(ano, mes - 1, dia);
+    return (
+      dt.getFullYear() === ano &&
+      (dt.getMonth() + 1) === mes &&
+      dt.getDate() === dia
+    );
+  }
+
+  /**
+   * Retorna dataISO validada ou fallback local seguro.
+   */
+  function sanitizarDataISOSegura(valor, fallbackDateObj) {
+    return ehDataISOValida(valor)
+      ? String(valor).trim()
+      : getDataLocalISO(fallbackDateObj);
+  }
+
   function clonarAluno(aluno) {
     return {
       id: aluno.id,
       nome: aluno.nome,
       chave: aluno.chave
     };
+  }
+
+  function sanitizarStickerId(valor) {
+    if (typeof valor !== 'string') return null;
+    var limpo = valor.trim().toLowerCase();
+    if (!limpo) return null;
+    if (limpo === '__proto__' || limpo === 'constructor' || limpo === 'prototype') {
+      return null;
+    }
+    if (limpo === 'none') return 'none';
+    return /^[a-z0-9_-]{1,48}$/.test(limpo) ? limpo : null;
   }
 
   function clonarPalavra(item) {
@@ -205,7 +513,8 @@
       silabasRaw: item.silabasRaw,
       silabas: item.silabas.slice(),
       dica: item.dica,
-      frase: item.frase
+      frase: item.frase,
+      stickerId: sanitizarStickerId(item && item.stickerId)
     };
   }
 
@@ -224,7 +533,7 @@
     }
     var max = typeof limite === 'number' && limite > 0 ? limite : 10;
     for (var i = 0; i < lista.length && limpa.length < max; i += 1) {
-      var item = String(lista[i] == null ? '' : lista[i]).trim();
+      var item = sanitizarTextoSeguro(lista[i], 60, false);
       if (item && limpa.indexOf(item) === -1) {
         limpa.push(item);
       }
@@ -234,19 +543,27 @@
 
   function sanitizarMapaContagem(mapa) {
     var limpo = {};
-    if (!mapa || typeof mapa !== 'object' || Array.isArray(mapa)) {
+    if (!ehObjetoPlano(mapa)) {
       return limpo;
     }
     var chaves = Object.keys(mapa);
-    for (var i = 0; i < chaves.length; i += 1) {
+    var inseridas = 0;
+    for (var i = 0; i < chaves.length && inseridas < MAX_MAP_KEYS; i += 1) {
       var k = chaves[i];
+      if (ehChaveProibida(k)) {
+        continue;
+      }
+      var kLimpa = sanitizarTextoSeguro(k, 60, false);
       var bruto = mapa[k];
-      if (!k || bruto === null || bruto === undefined || bruto === '') {
+      if (!kLimpa || ehChaveProibida(kLimpa) || bruto === null || bruto === undefined || bruto === '') {
         continue;
       }
       var num = Number(bruto);
       if (isFinite(num) && num >= 0) {
-        limpo[k] = Math.floor(num);
+        if (!Object.prototype.hasOwnProperty.call(limpo, kLimpa)) {
+          inseridas += 1;
+        }
+        limpo[kLimpa] = Math.floor(num);
       }
     }
     return limpo;
@@ -257,18 +574,26 @@
    */
   function sanitizarErrosSilabas(mapa) {
     var limpo = {};
-    if (!mapa || typeof mapa !== 'object' || Array.isArray(mapa)) {
+    if (!ehObjetoPlano(mapa)) {
       return limpo;
     }
     var chaves = Object.keys(mapa);
-    for (var i = 0; i < chaves.length; i += 1) {
+    var inseridas = 0;
+    for (var i = 0; i < chaves.length && inseridas < MAX_MAP_KEYS; i += 1) {
       var k = chaves[i];
-      var bruto = mapa[k];
-      if (!k || bruto === null || bruto === undefined || bruto === '') {
+      if (ehChaveProibida(k)) {
         continue;
       }
-      if (typeof bruto === 'object' && !Array.isArray(bruto)) {
-        limpo[k] = {
+      var kLimpa = sanitizarTextoSeguro(k, 60, false);
+      var bruto = mapa[k];
+      if (!kLimpa || ehChaveProibida(kLimpa) || bruto === null || bruto === undefined || bruto === '') {
+        continue;
+      }
+      if (ehObjetoPlano(bruto)) {
+        if (!Object.prototype.hasOwnProperty.call(limpo, kLimpa)) {
+          inseridas += 1;
+        }
+        limpo[kLimpa] = {
           count: sanitizarNumeroNaoNegativo(bruto.count),
           palavras: sanitizarListaTextos(bruto.palavras, 5),
           confusoes: sanitizarMapaContagem(bruto.confusoes)
@@ -276,7 +601,10 @@
       } else {
         var num = Number(bruto);
         if (isFinite(num) && num >= 0) {
-          limpo[k] = {
+          if (!Object.prototype.hasOwnProperty.call(limpo, kLimpa)) {
+            inseridas += 1;
+          }
+          limpo[kLimpa] = {
             count: Math.floor(num),
             palavras: [],
             confusoes: {}
@@ -289,29 +617,40 @@
 
   function sanitizarErrosOrtograficos(mapa) {
     var limpo = {};
-    if (!mapa || typeof mapa !== 'object' || Array.isArray(mapa)) {
+    if (!ehObjetoPlano(mapa)) {
       return limpo;
     }
     var chaves = Object.keys(mapa);
-    for (var i = 0; i < chaves.length; i += 1) {
+    var inseridas = 0;
+    for (var i = 0; i < chaves.length && inseridas < MAX_MAP_KEYS; i += 1) {
       var k = chaves[i];
-      var bruto = mapa[k];
-      if (!k || bruto === null || bruto === undefined || bruto === '') {
+      if (ehChaveProibida(k)) {
         continue;
       }
-      if (typeof bruto === 'object' && !Array.isArray(bruto)) {
-        limpo[k] = {
-          codigo: String(bruto.codigo || k),
-          label: String(bruto.label || k),
+      var kLimpa = sanitizarTextoSeguro(k, 60, false);
+      var bruto = mapa[k];
+      if (!kLimpa || ehChaveProibida(kLimpa) || bruto === null || bruto === undefined || bruto === '') {
+        continue;
+      }
+      if (ehObjetoPlano(bruto)) {
+        if (!Object.prototype.hasOwnProperty.call(limpo, kLimpa)) {
+          inseridas += 1;
+        }
+        limpo[kLimpa] = {
+          codigo: sanitizarTextoSeguro(bruto.codigo || kLimpa, 80, false) || kLimpa,
+          label: sanitizarTextoSeguro(bruto.label || kLimpa, 80, false) || kLimpa,
           count: sanitizarNumeroNaoNegativo(bruto.count),
           exemplos: sanitizarListaTextos(bruto.exemplos, 5)
         };
       } else {
         var num = Number(bruto);
         if (isFinite(num) && num >= 0) {
-          limpo[k] = {
-            codigo: String(k),
-            label: String(k),
+          if (!Object.prototype.hasOwnProperty.call(limpo, kLimpa)) {
+            inseridas += 1;
+          }
+          limpo[kLimpa] = {
+            codigo: kLimpa,
+            label: kLimpa,
             count: Math.floor(num),
             exemplos: []
           };
@@ -323,17 +662,25 @@
 
   function sanitizarPalavrasStats(mapa) {
     var limpo = {};
-    if (!mapa || typeof mapa !== 'object' || Array.isArray(mapa)) {
+    if (!ehObjetoPlano(mapa)) {
       return limpo;
     }
     var chaves = Object.keys(mapa);
-    for (var i = 0; i < chaves.length; i += 1) {
+    var inseridas = 0;
+    for (var i = 0; i < chaves.length && inseridas < MAX_MAP_KEYS; i += 1) {
       var k = chaves[i];
-      var bruto = mapa[k];
-      if (!k || !bruto || typeof bruto !== 'object' || Array.isArray(bruto)) {
+      if (ehChaveProibida(k)) {
         continue;
       }
-      limpo[k] = {
+      var kLimpa = sanitizarTextoSeguro(k, 60, false);
+      var bruto = mapa[k];
+      if (!kLimpa || ehChaveProibida(kLimpa) || !ehObjetoPlano(bruto)) {
+        continue;
+      }
+      if (!Object.prototype.hasOwnProperty.call(limpo, kLimpa)) {
+        inseridas += 1;
+      }
+      limpo[kLimpa] = {
         tentativas: sanitizarNumeroNaoNegativo(bruto.tentativas),
         acertos: sanitizarNumeroNaoNegativo(bruto.acertos),
         erros: sanitizarNumeroNaoNegativo(bruto.erros)
@@ -355,7 +702,7 @@
   }
 
   function sanitizarAnotacao(entrada) {
-    var raw = entrada && typeof entrada === 'object' ? entrada : {};
+    var raw = ehObjetoPlano(entrada) ? entrada : {};
     var textoLimpo = sanitizarTextoSeguro(raw.texto, MAX_ANOTACAO_TEXTO, true);
     if (!textoLimpo) {
       return null;
@@ -368,15 +715,13 @@
       ? Math.floor(raw.atualizadaEm)
       : criadaEm;
 
-    var dataValida = typeof raw.dataISO === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.dataISO.trim())
-      ? raw.dataISO.trim()
-      : getDataLocalISO(new Date(criadaEm));
+    var dataValida = sanitizarDataISOSegura(raw.dataISO, new Date(criadaEm));
 
     var alunoIdBruto = raw.alunoId !== undefined && raw.alunoId !== null
-      ? sanitizarTextoSeguro(raw.alunoId, 60, false)
+      ? sanitizarTextoSeguro(raw.alunoId, MAX_ID_LENGTH, false)
       : '';
     var alunoIdLimpo = (alunoIdBruto && alunoIdBruto !== 'TURMA' && alunoIdBruto !== 'TODOS')
-      ? alunoIdBruto
+      ? sanitizarIdSeguro(alunoIdBruto, null)
       : null;
 
     var alunoNomeLimpo = alunoIdLimpo || raw.alunoNome
@@ -386,10 +731,10 @@
       alunoNomeLimpo = '';
     }
 
-    var idLimpo = raw.id ? sanitizarTextoSeguro(raw.id, 60, false) : '';
+    var idLimpo = sanitizarIdSeguro(raw.id, 'ano');
 
     return {
-      id: idLimpo || gerarId('ano'),
+      id: idLimpo,
       dataISO: dataValida,
       alunoId: alunoIdLimpo,
       alunoNome: alunoNomeLimpo,
@@ -401,7 +746,7 @@
 
   function sanitizarAnotacoes(lista) {
     var limpas = [];
-    var idsVistos = {};
+    var idsVistos = Object.create(null);
 
     if (typeof lista === 'string') {
       var unica = sanitizarAnotacao({ texto: lista });
@@ -498,7 +843,7 @@
   }
 
   function sanitizarSessao(entrada) {
-    var raw = entrada && typeof entrada === 'object' ? entrada : {};
+    var raw = ehObjetoPlano(entrada) ? entrada : {};
     var ts = typeof raw.timestamp === 'number' && isFinite(raw.timestamp) && raw.timestamp > 0
       ? raw.timestamp
       : Date.now();
@@ -506,38 +851,39 @@
       ? raw.finalizadaEm
       : ts;
 
-    var dataValida = typeof raw.dataISO === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.dataISO.trim())
-      ? raw.dataISO.trim()
-      : getDataLocalISO(new Date(ts));
+    var dataValida = sanitizarDataISOSegura(raw.dataISO, new Date(ts));
 
-    var alunoNome = String(raw.alunoNome == null ? '' : raw.alunoNome).replace(/\s+/g, ' ').trim();
-    var alunoChave = raw.alunoChave ? normalizarChave(raw.alunoChave) : normalizarChave(alunoNome);
+    var alunoNome = sanitizarTextoSeguro(raw.alunoNome, MAX_ALUNO_NOME, false);
+    var alunoChave = raw.alunoChave
+      ? normalizarChave(sanitizarTextoSeguro(raw.alunoChave, MAX_ALUNO_NOME, false))
+      : normalizarChave(alunoNome);
     var palavrasStats = sanitizarPalavrasStats(raw.palavrasStats);
 
     var palavras = [];
     if (Array.isArray(raw.palavrasTrabalhadas)) {
-      for (var i = 0; i < raw.palavrasTrabalhadas.length; i += 1) {
-        var pal = String(raw.palavrasTrabalhadas[i] == null ? '' : raw.palavrasTrabalhadas[i]).trim();
+      for (var i = 0; i < raw.palavrasTrabalhadas.length && palavras.length < MAX_PALAVRAS_TRABALHADAS_SESSAO; i += 1) {
+        var pal = sanitizarTextoSeguro(raw.palavrasTrabalhadas[i], 60, false);
         if (pal && palavras.indexOf(pal) === -1) {
           palavras.push(pal);
         }
       }
     } else {
-      palavras = Object.keys(palavrasStats);
+      palavras = Object.keys(palavrasStats).slice(0, MAX_PALAVRAS_TRABALHADAS_SESSAO);
     }
 
     var tentativas = sanitizarNumeroNaoNegativo(raw.tentativas);
+    var fonteLimpa = sanitizarTextoSeguro(raw.fontePalavras || 'padrao', 32, false) || 'padrao';
 
     return {
-      id: raw.id ? String(raw.id) : gerarId('ses'),
+      id: sanitizarIdSeguro(raw.id, 'ses'),
       dataISO: dataValida,
       timestamp: ts,
       finalizadaEm: fin,
-      alunoId: raw.alunoId ? String(raw.alunoId) : null,
+      alunoId: raw.alunoId ? sanitizarIdSeguro(raw.alunoId, null) : null,
       alunoNome: alunoNome,
       alunoChave: alunoChave,
-      modoJogo: String(raw.modoJogo || ''),
-      fontePalavras: String(raw.fontePalavras || 'padrao'),
+      modoJogo: sanitizarTextoSeguro(raw.modoJogo, 32, false),
+      fontePalavras: fonteLimpa,
       tentativas: tentativas,
       acertos: sanitizarNumeroNaoNegativo(raw.acertos),
       acertosPrimeira: sanitizarNumeroNaoNegativo(raw.acertosPrimeira),
@@ -557,26 +903,36 @@
    */
   function sanitizarDados(bruto) {
     var base = criarEstruturaPadrao();
-    if (!bruto || typeof bruto !== 'object' || Array.isArray(bruto)) {
+    if (!ehObjetoPlano(bruto)) {
       return base;
     }
 
-    // Turma
+    // Turma (protegida contra chaves reservadas e limitada a MAX_ALUNOS)
     if (Array.isArray(bruto.turma)) {
-      var chavesVistas = {};
-      for (var i = 0; i < bruto.turma.length; i += 1) {
+      var chavesVistas = Object.create(null);
+      var idsAlunosVistos = Object.create(null);
+      for (var i = 0; i < bruto.turma.length && base.turma.length < MAX_ALUNOS; i += 1) {
         var itemAluno = bruto.turma[i];
-        if (!itemAluno || typeof itemAluno !== 'object') {
+        if (!ehObjetoPlano(itemAluno)) {
           continue;
         }
-        var nomeLimpo = String(itemAluno.nome == null ? '' : itemAluno.nome).replace(/\s+/g, ' ').trim();
-        var chave = normalizarChave(itemAluno.chave || nomeLimpo);
+        var nomeLimpo = sanitizarTextoSeguro(itemAluno.nome, MAX_ALUNO_NOME, false);
+        var chave = normalizarChave(
+          itemAluno.chave
+            ? sanitizarTextoSeguro(itemAluno.chave, MAX_ALUNO_NOME, false)
+            : nomeLimpo
+        ) || normalizarChave(nomeLimpo);
         if (!nomeLimpo || !chave || chavesVistas[chave]) {
           continue;
         }
         chavesVistas[chave] = true;
+        var idAluno = sanitizarIdSeguro(itemAluno.id, 'alu');
+        if (idsAlunosVistos[idAluno]) {
+          idAluno = gerarId('alu');
+        }
+        idsAlunosVistos[idAluno] = true;
         base.turma.push({
-          id: itemAluno.id ? String(itemAluno.id) : gerarId('alu'),
+          id: idAluno,
           nome: nomeLimpo,
           chave: chave
         });
@@ -585,10 +941,11 @@
 
     // Palavras da semana
     if (Array.isArray(bruto.palavrasSemana)) {
-      var plainsVistos = {};
+      var plainsVistos = Object.create(null);
+      var idsPalavrasVistos = Object.create(null);
       for (var j = 0; j < bruto.palavrasSemana.length && base.palavrasSemana.length < MAX_PALAVRAS_SEMANA; j += 1) {
         var itemPal = bruto.palavrasSemana[j];
-        if (!itemPal || typeof itemPal !== 'object') {
+        if (!ehObjetoPlano(itemPal)) {
           continue;
         }
         var rawSilabas = Array.isArray(itemPal.silabas) && itemPal.silabas.length > 0
@@ -597,30 +954,43 @@
         var validada = validarDadosPalavra({
           silabasRaw: rawSilabas,
           dica: itemPal.dica,
-          frase: itemPal.frase
+          frase: itemPal.frase,
+          stickerId: itemPal.stickerId
         });
         if (!validada.ok || plainsVistos[validada.dados.plain]) {
           continue;
         }
         plainsVistos[validada.dados.plain] = true;
+        var idPal = sanitizarIdSeguro(itemPal.id, 'pal');
+        if (idsPalavrasVistos[idPal]) {
+          idPal = gerarId('pal');
+        }
+        idsPalavrasVistos[idPal] = true;
         base.palavrasSemana.push({
-          id: itemPal.id ? String(itemPal.id) : gerarId('pal'),
+          id: idPal,
           palavra: validada.dados.palavra,
           plain: validada.dados.plain,
           silabasRaw: validada.dados.silabasRaw,
           silabas: validada.dados.silabas,
           dica: validada.dados.dica,
-          frase: validada.dados.frase
+          frase: validada.dados.frase,
+          stickerId: validada.dados.stickerId
         });
       }
     }
 
-    // Sessoes (limita aos ultimos 500 registros)
+    // Sessoes (limita aos ultimos 500 registros e garante unicidade de ID)
     if (Array.isArray(bruto.sessoes)) {
       var inicio = bruto.sessoes.length > MAX_SESSOES ? bruto.sessoes.length - MAX_SESSOES : 0;
+      var idsSessoesVistos = Object.create(null);
       for (var k = inicio; k < bruto.sessoes.length; k += 1) {
-        if (bruto.sessoes[k] && typeof bruto.sessoes[k] === 'object') {
-          base.sessoes.push(sanitizarSessao(bruto.sessoes[k]));
+        if (ehObjetoPlano(bruto.sessoes[k])) {
+          var sesLimpa = sanitizarSessao(bruto.sessoes[k]);
+          if (idsSessoesVistos[sesLimpa.id]) {
+            sesLimpa.id = gerarId('ses');
+          }
+          idsSessoesVistos[sesLimpa.id] = true;
+          base.sessoes.push(sesLimpa);
         }
       }
     }
@@ -629,12 +999,13 @@
     base.anotacoes = sanitizarAnotacoes(bruto.anotacoes);
 
     // Configuracao
-    if (bruto.config && typeof bruto.config === 'object') {
+    if (ehObjetoPlano(bruto.config)) {
       base.config.modo = bruto.config.modo === 'livre' ? 'livre' : 'aula';
       base.config.fase1ModoSemana = bruto.config.fase1ModoSemana === 'silaba' ? 'silaba' : 'dica';
       base.config.palavrasSemanaAtivo = Boolean(
         bruto.config.palavrasSemanaAtivo && base.palavrasSemana.length >= 4
       );
+      base.config.periodosLetivos = sanitizarPeriodosLetivos(bruto.config.periodosLetivos);
     }
 
     return base;
@@ -660,13 +1031,12 @@
       if (!raw) {
         return criarEstruturaPadrao();
       }
-      try {
-        var parsed = JSON.parse(raw);
-        return sanitizarDados(parsed);
-      } catch (erroJson) {
+      var resParse = parseJsonSeguro(raw, null);
+      if (!resParse.ok) {
         // Retorna estrutura limpa caso o JSON armazenado esteja corrompido
         return criarEstruturaPadrao();
       }
+      return sanitizarDados(resParse.valor);
     }
 
     if (memoriaFallback) {
@@ -702,7 +1072,8 @@
     return {
       modo: dados.config.modo,
       palavrasSemanaAtivo: dados.config.palavrasSemanaAtivo,
-      fase1ModoSemana: dados.config.fase1ModoSemana
+      fase1ModoSemana: dados.config.fase1ModoSemana,
+      periodosLetivos: clonarPeriodosLetivos(dados.config.periodosLetivos)
     };
   }
 
@@ -715,7 +1086,8 @@
     return {
       modo: dados.config.modo,
       palavrasSemanaAtivo: dados.config.palavrasSemanaAtivo,
-      fase1ModoSemana: dados.config.fase1ModoSemana
+      fase1ModoSemana: dados.config.fase1ModoSemana,
+      periodosLetivos: clonarPeriodosLetivos(dados.config.periodosLetivos)
     };
   }
 
@@ -757,7 +1129,68 @@
     return {
       modo: dados.config.modo,
       palavrasSemanaAtivo: dados.config.palavrasSemanaAtivo,
-      fase1ModoSemana: dados.config.fase1ModoSemana
+      fase1ModoSemana: dados.config.fase1ModoSemana,
+      periodosLetivos: clonarPeriodosLetivos(dados.config.periodosLetivos)
+    };
+  }
+
+  function getPeriodosLetivos() {
+    var dados = carregarDados();
+    return clonarPeriodosLetivos(dados.config.periodosLetivos);
+  }
+
+  function validarEstruturaPeriodos(cfgPeriodos) {
+    if (!ehObjetoPlano(cfgPeriodos)) {
+      return {
+        ok: false,
+        erro: 'Configuração de períodos letivos inválida.'
+      };
+    }
+
+    var periods = getPeriodsModule();
+    if (periods && typeof periods.validarCiclos === 'function') {
+      var validacao = periods.validarCiclos(cfgPeriodos.ciclos);
+      if (!validacao.ok) {
+        return {
+          ok: false,
+          erro: validacao.erro || 'Os intervalos de datas dos períodos letivos são inválidos.'
+        };
+      }
+    } else if (!Array.isArray(cfgPeriodos.ciclos) || cfgPeriodos.ciclos.length === 0) {
+      return {
+        ok: false,
+        erro: 'Os intervalos de datas dos períodos letivos são inválidos.'
+      };
+    }
+
+    return { ok: true };
+  }
+
+  function salvarPeriodosLetivos(novaConfig) {
+    var validacao = validarEstruturaPeriodos(novaConfig);
+    if (!validacao.ok) {
+      return validacao;
+    }
+
+    var dados = carregarDados();
+    dados.config.periodosLetivos = sanitizarPeriodosLetivos(novaConfig);
+    salvarDados(dados);
+
+    return {
+      ok: true,
+      periodosLetivos: clonarPeriodosLetivos(dados.config.periodosLetivos)
+    };
+  }
+
+  function definirModeloPeriodos(modelo, ano) {
+    var modeloNorm = modelo === 'trimestre' ? 'trimestre' : 'bimestre';
+    var dados = carregarDados();
+    dados.config.periodosLetivos = criarPeriodosPadrao(modeloNorm, ano);
+    salvarDados(dados);
+
+    return {
+      ok: true,
+      periodosLetivos: clonarPeriodosLetivos(dados.config.periodosLetivos)
     };
   }
 
@@ -769,9 +1202,15 @@
    * Valida e prepara objeto de aluno sem persistir (reaproveitado em lote).
    */
   function validarNovoAluno(nomeOriginal, listaAtual) {
-    var nomeLimpo = String(nomeOriginal == null ? '' : nomeOriginal)
-      .replace(/\s+/g, ' ')
-      .trim();
+    if (Array.isArray(listaAtual) && listaAtual.length >= MAX_ALUNOS) {
+      return {
+        ok: false,
+        motivo: 'limite',
+        erro: 'Limite máximo de ' + MAX_ALUNOS + ' alunos cadastrados na turma atingido.'
+      };
+    }
+
+    var nomeLimpo = sanitizarTextoSeguro(nomeOriginal, MAX_ALUNO_NOME, false);
 
     var chave = normalizarChave(nomeLimpo);
     var caracteresUteis = chave.replace(/[^a-z0-9]/g, '');
@@ -961,10 +1400,7 @@
    * Processa a frase opcional garantindo exibicao da lacuna '___' na Fase 3.
    */
   function processarFraseSemana(fraseBruta, plainPalavra) {
-    var fraseLimpa = String(fraseBruta == null ? '' : fraseBruta)
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toUpperCase();
+    var fraseLimpa = sanitizarTextoSeguro(fraseBruta, 400, false).toUpperCase();
 
     if (!fraseLimpa) {
       return '';
@@ -995,6 +1431,9 @@
   /**
    * Valida e normaliza os campos de uma palavra da semana.
    */
+  var MAX_PALAVRA_LETRAS = 30;
+  var MAX_PALAVRA_SILABAS = 12;
+
   function validarDadosPalavra(entrada) {
     var obj = entrada && typeof entrada === 'object' ? entrada : {};
     var partes = String(obj.silabasRaw == null ? '' : obj.silabasRaw).split('-');
@@ -1021,6 +1460,13 @@
       };
     }
 
+    if (silabas.length > MAX_PALAVRA_SILABAS) {
+      return {
+        ok: false,
+        erro: 'A palavra pode ter no máximo ' + MAX_PALAVRA_SILABAS + ' sílabas.'
+      };
+    }
+
     var palavra = silabas.join('');
     var plain = normalizarPlain(palavra);
 
@@ -1031,6 +1477,13 @@
       };
     }
 
+    if (plain.length > MAX_PALAVRA_LETRAS) {
+      return {
+        ok: false,
+        erro: 'A palavra pode ter no máximo ' + MAX_PALAVRA_LETRAS + ' letras.'
+      };
+    }
+
     if (palavra.length !== plain.length) {
       return {
         ok: false,
@@ -1038,12 +1491,10 @@
       };
     }
 
-    var dicaLimpa = String(obj.dica == null ? '' : obj.dica)
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toUpperCase();
+    var dicaLimpa = sanitizarTextoSeguro(obj.dica, 400, false).toUpperCase();
 
     var fraseProcessada = processarFraseSemana(obj.frase, plain);
+    var stickerIdLimpo = sanitizarStickerId(obj.stickerId);
 
     return {
       ok: true,
@@ -1053,7 +1504,8 @@
         silabasRaw: silabas.join('-'),
         silabas: silabas,
         dica: dicaLimpa,
-        frase: fraseProcessada
+        frase: fraseProcessada,
+        stickerId: stickerIdLimpo
       }
     };
   }
@@ -1093,7 +1545,8 @@
       silabasRaw: validacao.dados.silabasRaw,
       silabas: validacao.dados.silabas,
       dica: validacao.dados.dica,
-      frase: validacao.dados.frase
+      frase: validacao.dados.frase,
+      stickerId: validacao.dados.stickerId
     };
 
     dados.palavrasSemana.push(item);
@@ -1134,6 +1587,9 @@
       }
     }
 
+    var temStickerNaEntrada = entrada && typeof entrada === 'object' &&
+      Object.prototype.hasOwnProperty.call(entrada, 'stickerId');
+
     var atualizado = {
       id: id,
       palavra: validacao.dados.palavra,
@@ -1141,7 +1597,10 @@
       silabasRaw: validacao.dados.silabasRaw,
       silabas: validacao.dados.silabas,
       dica: validacao.dados.dica,
-      frase: validacao.dados.frase
+      frase: validacao.dados.frase,
+      stickerId: temStickerNaEntrada
+        ? validacao.dados.stickerId
+        : sanitizarStickerId(dados.palavrasSemana[idx].stickerId)
     };
 
     dados.palavrasSemana[idx] = atualizado;
@@ -1198,7 +1657,7 @@
   }
 
   function gerarSilabasIntrusas(itemAlvo, todasPalavras) {
-    var proibidas = {};
+    var proibidas = Object.create(null);
     for (var i = 0; i < itemAlvo.silabas.length; i += 1) {
       proibidas[itemAlvo.silabas[i]] = true;
     }
@@ -1218,7 +1677,7 @@
     }
 
     var intrusas = [];
-    var escolhidas = {};
+    var escolhidas = Object.create(null);
 
     function tentarAdicionarDe(origem) {
       var embaralhada = embaralharCopia(origem);
@@ -1262,6 +1721,18 @@
         fraseParaFase3 = 'PALAVRA DA SEMANA! ESCREVA NO TECLADO: ___!';
       }
 
+      var stickersMod = global.SaudeEscola && global.SaudeEscola.Stickers;
+      var stickerExplicit = sanitizarStickerId(item.stickerId);
+      var stickerResolvido = null;
+      if (stickerExplicit === 'none') {
+        stickerResolvido = null;
+      } else if (stickerExplicit && stickersMod && typeof stickersMod.getById === 'function') {
+        stickerResolvido = stickersMod.getById(stickerExplicit);
+      } else if (!stickerExplicit && stickersMod && typeof stickersMod.matchByWord === 'function') {
+        stickerResolvido = stickersMod.matchByWord(item.plain || item.palavra);
+      }
+      var temSticker = Boolean(stickerResolvido && stickerResolvido.svg);
+
       banco.push({
         id: item.id,
         word: item.palavra,
@@ -1276,7 +1747,11 @@
         sentences: [fraseParaFase3],
         sentenceBefore: '',
         sentenceAfter: '',
-        svg: SVGs.ILUSTRACAO_SEMANA,
+        svg: temSticker ? stickerResolvido.svg : SVGs.ILUSTRACAO_SEMANA,
+        stickerId: stickerExplicit === 'none'
+          ? 'none'
+          : (stickerResolvido ? stickerResolvido.id : null),
+        hasSticker: temSticker,
         isWeeklyWord: true
       });
     }
@@ -1316,10 +1791,15 @@
   // =========================================================================
 
   function resolverNomeAlunoParaAnotacao(dados, alunoId, alunoNomeInformado) {
-    var idLimpo = alunoId !== undefined && alunoId !== null
-      ? sanitizarTextoSeguro(alunoId, 60, false)
+    var idBruto = alunoId !== undefined && alunoId !== null
+      ? sanitizarTextoSeguro(alunoId, MAX_ID_LENGTH, false)
       : '';
-    if (!idLimpo || idLimpo === 'TURMA' || idLimpo === 'TODOS') {
+    if (!idBruto || idBruto === 'TURMA' || idBruto === 'TODOS') {
+      return { alunoId: null, alunoNome: '' };
+    }
+
+    var idLimpo = sanitizarIdSeguro(idBruto, null);
+    if (!idLimpo) {
       return { alunoId: null, alunoNome: '' };
     }
 
@@ -1490,16 +1970,12 @@
     var limpa = [];
     for (var i = 0; i < listaBruta.length; i += 1) {
       var item = listaBruta[i];
-      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      if (!ehObjetoPlano(item)) {
         continue;
       }
 
-      var rawName = String(item.name == null ? '' : item.name)
-        .replace(/\s+/g, ' ')
-        .trim();
-      var nomeLimpo = rawName
-        ? rawName.slice(0, MAX_RANKING_NAME_LENGTH)
-        : 'ALUNO';
+      var rawName = sanitizarTextoSeguro(item.name, MAX_RANKING_NAME_LENGTH, false);
+      var nomeLimpo = rawName || 'ALUNO';
 
       var starsNum = sanitizarNumeroNaoNegativo(item.stars);
       var dateNum = typeof item.date === 'number' && isFinite(item.date) && item.date > 0
@@ -1527,8 +2003,11 @@
         if (!raw) {
           return [];
         }
-        var parsed = JSON.parse(raw);
-        return sanitizarListaRanking(parsed);
+        var resParse = parseJsonSeguro(raw, null);
+        if (!resParse.ok) {
+          return [];
+        }
+        return sanitizarListaRanking(resParse.valor);
       }
     } catch (e) {}
 
@@ -1565,7 +2044,8 @@
   }
 
   /**
-   * Importa um backup JSON aplicando sanitizarDados() e sanitizacao de Ranking.
+   * Importa um backup JSON aplicando validacao estrita de esquema, limites,
+   * protecao anti-prototype pollution, sanitizarDados() e sanitizacao de Ranking.
    */
   function importarBackupJSON(conteudoBruto) {
     var parsed = null;
@@ -1578,15 +2058,21 @@
           erro: 'O arquivo de backup selecionado está vazio.'
         };
       }
-      try {
-        parsed = JSON.parse(texto);
-      } catch (erroParse) {
+      var resParse = parseJsonSeguro(texto, MAX_BACKUP_BYTES);
+      if (!resParse.ok) {
+        if (resParse.motivo === 'tamanho') {
+          return {
+            ok: false,
+            erro: 'O arquivo de backup excede o limite máximo permitido de 2 MB.'
+          };
+        }
         return {
           ok: false,
           erro: 'Arquivo inválido: o conteúdo não é um JSON válido.'
         };
       }
-    } else if (conteudoBruto && typeof conteudoBruto === 'object' && !Array.isArray(conteudoBruto)) {
+      parsed = resParse.valor;
+    } else if (ehObjetoPlano(conteudoBruto)) {
       parsed = conteudoBruto;
     } else {
       return {
@@ -1595,10 +2081,65 @@
       };
     }
 
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    if (!ehObjetoPlano(parsed)) {
       return {
         ok: false,
         erro: 'Estrutura de backup inválida.'
+      };
+    }
+
+    // Validacao estrita dos metadados opcionais do envelope (retrocompativel)
+    if (parsed.tipo !== undefined && parsed.tipo !== 'saude_escola_backup') {
+      return {
+        ok: false,
+        erro: 'Tipo de arquivo de backup não reconhecido.'
+      };
+    }
+
+    if (
+      parsed.versaoBackup !== undefined &&
+      (
+        typeof parsed.versaoBackup !== 'number' ||
+        !isFinite(parsed.versaoBackup) ||
+        Math.floor(parsed.versaoBackup) !== parsed.versaoBackup ||
+        parsed.versaoBackup < 1 ||
+        parsed.versaoBackup > 10
+      )
+    ) {
+      return {
+        ok: false,
+        erro: 'Versão de backup não suportada.'
+      };
+    }
+
+    if (parsed.dataISO !== undefined && !ehDataISOValida(parsed.dataISO)) {
+      return {
+        ok: false,
+        erro: 'A data registrada no arquivo de backup é inválida.'
+      };
+    }
+
+    if (parsed.saudeEscola_v2_dados !== undefined && !ehObjetoPlano(parsed.saudeEscola_v2_dados)) {
+      return {
+        ok: false,
+        erro: 'A seção de dados pedagógicos do backup está corrompida.'
+      };
+    }
+
+    if (parsed.dados !== undefined && !ehObjetoPlano(parsed.dados)) {
+      return {
+        ok: false,
+        erro: 'A seção de dados pedagógicos do backup está corrompida.'
+      };
+    }
+
+    if (
+      (parsed.saudeBucalRanking !== undefined && !Array.isArray(parsed.saudeBucalRanking)) ||
+      (parsed.ranking !== undefined && !Array.isArray(parsed.ranking))
+    ) {
+      return {
+        ok: false,
+        erro: 'A seção de Ranking do backup está corrompida.'
       };
     }
 
@@ -1625,11 +2166,37 @@
     }
 
     var origemDados = parsed.saudeEscola_v2_dados || parsed.dados || (possuiChavesDiretas ? parsed : {});
-    if (!origemDados || typeof origemDados !== 'object' || Array.isArray(origemDados)) {
+    if (!ehObjetoPlano(origemDados)) {
       return {
         ok: false,
         erro: 'A seção de dados pedagógicos do backup está corrompida.'
       };
+    }
+
+    if (
+      (origemDados.config !== undefined && !ehObjetoPlano(origemDados.config)) ||
+      (origemDados.turma !== undefined && !Array.isArray(origemDados.turma)) ||
+      (origemDados.palavrasSemana !== undefined && !Array.isArray(origemDados.palavrasSemana)) ||
+      (origemDados.sessoes !== undefined && !Array.isArray(origemDados.sessoes)) ||
+      (origemDados.anotacoes !== undefined && !Array.isArray(origemDados.anotacoes) && typeof origemDados.anotacoes !== 'string')
+    ) {
+      return {
+        ok: false,
+        erro: 'A seção de dados pedagógicos do backup contém campos com formato inválido.'
+      };
+    }
+
+    if (
+      origemDados.config &&
+      origemDados.config.periodosLetivos !== undefined
+    ) {
+      var valPeriodosBackup = validarEstruturaPeriodos(origemDados.config.periodosLetivos);
+      if (!valPeriodosBackup.ok) {
+        return {
+          ok: false,
+          erro: 'A configuração de períodos letivos do backup está corrompida.'
+        };
+      }
     }
 
     var dadosSanitizados = sanitizarDados(origemDados);
@@ -1664,11 +2231,15 @@
   global.SaudeEscola.Storage = {
     STORAGE_KEY: STORAGE_KEY,
     RANKING_STORAGE_KEY: RANKING_STORAGE_KEY,
+    MAX_ALUNOS: MAX_ALUNOS,
+    MAX_BACKUP_BYTES: MAX_BACKUP_BYTES,
     SVGs: SVGs,
 
     normalizarChave: normalizarChave,
     normalizarPlain: normalizarPlain,
     sanitizarTextoSeguro: sanitizarTextoSeguro,
+    sanitizarIdSeguro: sanitizarIdSeguro,
+    ehDataISOValida: ehDataISOValida,
     getDataLocalISO: getDataLocalISO,
     sanitizarDados: sanitizarDados,
     carregarDados: carregarDados,
@@ -1682,6 +2253,9 @@
     setPalavrasSemanaAtivo: setPalavrasSemanaAtivo,
     isPalavrasSemanaAtivo: isPalavrasSemanaAtivo,
     setFase1ModoSemana: setFase1ModoSemana,
+    getPeriodosLetivos: getPeriodosLetivos,
+    salvarPeriodosLetivos: salvarPeriodosLetivos,
+    definirModeloPeriodos: definirModeloPeriodos,
 
     listarAlunos: listarAlunos,
     adicionarAluno: adicionarAluno,
