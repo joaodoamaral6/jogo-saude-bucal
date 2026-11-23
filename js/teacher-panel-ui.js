@@ -1,6 +1,23 @@
 /* ==========================================================================
-   Painel da Professora (UI) + Icones SVG Infantis + Sugestoes no Ranking
-   Compativel 100% offline (file:// e GitHub Pages) sem ES Modules.
+   CABEÇALHO ARQUITETURAL — SaudeEscola.TeacherPanel
+   ==========================================================================
+   Responsabilidade: interface da professora, três abas, turma, Palavras da
+   Semana, períodos, evolução, backup, galeria de figurinhas e confirmações.
+
+   Dependências: Storage, Periods, EvolutionView, ReportPrint, SyllableHelper,
+   Stickers, UiIcons e DomSafe; recursos indisponíveis recebem fallback seguro.
+
+   API pública: SaudeEscola.TeacherPanel
+   Contrato: inicialização, abertura/fechamento, seleção de aba, indicadores
+   do menu e renderização de sugestões no Ranking.
+
+   Sumário:
+   1. Estado e ícones vetoriais
+   2. Abertura por pressão prolongada
+   3. Aba Turma, Modo e Backup
+   4. Aba Palavras da Semana e figurinhas
+   5. Aba Evolução e períodos
+   6. API pública e integração com o jogo
    ========================================================================== */
 
 (function (global) {
@@ -87,6 +104,10 @@
 
     /**
      * Resolve figurinha (explicita ou automatica pela palavra) ou fallback do caderninho.
+     *
+     * [RETROCOMPATIBILIDADE v2.1.x] Palavras antigas podem não possuir stickerId;
+     * neste caso o painel resolve uma figurinha pela palavra ou usa o caderninho,
+     * mantendo compatibilidade visual sem alterar o cadastro original.
      */
     function resolverStickerVisual(palavraOuPlain, stickerIdExplicito) {
         var Stickers = getStickers();
@@ -2647,9 +2668,28 @@
     /* ----------------------------------------------------------------------
        5. API Publica: window.SaudeEscola.TeacherPanel
        ---------------------------------------------------------------------- */
+    /**
+     * Contrato público de SaudeEscola.TeacherPanel.
+     *
+     * init(options) prepara o painel e liga a proteção de três segundos.
+     * open(abaInicial) e close() controlam o modal e restauram o foco.
+     * atualizarIndicadoresMenu() sincroniza o selo sem alterar dados.
+     * renderizarSugestoesRanking(...) prepara sugestões em modo Aula.
+     *
+     * A persistência é delegada a Storage; gráficos são delegados a EvolutionView;
+     * períodos são delegados a Periods; o silabador é delegado a SyllableHelper.
+     * Caso um auxiliar não esteja carregado, a função retorna UI segura ou omite
+     * o recurso dependente, sem lançar erro ou alterar a sessão em andamento.
+     */
     var TeacherPanel = {
         /**
          * Inicializa o painel, eventos de segurar 3s no botao de engrenagem e indicadores.
+         *
+         * Parâmetros: options.onConfigChanged é callback opcional chamado ao fechar
+         * o painel quando houve alteração configurada. Retorno: undefined.
+         * Efeito colateral: cria o modal no DOM e liga o gesto de 3 segundos.
+         * Caso o módulo Storage esteja indisponível, indicadores usam configurações
+         * vazias e a interface evita operação de persistência.
          */
         init: function (options) {
             options = options || {};

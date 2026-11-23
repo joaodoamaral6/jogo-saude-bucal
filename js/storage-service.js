@@ -1,3 +1,26 @@
+/**
+ * ==========================================================================
+ * CABEÇALHO ARQUITETURAL — SaudeEscola.Storage
+ * ==========================================================================
+ * Responsabilidade: persistência local, sanitização de dados, Backup JSON,
+ * turma, Palavras da Semana, sessões, anotações e limites de integridade.
+ *
+ * Dependências: SaudeEscola.Periods e SaudeEscola.DomSafe quando disponíveis;
+ * o módulo preserva fallbacks próprios para continuar funcional offline.
+ *
+ * API pública: SaudeEscola.Storage
+ * Contrato: leitura/escrita de localStorage, exportação/importação JSON,
+ * consultas CRUD e normalização de dados já usados pelos módulos de interface.
+ *
+ * Sumário:
+ * 1. Constantes e ilustrações
+ * 2. Sanitização e normalização
+ * 3. Turma e Palavras da Semana
+ * 4. Sessões e compatibilidade de métricas
+ * 5. Anotações pedagógicas
+ * 6. Backup, ranking auxiliar e exportação pública
+ * ==========================================================================
+ */
 (function (global) {
   'use strict';
 
@@ -778,6 +801,9 @@
   /**
    * Sanitiza estatisticas por fase preservando null para sessoes antigas sem esse campo.
    * Na Fase 1, preserva metricas de tempo (v2.1.3+) e contadores legados (v2.1.x).
+   *
+   * [RETROCOMPATIBILIDADE v2.1.x] Aceita sessões com fasesStats ausente ou incompleto,
+   * preservando métricas antigas sem inventar dados das fases não registradas.
    */
   function sanitizarFasesStats(mapa) {
     if (!mapa || typeof mapa !== 'object' || Array.isArray(mapa)) {
@@ -995,7 +1021,7 @@
       }
     }
 
-    // Anotacoes pedagogicas da professora (retrocompativel com backups sem este campo)
+    // [RETROCOMPATIBILIDADE v2.1.x] Backups sem anotacoes recebem lista vazia segura.
     base.anotacoes = sanitizarAnotacoes(bruto.anotacoes);
 
     // Configuracao
@@ -1058,7 +1084,7 @@
         return true;
       }
     } catch (erro) {
-      // Mantem fallback em memoria se localStorage estiver cheio ou bloqueado
+      // Fallback operacional: mantém dados em memória se localStorage estiver cheio ou bloqueado.
     }
     return false;
   }
@@ -2228,6 +2254,23 @@
   // =========================================================================
 
   global.SaudeEscola = global.SaudeEscola || {};
+  /**
+   * Contrato público de SaudeEscola.Storage.
+   *
+   * API de leitura: carregarDados(), listarAlunos(), listarPalavrasSemana(),
+   * listarSessoes(), listarAnotacoes(), getConfig() e getPeriodosLetivos().
+   *
+   * API de escrita: adicionar/atualizar/remover os registros, salvarDados(),
+   * salvarSessao(), salvarPeriodosLetivos() e gerarBackupJSON().
+   *
+   * Efeitos colaterais: métodos de gravação usam as chaves saudeEscola_v2_dados
+   * e saudeBucalRanking no localStorage. Se o navegador bloqueia ou impede
+   * persistência, o módulo mantém o fallback próprio em memória.
+   *
+   * Importação: importarBackupJSON(texto) exige texto JSON, respeita limite de
+   * tamanho, valida o envelope e retorna resultado estruturado. O chamador não
+   * precisa interpretar dados brutos: todos os dados retornados são sanitizados.
+   */
   global.SaudeEscola.Storage = {
     STORAGE_KEY: STORAGE_KEY,
     RANKING_STORAGE_KEY: RANKING_STORAGE_KEY,

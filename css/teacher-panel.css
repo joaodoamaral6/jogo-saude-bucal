@@ -1,6 +1,21 @@
 /* ==========================================================================
-   Painel da Professora, Sugestoes no Ranking, Adaptacoes das Fases e Evolucao
-   Compativel com lousa digital touch (HDMI+USB) e telas moveis.
+   ESTILOS DO PAINEL — Saúde na Escola: Saúde Bucal
+   ==========================================================================
+
+   SUMÁRIO DE NAVEGAÇÃO
+   1. Engrenagem, selo semanal e estrutura do modal
+   2. Abas, cartões, formulários e botões
+   3. Turma, modo de operação e backup
+   4. Palavras da Semana, sílabas e cadastro em lote
+   5. Figurinhas e sugestões no Ranking
+   6. Adaptações das 3 fases para palavras personalizadas
+   7. Evolução e períodos
+   8. Visão panorâmica Aluno por Aluno
+   7B. Anotações pedagógicas
+   9. Mobile e orientação curta
+  10. Relatório pedagógico imprimível/PDF
+
+   Conteúdo de regra preservado integralmente nesta manutenção documental.
    ========================================================================== */
 
 /* 1. Ancora no heroi do menu para posicionar o botao discreto da engrenagem */
@@ -171,7 +186,9 @@
     color: #00897B;
 }
 
-/* 4. Modal completo do Painel da Professora */
+/* ==========================================================================
+   SEÇÃO 1 — MODAL COMPLETO DO PAINEL DA PROFESSORA
+   ========================================================================== */
 body.tp-modal-open {
     overflow: hidden;
 }
@@ -304,6 +321,9 @@ body.tp-modal-open {
     height: 22px;
 }
 
+/* ==========================================================================
+   SEÇÃO 2 — ABAS, CARTÕES, FORMULÁRIOS E BOTÕES
+   ========================================================================== */
 /* Abas de navegacao do painel */
 .tp-tabs {
     flex: 0 0 auto;
@@ -427,6 +447,9 @@ body.tp-modal-open {
     font-weight: 800;
 }
 
+/* ==========================================================================
+   SEÇÃO 3 — TURMA, MODO DE OPERAÇÃO E BACKUP
+   ========================================================================== */
 /* Seletor Modo Aula vs Modo Livre */
 .tp-mode-grid {
     display: grid;
@@ -928,7 +951,9 @@ body.tp-modal-open {
     color: #1E293B;
 }
 
-/* Bloco 2: UX simplificada de Palavras da Semana */
+/* ==========================================================================
+   SEÇÃO 4 — UX DAS PALAVRAS DA SEMANA
+   ========================================================================== */
 .tp-weekly-status-card {
     transition: border-color 0.18s ease, background-color 0.18s ease;
 }
@@ -1288,7 +1313,9 @@ body.tp-modal-open {
     color: #991B1B;
 }
 
-/* Etapa 2C: Figurinhas / Stickers em Palavras da Semana */
+/* ==========================================================================
+   SEÇÃO 5 — FIGURINHAS E PERSONALIZAÇÃO DAS PALAVRAS
+   ========================================================================== */
 .tp-sticker-field-wrap {
     gap: 10px;
 }
@@ -1625,7 +1652,9 @@ body.tp-modal-open {
     color: #FFFFFF;
 }
 
-/* 5. Sugestoes clicaveis no Ranking (#rankingSuggestionsRow) */
+/* ==========================================================================
+   SEÇÃO 5B — SUGESTÕES NO RANKING
+   ========================================================================== */
 .ranking-suggestions-row {
     display: flex;
     flex-wrap: wrap;
@@ -1666,7 +1695,9 @@ body.tp-modal-open {
     background: #80DEEA;
 }
 
-/* 6. Adaptacoes para Palavras da Semana nas 3 Fases */
+/* ==========================================================================
+   SEÇÃO 6 — ADAPTAÇÕES DAS 3 FASES PARA PALAVRAS PERSONALIZADAS
+   ========================================================================== */
 /* Fase 1 (carta de dica curta ou silaba inicial + palavras longas) */
 .mem-clue-card {
     display: flex;
@@ -1812,7 +1843,9 @@ body.tp-modal-open {
     color: #00897B;
 }
 
-/* 7. Aba de Evolucao e Dificuldades (evolution-view.js) */
+/* ==========================================================================
+   SEÇÃO 7 — EVOLUÇÃO, PERÍODOS E DIFICULDADES
+   ========================================================================== */
 .ev-root {
     display: flex;
     flex-direction: column;
@@ -2884,7 +2917,9 @@ body.tp-modal-open {
     color: #00838F;
 }
 
-/* Visao panoramica Aluno por Aluno */
+/* ==========================================================================
+   SEÇÃO 8 — VISÃO ALUNO POR ALUNO
+   ========================================================================== */
 .ev-students-panel {
     padding: 16px;
     border-radius: 16px;
@@ -3088,7 +3123,9 @@ body.tp-modal-open {
     cursor: not-allowed;
 }
 
-/* Secao Anotacoes Pedagogicas da Professora */
+/* ==========================================================================
+   SEÇÃO 7B — ANOTAÇÕES PEDAGÓGICAS
+   ========================================================================== */
 .ev-notes-panel {
     padding: 16px;
     border-radius: 16px;
@@ -3227,7 +3264,9 @@ body.tp-modal-open {
     display: none;
 }
 
-/* 8. Media queries para celular retrato e paisagem curta */
+/* ==========================================================================
+   SEÇÃO 9 — MOBILE RETRATO E PAISAGEM CURTA
+   ========================================================================== */
 @media (orientation: portrait) and (max-width: 820px) {
     #btnTeacherPanel,
     .tp-gear-btn {
@@ -3547,7 +3586,9 @@ body.tp-modal-open {
     }
 }
 
-/* 9. Relatorio Pedagogico Imprimivel / PDF (@media print) */
+/* ==========================================================================
+   SEÇÃO 10 — RELATÓRIO PEDAGÓGICO IMPRIMÍVEL / PDF
+   ========================================================================== */
 @page {
     size: A4 portrait;
     margin: 14mm;
