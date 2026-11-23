@@ -14,6 +14,18 @@ Este relatório consolida os achados da **Auditoria Dupla Pré-Release** realiza
 
 ---
 
+## Status pós-auditoria do Bloco 5B
+
+Os achados abaixo são mantidos neste relatório como histórico da auditoria pré-release. Os itens que já foram aplicados no código receberam a marca `[CORRIGIDO NO BLOCO 5B]`; eles não devem ser tratados como pendências abertas da v2.2.0.
+
+- `[CORRIGIDO NO BLOCO 5B]` Limites superiores em `validarDadosPalavra()` e sanitização de tamanho em `storage-service.js:1430+`.
+- `[CORRIGIDO NO BLOCO 5B]` Uso de `Object.create(null)` e chaves próprias em mapas analíticos e de período.
+- `[CORRIGIDO NO BLOCO 5B]` Remoção do bloqueio de zoom assistivo em `index.html:5`.
+- `[CORRIGIDO NO BLOCO 5B]` Modais principais com `role="dialog"`, `aria-modal="true"` e `aria-labelledby` em `index.html:317` e `363`.
+- Os itens do histórico que não possuem a marca permanecem como validação futura, polimento ou evolução planejada.
+
+---
+
 ## 1. Não precisa melhorar
 
 Pontos arquiteturais, pedagógicos e de segurança já consolidados e validados nesta versão:
@@ -34,7 +46,7 @@ Refinamentos desejáveis de baixa/média prioridade (não bloqueiam o funcioname
 
 - **Defesa em profundidade de Segurança e Memória:**
   - Checar `file.size > MAX_BACKUP_BYTES` antes de ler o arquivo via `FileReader.readAsText()` em `js/teacher-panel-ui.js:880-926` para evitar pico de RAM em PCs escolares ao selecionar arquivo grande por engano.
-  - Aplicar reviver anti-prototype-pollution em `Ranking.getList()` (`js/ranking-service.js:188`) e `WordBank.loadQueueState()` (`js/word-bank.js:1176`, substituindo `queueMemoryCache = {}` em `L1166` por `Object.create(null)`), além de teto numérico superior em `sanitizarNumeroNaoNegativo()` (`js/storage-service.js:521-527`, hoje aceita números como `1e30`).
+  - Aplicar reviver anti-prototype-pollution em `Ranking.getList()` (`js/ranking-service.js:188`) e `WordBank.loadQueueState()` (`js/word-bank.js:1176`), além de teto numérico superior em `sanitizarNumeroNaoNegativo()` (`js/storage-service.js:521-527`, hoje aceita números como `1e30`). O `queueMemoryCache` já usa `Object.create(null)` e os principais mapas analíticos também estão protegidos.
   - Em `js/dom-safe.js`, reforçar `sanitizeSvgAttributes()` (`L187-221`) contra `url(...)` em atributos de apresentação (`fill`, `stroke`, `clip-path`, `mask`, `filter`) e adicionar denylist explícita (`script`, `style`, `iframe`, `object`, `embed`) em `DomSafe.el()` (`L406-411`).
   - *(Nota informativa CSP)* As 5 atribuições CSSOM (`fillEl.style.width` / `.style.height`) em `js/evolution-view.js:956, 1092, 1106, 1117, 1178` são **100% compatíveis com `style-src 'self'` (CSP3)** por manipularem apenas percentuais limitados entre `0` e `100` via CSSOM; a seta Unicode `'→'` em `js/teacher-panel-ui.js:1395` pode opcionalmente virar SVG se desejarem uniformidade absoluta.
 - **Suavização de jargão técnico e consistência touch no Painel da Professora:**
@@ -47,7 +59,7 @@ Refinamentos desejáveis de baixa/média prioridade (não bloqueiam o funcioname
   - Validar com a Profª Carla a divisão silábica de `CÁRIE` (`CÁ-RI-E` em `js/word-bank.js:418` vs. `CÁ-RIE` no `SyllableHelper`).
 - **Acessibilidade complementar e sinalização no Menu Inicial:**
   - Esclarecer no Menu Inicial (`index.html:79-95, 156`) que o seletor `3 / 5 / 10` vale para as Fases 2 e 3, e refletir o modo ativo da Fase 1 no subtítulo do card.
-  - Adicionar `@media (prefers-reduced-motion: reduce)` em `css/teacher-panel.css` (complementando `css/game.css:934`).
+  - Adicionar `@media (prefers-reduced-motion: reduce)` em `css/teacher-panel.css` (complementando `css/game.css:934`). Esta melhoria ainda não foi aplicada.
 
 ---
 
@@ -55,9 +67,9 @@ Refinamentos desejáveis de baixa/média prioridade (não bloqueiam o funcioname
 
 Correções recomendadas com alta/média prioridade (bugs silenciosos, desvios claros de Norma Culta, colas ortográficas e lacunas de IHC/acessibilidade), além da evolução estrutural planejada após a v2.2:
 
-1. **Segurança — Colisão com propriedades herdadas de `Object.prototype` em dicionários analíticos (`[MÉDIA]`):**
+1. **Segurança — Colisão com propriedades herdadas de `Object.prototype` em dicionários analíticos (`[MÉDIA]`) — `[CORRIGIDO NO BLOCO 5B]`:**
    - `js/analytics-engine.js:805-807, 876, 890, 914` (e `L782, 1458-1459, 1490, 1717-1718`; `js/evolution-view.js:331-332`): mapas literais `{}` permitem que chaves como `"toString"` ou `"valueOf"` em sessões importadas disparem `TypeError` em `errosSilabas[silaba].palavras.indexOf(...)`. **Correção:** usar `Object.create(null)` e `Object.prototype.hasOwnProperty.call(...)`.
-2. **Segurança — Limite máximo em `validarDadosPalavra()` (`[MÉDIA]`):**
+2. **Segurança — Limite máximo em `validarDadosPalavra()` (`[MÉDIA]`) — `[CORRIGIDO NO BLOCO 5B]`:**
    - `js/storage-service.js:1434-1494`: falta limite superior de tamanho da palavra e número de sílabas (em teste em memória, um JSON com 5.001 sílabas foi aceito). **Correção:** limitar `palavra.length` (ex.: máx. 30 letras) e `silabas.length` (ex.: máx. 12 sílabas).
 3. **Pedagógico — 4 colas ortográficas no banco nativo e 1 imprecisão de saúde bucal:**
    - `js/word-bank.js:217` (`ESCOVA` Fase 3): `'...PARA ESCOVAR NA ESCOLA!'` entrega literalmente `ESCOVA`; alterar para `'...PARA LIMPAR OS DENTES NA ESCOLA!'`.
@@ -80,9 +92,9 @@ Correções recomendadas com alta/média prioridade (bugs silenciosos, desvios c
 6. **Consistência de IHC, Palavras da Semana, PDF e Acessibilidade:**
    - `js/game-engine.js:1267, 1550, 1579`: ajustar mensagens quando a palavra semanal não tiver figurinha associada (`'OBSERVE A FIGURA'` diante do caderninho genérico) ou estiver em Modo Dica/Ditado sem frase (`'VOCÊ COMPLETOU A FRASE...'`).
    - `js/teacher-panel-ui.js:1499, 1717, 1744, 1780, 1784, 2009`: atualizar textos da aba Palavras da Semana para mencionar explicitamente a prioridade das **Figurinhas**, o **Modo Ditado** e renomear `'Usar combinada'` para um rótulo autoexplicativo (`'Usar automática'`).
-   - `js/evolution-view.js:1923` vs. `js/report-print.js:182, 211`: alinhar o filtro individual no Relatório PDF (ou explicitar `'Exportar Relatório da Turma (PDF)'`), evitando que a docente filtre 1 aluno esperando PDF individual e receba o consolidado da turma.
-   - `index.html:71, 303, 317, 363`: adicionar `role="dialog"`, `aria-modal="true"` e `aria-labelledby` em `#celebrationModal` e `#rankingModal`, `role="status"` / `aria-live="polite"` em `#mascotSpeechText` e `#feedbackBanner`, e `for`/`id` nos rótulos de data em `js/evolution-view.js:616, 618`.
-   - `index.html:5`: remover bloqueio de zoom assistivo (`maximum-scale=1.0, user-scalable=no`).
+   - **`[CORRIGIDO NO BLOCO 5B]`** `js/evolution-view.js:1923` vs. `js/report-print.js:182, 211`: o filtro individual já é propagado ao PDF, exibindo resumo individual e filtrando a tabela e as anotações.
+   - **`[CORRIGIDO NO BLOCO 5B]`** `index.html:71, 303, 317, 363`: modais e estados ARIA já foram inseridos nos pontos principais; a associação semântica completa dos rótulos de data permanece como refinamento futuro.
+   - **`[CORRIGIDO NO BLOCO 5B]`** `index.html:5`: bloqueio de zoom assistivo removido no estado atual.
    - `js/game-engine.js:1571`: não depender apenas da cor verde no feedback da Fase 3 (complementar para daltônicos: `'AS LETRAS TRAVADAS ESTÃO CERTAS!'`).
 7. **Reforma Visual Profunda (Registrada para a Próxima Versão pós-v2.2):**
    - Evoluir de forma estrutural o layout base, **saindo do fundo branco/simples herdado da v1** para um ambiente visual mais rico e imersivo por cenários/temas infantis, mantendo alto contraste para projetores/lousas e desempenho 100% offline.

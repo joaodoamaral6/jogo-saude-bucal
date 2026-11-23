@@ -1,3 +1,24 @@
+/**
+ * ==========================================================================
+ * CABEÇALHO ARQUITETURAL — SaudeEscola.Periods
+ * ==========================================================================
+ * Responsabilidade: períodos letivos, validação de datas ISO e agrupamento
+ * de sessões por bimestres/trimestres sem depender de DOM.
+ *
+ * Dependências: nenhuma obrigatória; pode operar isoladamente em file://.
+ *
+ * API pública: SaudeEscola.Periods
+ * Contrato: gerar/sanitizar períodos, validar datas, localizar ciclos,
+ * comparar períodos anteriores e filtrar/agrupar sessões fornecidas por caller.
+ *
+ * Sumário:
+ * 1. Constantes e validação de ano
+ * 2. Datas ISO e formatação brasileira
+ * 3. Configuração e sanitização de ciclos
+ * 4. Filtros, agrupamento e período anterior
+ * 5. Exportação pública
+ * ==========================================================================
+ */
 (function (global) {
   'use strict';
 
@@ -146,6 +167,9 @@
 
   /**
    * Valida uma data estrita no formato 'YYYY-MM-DD' conferindo existencia no calendario.
+   *
+   * Essa validação impede datas impossíveis antes que o filtro ou o agrupamento
+   * sejam usados pelo painel, pelos relatórios e pelo PDF.
    */
   function ehDataISOValida(dataISO) {
     if (typeof dataISO !== 'string') {
@@ -397,6 +421,10 @@
 
   /**
    * Sanitiza uma configuracao completa de periodos letivos aplicando fallback seguro.
+   *
+   * [RETROCOMPATIBILIDADE v2.1.x] Configurações legadas podem não informar modelo,
+   * ano ou ciclos completos; o sanitizador gera uma configuração válida sem alterar
+   * o dataISO das sessões já persistidas.
    */
   function sanitizarConfiguracao(bruto, anoFallback) {
     if (!ehObjetoPlano(bruto)) {
@@ -624,6 +652,14 @@
   }
 
   global.SaudeEscola = global.SaudeEscola || {};
+  /**
+   * Contrato público de SaudeEscola.Periods.
+   *
+   * Recebe configurações e sessões fornecidas pelo chamador e retorna clones,
+   * resultados validados ou filtros novos, sem gravar localStorage por conta própria.
+   * Caso Storage não esteja disponível, gerarConfiguracaoPadrao continua funcional
+   * com bimestres/trimestres calculados localmente.
+   */
   global.SaudeEscola.Periods = {
     ehDataISOValida: ehDataISOValida,
     formatarDataBR: formatarDataBR,

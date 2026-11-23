@@ -1,8 +1,25 @@
 /* ==========================================================================
-   Motor Principal do Jogo (Fases 1, 2 e 3 + Navegacao + Teclado Fisico)
-   Projeto: Saude na Escola: Saude Bucal
-   Compativel 100% offline (file://) e GitHub Pages (sem ES Modules).
-   ========================================================================== */
+   CABEÇALHO ARQUITETURAL — SaudeEscola.Game
+   ==========================================================================
+   Responsabilidade: motor das três fases, jornada completa, estados das
+   partidas, navegação, feedback visual/sonoro e suporte ao teclado físico.
+
+   Dependências: Storage, Analytics, WordBank, Ranking, Audio, TeacherPanel,
+   DomSafe, UiIcons e Mascot; os auxiliares são consultados com fallbacks.
+
+   API pública: SaudeEscola.Game
+   Contrato: inicialização, seleção de quantidade, início das fases, navegação,
+   confirmação da saída e continuação do modal; getState retorna o estado interno.
+
+   Sumário:
+   1. Estado central e integrações modulares
+   2. Menu e seleção de modo
+   3. Fase 1 — memória avaliada por tempo
+   4. Fase 2 — construção silábica
+   5. Fase 3 — escrita espontânea
+   6. Ranking, feedback e navegação final
+   ==========================================================================
+*/
 (function (global) {
   'use strict';
 
@@ -115,6 +132,10 @@
   /**
    * Resolve a hierarquia de pista ou ditado na Fase 3:
    * 1) Frase cadastrada com lacuna; 2) Dica; 3) Orientacao para ditado da professora.
+   *
+   * [RETROCOMPATIBILIDADE v2.1.x] Itens antigos podem chegar sem isWeeklyWord,
+   * p3Mode ou campos *_Original; nesse caso é usada a frase nativa existente,
+   * evitando lacunas vazias ou prompts sem contexto.
    */
   function resolverPromptFase3(item, sentenceTemplate) {
     if (!item || !item.isWeeklyWord) {
@@ -184,6 +205,10 @@
 
   /**
    * Executa um efeito sonoro no modulo Audio sem quebrar caso ele ainda nao esteja carregado.
+   *
+   * [RETROCOMPATIBILIDADE v2.1.x] Quando o método moderno play* não existe,
+   * consulta-se o nome legado playSound*; se o módulo Audio não estiver presente,
+   * o jogo continua visualmente sem áudio.
    */
   function playAudio(methodName) {
     const audio = getSaudeModule('Audio');
@@ -1885,6 +1910,18 @@
     }
   };
 
+  /**
+   * Contrato público de SaudeEscola.Game.
+   *
+   * init() liga os eventos principais e pode ser chamado automaticamente pelo
+   * DOMContentLoaded. startGameMode(), startPhase1/2/3() iniciam fluxos a partir
+   * dos bancos disponíveis. goHome(), skipOrNextItem() e handleModalContinue()
+   * governam navegação e não exigem resposta direta do chamador.
+   *
+   * Se módulos auxiliares não estiverem carregados, o motor segue com fallbacks
+   * seguros: som visualmente desativado, ranking preservado quando disponível e
+   * banco nativo quando Palavras da Semana não puder ser consultado.
+   */
   SaudeEscola.Game = {
     init: init,
     getState: function () { return gameState; },

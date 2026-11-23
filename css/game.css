@@ -1,8 +1,25 @@
 /* ==========================================================================
-   Estilos principais do jogo "Saude na Escola: Saude Bucal"
-   Extraido do index.html na Refatoracao Modular (v2.1)
+   ESTILOS PRINCIPAIS — Saúde na Escola: Saúde Bucal
+   ==========================================================================
+
+   SUMÁRIO DE NAVEGAÇÃO
+   1. Tokens, resets e utilidades
+   2. Cabeçalho, layouts de tela e dock
+   3. Menu inicial e seletores
+   4. Mascote Dentinho e estados expressivos
+   5. Fase 1 — jogo da memória
+   6. Fase 2 — construtor de sílabas
+   7. Fase 3 — escrita espontânea
+    8. Modais e celebrações
+    9. Ranking e mini-teclado
+   10. Responsividade, lousa, mobile e movimento reduzido
+
+   Conteúdo de regra preservado integralmente nesta manutenção documental.
    ========================================================================== */
 
+/* ==========================================================================
+   SEÇÃO 1 — TOKENS, RESETS E UTILIDADES
+   ========================================================================== */
 :root {
   /* Tokens legados preservados */
   --bg-sky: #E0F7FA;
@@ -132,6 +149,9 @@ html, body {
   50% { transform: translateY(-18px) scale(1.05); }
 }
 
+/* ==========================================================================
+   SEÇÃO 2 — CABEÇALHO, TELAS E DOCK
+   ========================================================================== */
 /* Top Bar - Compact & Informative */
 header.top-bar {
   height: 10vh;
@@ -508,7 +528,9 @@ footer.bottom-dock:not(.is-menu) .feedback-banner.encourage::after {
   }
 }
 
-/* ================= MENU SCREEN ================= */
+/* ==========================================================================
+   SEÇÃO 3 — MENU INICIAL E SELETOR DE QUESTÕES
+   ========================================================================== */
 .menu-hero {
   height: 36vh;
   display: flex;
@@ -549,6 +571,9 @@ footer.bottom-dock:not(.is-menu) .feedback-banner.encourage::after {
   outline-offset: 4px;
 }
 
+/* ==========================================================================
+   SEÇÃO 4 — MASCOTE DENTINHO E ESTADOS EXPRESSIVOS
+   ========================================================================== */
 /* Camadas animaveis do Mascote Dentinho (SVG + CSS GPU cross-browser) */
 .mascot-svg .mascot-eyes-happy,
 .mascot-svg .mascot-eyes-encourage,
@@ -1230,7 +1255,9 @@ footer.bottom-dock:not(.is-menu) .feedback-banner.encourage::after {
   width: 100%;
 }
 
-/* ================= PHASE 1: MEMORY GAME ================= */
+/* ==========================================================================
+   SEÇÃO 5 — FASE 1: JOGO DA MEMÓRIA
+   ========================================================================== */
 .p1-header-banner {
   height: 18vh;
   width: 100%;
@@ -1395,7 +1422,9 @@ footer.bottom-dock:not(.is-menu) .feedback-banner.encourage::after {
   width: 92%;
 }
 
-/* ================= PHASE 2: SYLLABLE BUILDER ================= */
+/* ==========================================================================
+   SEÇÃO 6 — FASE 2: CONSTRUTOR DE SÍLABAS
+   ========================================================================== */
 .word-showcase-card {
   background: linear-gradient(180deg, var(--ui-surface) 0%, #EFFAF8 100%);
   border: 4.5px solid var(--ui-border-teal);
@@ -1567,7 +1596,9 @@ footer.bottom-dock:not(.is-menu) .feedback-banner.encourage::after {
   transform: scale(0.92);
 }
 
-/* ================= PHASE 3: SPONTANEOUS WRITING ================= */
+/* ==========================================================================
+   SEÇÃO 7 — FASE 3: ESCRITA ESPONTÂNEA
+   ========================================================================== */
 .p3-upper-card {
   background: linear-gradient(180deg, var(--ui-surface) 0%, #FAF3FD 100%);
   border: 4.5px solid var(--ui-border-purple);
@@ -1784,6 +1815,9 @@ footer.bottom-dock:not(.is-menu) .feedback-banner.encourage::after {
 }
 
 /* ================= CELEBRATION OVERLAY ================= */
+/* ==========================================================================
+   SEÇÃO 8 — MODAIS, CELEBRAÇÕES E FEEDBACK FINAL
+   ========================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1880,7 +1914,9 @@ footer.bottom-dock:not(.is-menu) .feedback-banner.encourage::after {
   border-radius: 24px;
 }
 
-/* ================= RANKING PEDAGÓGICO E MINI-TECLADO ================= */
+/* ==========================================================================
+   SEÇÃO 9 — RANKING PEDAGÓGICO E MINI-TECLADO
+   ========================================================================== */
 .badge-pill-btn {
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
@@ -2163,6 +2199,9 @@ footer.bottom-dock:not(.is-menu) .feedback-banner.encourage::after {
 }
 
 /* ================= ETAPA 2B-2: MODO PERSONALIZADO DESKTOP / LOUSA DIGITAL ================= */
+/* ==========================================================================
+   SEÇÃO 10 — RESPONSIVIDADE, LOUSA, MOBILE E MOVIMENTO REDUZIDO
+   ========================================================================== */
 @media (min-width: 821px) and (min-height: 541px) {
   #screenPhase3 .p3-letter-boxes-row.many-letters {
     height: auto;
